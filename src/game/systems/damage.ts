@@ -1,7 +1,12 @@
 import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
-import type { AntibodyTower, NkTower, PhagocyteTower, SimState } from '../types';
-import { armourMultiplier, inRange, isAlive, pickLeader, pickMostWounded } from './targeting';
+import { TAGGED_BURST_MULTIPLIER } from '../content/rules';
+import type {
+  AntibodyTower, MastTower, MemoryTower, NkTower, PhagocyteTower, SimState,
+} from '../types';
+import {
+  armourMultiplier, inRange, isAlive, isTagged, pickLeader, pickMostWounded,
+} from './targeting';
 
 /**
  * Phagocyte grabs, as their own pass. `step` calls this before movement so an enemy is frozen
@@ -77,9 +82,46 @@ function execute(state: SimState, tower: NkTower, dt: number, dead: ReadonlySet<
   });
 }
 
+/** One pulse over everything in reach at once, landing harder on anything already tagged. */
+function burst(state: SimState, tower: MastTower, dt: number, dead: ReadonlySet<number>): void {
+  const stats = DEFENDERS.mast;
+  tower.cooldown -= dt;
+  if (tower.cooldown > 0) return;
+
+  let hitSomething = false;
+  for (const enemy of state.enemies) {
+    if (!isAlive(enemy, dead)) continue;
+    if (!inRange(tower, enemy, stats.range)) continue;
+
+    const bonus = isTagged(enemy) ? TAGGED_BURST_MULTIPLIER : 1;
+    enemy.hp -= stats.dmg * bonus * armourMultiplier(state, enemy);
+    hitSomething = true;
+  }
+
+  if (!hitSomething) return;
+  tower.cooldown = stats.rate;
+  tower.flash = 0.18;
+}
+
+/** Weak on its own, but every nearby kill is banked as `xp` and rides on every hit after it. */
+function learn(state: SimState, tower: MemoryTower, dt: number, dead: ReadonlySet<number>): void {
+  const stats = DEFENDERS.mem;
+  tower.cooldown -= dt;
+  if (tower.cooldown > 0) return;
+
+  const target = pickLeader(state, tower, stats.range, dead);
+  if (target === null) return;
+
+  target.hp -= (stats.dmg + tower.xp) * armourMultiplier(state, target);
+  tower.cooldown = stats.rate;
+  state.beams.push({
+    fromX: tower.x, fromY: tower.y, toX: target.x, toY: target.y, life: 0.16, source: 'mem',
+  });
+}
+
 /**
  * The defender action pass. A stunned cell does nothing this step. The switch is exhaustive so
- * a new defender kind cannot be silently forgotten; `mast` and `mem` land in Phase 6.
+ * a new defender kind cannot be silently forgotten.
  */
 export function runDefenders(state: SimState, dt: number, dead: ReadonlySet<number>): void {
   for (const tower of state.towers) {
@@ -102,7 +144,10 @@ export function runDefenders(state: SimState, dt: number, dead: ReadonlySet<numb
         execute(state, tower, dt, dead);
         break;
       case 'mast':
+        burst(state, tower, dt, dead);
+        break;
       case 'mem':
+        learn(state, tower, dt, dead);
         break;
       default: {
         const unhandled: never = tower;

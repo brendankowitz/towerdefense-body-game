@@ -26,7 +26,10 @@ export function applyWoundBleed(state: SimState, dt: number): void {
   state.energy = Math.max(0, state.energy - BLEED_AMOUNT);
 }
 
-/** Clots are inert and the memory cell's stated perk is toxin immunity. Everything else stuns. */
+/**
+ * Clots are inert and the memory cell's stated perk is toxin immunity. Everything else stuns.
+ * Note the exemption list here is deliberately *wider* than `applyPoison`'s — see decision D8.
+ */
 export function applyToxinStun(state: SimState, enemy: Enemy): void {
   const stun = PATHOGENS[enemy.kind].stun;
   if (stun === undefined) return;
@@ -39,7 +42,15 @@ export function applyToxinStun(state: SimState, enemy: Enemy): void {
   }
 }
 
-/** Poison cases damage defenders directly. Antibodies resist far better; only the clot is exempt. */
+/**
+ * Poison cases damage defenders directly. Antibodies resist far better; only the inert clot is
+ * exempt.
+ *
+ * Decision D8, deliberate asymmetry: the memory cell escapes `applyToxinStun` but is damaged
+ * here. Stun resistance is its stated perk — "toxins cannot stun it" — whereas the poison case
+ * rule harms every living cell. Exempting it from poison too would make Learn strictly dominant
+ * in the stomach case, which is the one case built to punish standing in the wrong place.
+ */
 export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
   if (state.rule !== 'poison') return;
 

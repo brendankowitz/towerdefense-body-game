@@ -3,7 +3,7 @@ import { acquireHolds, runDefenders } from './damage';
 import { armourMultiplier } from './targeting';
 import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
-import { IMMUNITY_MAX, STEP_SECONDS } from '../content/rules';
+import { IMMUNITY_MAX, STEP_SECONDS, TAGGED_BURST_MULTIPLIER } from '../content/rules';
 import { addEnemy, addTower, simFor } from '../testing';
 import type { SimState } from '../types';
 
@@ -345,5 +345,197 @@ describe('killer cell — execute', () => {
 
     expect(state.beams).toHaveLength(1);
     expect(state.beams[0]?.source).toBe('nk');
+  });
+});
+
+describe('mast cell — burst', () => {
+  it('hits everything inside its reach at once and nothing beyond it', () => {
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const near = addEnemy(state, 'staph', { x: 10, y: 0 });
+    const edge = addEnemy(state, 'staph', { x: DEFENDERS.mast.range, y: 0 });
+    const outside = addEnemy(state, 'staph', { x: DEFENDERS.mast.range + 1, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(near.hp).toBeCloseTo(near.maxHp - DEFENDERS.mast.dmg, 6);
+    expect(edge.hp).toBeCloseTo(edge.maxHp - DEFENDERS.mast.dmg, 6);
+    expect(outside.hp).toBe(outside.maxHp);
+  });
+
+  it('hits a tagged target harder than an untagged one', () => {
+    expect(TAGGED_BURST_MULTIPLIER).toBeGreaterThan(1);
+
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const plain = addEnemy(state, 'staph', { x: 10, y: 0 });
+    const tagged = addEnemy(state, 'staph', { x: 12, y: 0, tag: DEFENDERS.anti.tag });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(tagged.hp).toBeCloseTo(tagged.maxHp - DEFENDERS.mast.dmg * TAGGED_BURST_MULTIPLIER, 6);
+    expect(tagged.maxHp - tagged.hp).toBeGreaterThan(plain.maxHp - plain.hp);
+  });
+
+  it('stacks the tag bonus on top of the armour the tag stripped', () => {
+    expect(PATHOGENS.film.armour ?? 1).toBeLessThan(1);
+
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const film = addEnemy(state, 'film', { x: 10, y: 0, tag: DEFENDERS.anti.tag });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(film.hp).toBeCloseTo(film.maxHp - DEFENDERS.mast.dmg * TAGGED_BURST_MULTIPLIER, 6);
+  });
+
+  it('is blunted by armour when the target is untagged', () => {
+    const armour = PATHOGENS.film.armour ?? 1;
+    expect(armour).toBeLessThan(1);
+
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const film = addEnemy(state, 'film', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(film.hp).toBeCloseTo(film.maxHp - DEFENDERS.mast.dmg * armour, 6);
+  });
+
+  it('does not hit something already dying this step', () => {
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const dying = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set([dying.id]));
+
+    expect(dying.hp).toBe(dying.maxHp);
+  });
+
+  it('starts its pulse cooldown and flashes after hitting', () => {
+    const state = simFor();
+    const tower = addTower(state, 'mast', 0, 0, 0);
+    addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(tower.cooldown).toBeCloseTo(DEFENDERS.mast.rate, 6);
+    expect(tower.flash).toBeGreaterThan(0);
+  });
+
+  it('does not start its cooldown with nothing in range', () => {
+    const state = simFor();
+    const tower = addTower(state, 'mast', 0, 0, 0);
+    addEnemy(state, 'staph', { x: DEFENDERS.mast.range + 1, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(tower.cooldown).toBeLessThanOrEqual(0);
+    expect(tower.flash).toBe(0);
+  });
+
+  it('waits out its cooldown before pulsing again', () => {
+    const state = simFor();
+    addTower(state, 'mast', 0, 0, 0);
+    const enemy = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+    const afterFirstPulse = enemy.hp;
+
+    runDefenders(state, DEFENDERS.mast.rate / 2, new Set());
+    expect(enemy.hp).toBe(afterFirstPulse);
+
+    runDefenders(state, DEFENDERS.mast.rate, new Set());
+    expect(enemy.hp).toBeLessThan(afterFirstPulse);
+  });
+});
+
+describe('memory cell — learn', () => {
+  it('starts weak, hitting only the leader and only for its base damage', () => {
+    const state = simFor();
+    addTower(state, 'mem', 0, 0, 0);
+    const trailer = addEnemy(state, 'staph', { x: 20, y: 0, distance: 10 });
+    const leader = addEnemy(state, 'staph', { x: 10, y: 0, distance: 50 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(leader.hp).toBeCloseTo(leader.maxHp - DEFENDERS.mem.dmg, 6);
+    expect(trailer.hp).toBe(trailer.maxHp);
+  });
+
+  it('adds everything it has learned to the hit', () => {
+    const earned = DEFENDERS.mem.cap;
+    expect(earned).toBeGreaterThan(0);
+
+    const state = simFor();
+    const tower = addTower(state, 'mem', 0, 0, 0);
+    tower.xp = earned;
+    const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(prey.hp).toBeCloseTo(prey.maxHp - (DEFENDERS.mem.dmg + earned), 6);
+  });
+
+  it('is blunted by armour like every other hit', () => {
+    const armour = PATHOGENS.film.armour ?? 1;
+    expect(armour).toBeLessThan(1);
+
+    const state = simFor();
+    addTower(state, 'mem', 0, 0, 0);
+    const film = addEnemy(state, 'film', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(film.hp).toBeCloseTo(PATHOGENS.film.hp - DEFENDERS.mem.dmg * armour, 6);
+  });
+
+  it('reaches nothing outside its range', () => {
+    const state = simFor();
+    const tower = addTower(state, 'mem', 0, 0, 0);
+    const far = addEnemy(state, 'staph', { x: DEFENDERS.mem.range + 1, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(far.hp).toBe(far.maxHp);
+    expect(tower.cooldown).toBeLessThanOrEqual(0);
+    expect(state.beams).toHaveLength(0);
+  });
+
+  it('does not hit something already dying this step', () => {
+    const state = simFor();
+    addTower(state, 'mem', 0, 0, 0);
+    const dying = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set([dying.id]));
+
+    expect(dying.hp).toBe(dying.maxHp);
+  });
+
+  it('starts its cooldown after a hit and holds fire until it expires', () => {
+    const state = simFor();
+    const tower = addTower(state, 'mem', 0, 0, 0);
+    const enemy = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+    expect(tower.cooldown).toBeCloseTo(DEFENDERS.mem.rate, 6);
+
+    const afterFirstHit = enemy.hp;
+    runDefenders(state, DEFENDERS.mem.rate / 2, new Set());
+    expect(enemy.hp).toBe(afterFirstHit);
+
+    runDefenders(state, DEFENDERS.mem.rate, new Set());
+    expect(enemy.hp).toBeLessThan(afterFirstHit);
+  });
+
+  it('draws a beam to what it hit', () => {
+    const state = simFor();
+    addTower(state, 'mem', 0, 0, 0);
+    addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, STEP_SECONDS, new Set());
+
+    expect(state.beams).toHaveLength(1);
+    expect(state.beams[0]?.source).toBe('mem');
   });
 });
