@@ -35,6 +35,19 @@ this plan's own snippets:
   fields use the established idiom: `?? 1` for a missing armour multiplier, `?? 0`
   for a missing rate, with a guard assertion where the test depends on the value
   being present. Narrow a nullable with an explicit `if (x === null) throw`.
+- **A guard is only tested by an input that reaches it.** Check the fixture does
+  not satisfy an earlier condition first. Phase 5 as-built: the D11 no-bounty test
+  used a full-health leaker, so the `hp > 0` check did the work and mutating away
+  the `dead` guard under test failed nothing. The fix: a leaker that dies *as* it
+  leaks — the only input where the guard bites.
+- **An integration test whose outcome depends on damage-per-second beating
+  hit-points-over-distance is a balance assertion in disguise** and a legitimate
+  retune turns it red (criterion 5 violation). Pin the outcome by construction
+  instead — e.g. a phagocyte holds the prey still, so no tuning moves it out of
+  reach — or drive the flow directly (empty the queue and board to end a wave)
+  rather than fighting it. E2E is the one place combat coupling is allowed, and
+  only where it restates a design invariant (pacing rule: waves 1–2 winnable with
+  starter defenders).
 - **Before claiming a test proves something, reintroduce the defect and watch that
   exact test fail.** Several tests here looked rigorous and could not fail.
 
@@ -2422,6 +2435,29 @@ describe('applyMovement', () => {
     expect(state.towers[0]?.hp).toBeCloseTo(TOWER_MAX_HP - 2 * DEFENDERS.clot.wear, 6);
   });
 
+  it('destroys a crowded clot in strictly fewer seconds than a lone-body clot — decision D10', () => {
+    // The consequence D10 is actually about (added as-built, 8cb5158): the per-body
+    // test above could be satisfied by wear that merely scaled without ever
+    // buckling anything faster. Held enemies keep the crowd stationary in the zone.
+    const secondsToFail = (bodies: number): number => {
+      const state = fresh();
+      const held = new Set<number>();
+      for (let i = 0; i < bodies; i += 1) held.add(spawn(state, 'staph').id);
+      state.towers.push({ kind: 'clot', spotIndex: 0, x: 0, y: 46, hp: TOWER_MAX_HP, stun: 0 });
+      let seconds = 0;
+      const clot = state.towers[0];
+      if (clot === undefined) throw new Error('clot missing');
+      while (clot.hp > 0 && seconds < 600) {
+        applyMovement(state, 1 / 60, held, new Set());
+        seconds += 1 / 60;
+      }
+      if (clot.hp > 0) throw new Error('clot never failed — is wear zero?');
+      return seconds;
+    };
+
+    expect(secondsToFail(4)).toBeLessThan(secondsToFail(1));
+  });
+
   it('costs one tissue pip when an enemy reaches the end', () => {
     const state = fresh();
     const enemy = spawn(state, 'staph', state.path.total - 1);
@@ -2434,7 +2470,7 @@ describe('applyMovement', () => {
 });
 ```
 
-Run: `npx vitest run src/game/systems/movement.test.ts` — Expected: PASS, 10 tests.
+Run: `npx vitest run src/game/systems/movement.test.ts` — Expected: PASS, 11 tests.
 
 - [ ] **Step 15: Write `src/game/step.ts`**
 
@@ -2516,7 +2552,7 @@ import { pickLeader } from './targeting';
 import type { SimState } from '../types';
 
 /** Phagocyte grabs. Runs before movement so a grab freezes its prey this step (decision D9). */
-export function acquireHolds(state: SimState, held: Set<number>, dead: Set<number>): void {
+export function acquireHolds(state: SimState, held: Set<number>, dead: ReadonlySet<number>): void {
   for (const tower of state.towers) {
     if (tower.kind !== 'phago') continue;
     if (tower.stun > 0 || tower.rest > 0 || tower.holdingEnemyId !== null) continue;
@@ -3975,7 +4011,15 @@ git commit -m "feat(render): imperative Pixi board with pooled entity layers and
 
 **Why these four together:** they are the starting dock (asset sheet line 217) and they share one file and one dispatch. Splitting them across two commits would leave `runDefenders` half-written in between.
 
-> **Phase 3 as-built (a017e28) already delivered `acquireHolds`** — implemented and tested there because D9 is untestable without it. Do NOT re-implement or re-test acquisition in this phase; the acquisition-focused tests below (grab the leader, ignore out of reach, never steal a meal, no grab while resting/stunned) exist in Phase 3's suites. This phase turns the `runDefenders` stub — as-built signature `(state, dt)` — into the real dispatch, **adding the `dead` parameter** as part of that.
+> **BUILT AND COMMITTED (8cb5158).** 279 tests, verify green; the D11 mutation was independently re-checked and held; a 21-value retune left everything green. As-built deviations, all settled:
+>
+> - **`dead` is `ReadonlySet<number>`** in `runDefenders` and `acquireHolds` — they only read it; `resolveDeaths` keeps the mutable `Set` because it genuinely adds. Listings below reflect this; the draft used `Set` everywhere.
+> - **No tower casts in tests.** `addTower` in `src/game/testing.ts` is generic on kind and returns `Extract<Tower, { kind: K }>`; there are also `addTowerOnPath` and an `addEnemy` that defaults x/y from `positionAt`. Any `as PhagocyteTower`-style cast in a later phase's test snippet is unnecessary — use the typed return.
+> - **The `splitOnDeath` no-op stub was dropped** — an empty function with two ignored parameters is dead code. The iteration-order contract is a comment on `resolveDeaths` with a marked insertion point; Phase 6 fills it. No golden implications; the snapshot is not blessed until Phase 8.
+> - **D10's wear was already implemented in Phase 3**; what this phase added is the consequence test the decision is actually about — a clot under four bodies fails in strictly fewer seconds than under one. The pre-existing per-body wear test could have been satisfied by wear that merely scaled without ever destroying anything faster.
+> - The builder deleted two of its own tests as unfalsifiable (an integer-rounding assertion that is arithmetically always true, and a type-level tautology) and replaced the balance-coupled integration test — see the Global Constraints guidance and the corrected step below.
+>
+> **Phase 3 as-built (a017e28) already delivered `acquireHolds`** — implemented and tested there because D9 is untestable without it. Do NOT re-implement or re-test acquisition in this phase; this phase turns the `runDefenders` stub into the real dispatch, adding the read-only `dead` parameter.
 
 **Files:**
 - Modify: `src/game/systems/damage.ts` — replace the Phase 3 `runDefenders` stub (`acquireHolds` is already real)
@@ -3988,7 +4032,7 @@ git commit -m "feat(render): imperative Pixi board with pooled entity layers and
 **Interfaces:**
 - Consumes: `targeting.ts` selectors, `DEFENDERS`, `PATHOGENS`, `acquireHolds` (built in Phase 3).
 - Produces:
-  - `runDefenders(state: SimState, dt: number, dead: Set<number>): void`
+  - `runDefenders(state: SimState, dt: number, dead: ReadonlySet<number>): void`
   - `awardKill(state: SimState, enemy: Enemy): void`, `grantMemoryXp(state: SimState, enemy: Enemy): void`
   - `resolveDeaths(state: SimState, dead: Set<number>): void`
   - test helpers: `simFor(caseId, overrides?)`, `addEnemy(state, kind, opts?)`, `addTower(state, kind, spotIndex, x, y)`
@@ -4039,18 +4083,19 @@ export function addEnemy(
   return enemy;
 }
 
-export function addTower(
-  state: SimState, kind: DefenderKind, spotIndex: number, x = 0, y = 0,
-): Tower {
+/** Generic on kind, so tests get the narrowed tower type back and never cast. */
+export function addTower<K extends DefenderKind>(
+  state: SimState, kind: K, spotIndex: number, x = 0, y = 0,
+): Extract<Tower, { kind: K }> {
   const base = { spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0 };
   const tower: Tower =
-    kind === 'phago' ? { ...base, kind, holdingEnemyId: null, eaten: 0, rest: 0 }
-      : kind === 'clot' ? { ...base, kind }
-        : kind === 'mast' ? { ...base, kind, cooldown: 0, flash: 0 }
-          : kind === 'mem' ? { ...base, kind, cooldown: 0, xp: 0 }
-            : { ...base, kind, cooldown: 0 };
+    kind === 'phago' ? { ...base, kind: 'phago', holdingEnemyId: null, eaten: 0, rest: 0 }
+      : kind === 'clot' ? { ...base, kind: 'clot' }
+        : kind === 'mast' ? { ...base, kind: 'mast', cooldown: 0, flash: 0 }
+          : kind === 'mem' ? { ...base, kind: 'mem', cooldown: 0, xp: 0 }
+            : { ...base, kind: kind === 'anti' ? 'anti' : 'nk', cooldown: 0 };
   state.towers.push(tower);
-  return tower;
+  return tower as Extract<Tower, { kind: K }>;
 }
 ```
 
@@ -4114,7 +4159,7 @@ describe('phagocyte — engulf', () => {
 
   it('neither grabs nor digests while resting, and the rest ticks down in the action pass', () => {
     const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
+    const tower = addTower(state, 'phago', 0, 0, 0);
     tower.rest = 2;
     const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
 
@@ -4126,7 +4171,7 @@ describe('phagocyte — engulf', () => {
 
   it('neither grabs nor digests while stunned', () => {
     const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
+    const tower = addTower(state, 'phago', 0, 0, 0);
     tower.stun = 1.6;
     const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
 
@@ -4171,7 +4216,7 @@ function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
   prey.hp -= stats.dps * armourMultiplier(state, prey) * dt;
 }
 
-function tag(state: SimState, tower: Tower & { cooldown: number }, dt: number, dead: Set<number>): void {
+function tag(state: SimState, tower: Tower & { cooldown: number }, dt: number, dead: ReadonlySet<number>): void {
   const stats = DEFENDERS.anti;
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
@@ -4190,7 +4235,7 @@ function tag(state: SimState, tower: Tower & { cooldown: number }, dt: number, d
   if (tagged) tower.cooldown = stats.rate;
 }
 
-function execute(state: SimState, tower: Tower & { cooldown: number }, dt: number, dead: Set<number>): void {
+function execute(state: SimState, tower: Tower & { cooldown: number }, dt: number, dead: ReadonlySet<number>): void {
   const stats = DEFENDERS.nk;
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
@@ -4206,7 +4251,7 @@ function execute(state: SimState, tower: Tower & { cooldown: number }, dt: numbe
   });
 }
 
-export function runDefenders(state: SimState, dt: number, dead: Set<number>): void {
+export function runDefenders(state: SimState, dt: number, dead: ReadonlySet<number>): void {
   for (const tower of state.towers) {
     if (tower.stun > 0) {
       tower.stun -= dt;
@@ -4417,21 +4462,21 @@ Ports prototype lines 755–781. Virus splitting lands in Phase 6; the hook is h
 
 ```ts
 import { DEFENDERS } from '../content/defenders';
-import type { Enemy, SimState } from '../types';
+import type { SimState } from '../types';
 import { awardKill, grantMemoryXp } from './economy';
 
-/** Flu virus splitting. Implemented in Phase 6. */
-function splitOnDeath(_state: SimState, _enemy: Enemy): void {
-  return;
-}
-
+/**
+ * Iteration-order contract: an enemy killed here joins `dead` BEFORE any split
+ * hook runs, and split children appended mid-iteration are visited by for...of,
+ * skipped by the hp guard, and survive the filter (prototype lines 756, 769).
+ */
 export function resolveDeaths(state: SimState, dead: Set<number>): void {
   for (const enemy of state.enemies) {
     if (enemy.hp > 0 || dead.has(enemy.id)) continue;
     dead.add(enemy.id);
     awardKill(state, enemy);
     grantMemoryXp(state, enemy);
-    splitOnDeath(state, enemy);
+    // Phase 6 inserts splitOnDeath(state, enemy) here.
   }
 
   if (dead.size === 0) return;
@@ -4450,7 +4495,7 @@ export function resolveDeaths(state: SimState, dead: Set<number>): void {
 }
 ```
 
-Note the loop order: an enemy killed in this pass is added to `dead` *before* `splitOnDeath` runs, and split children are appended to `state.enemies` while it is being iterated. `for...of` over an array visits appended elements, so a child with `hp > 0` is visited, skipped by the first guard, and survives the filter — which is the prototype's behaviour at lines 756 and 769.
+No `splitOnDeath` stub is written now — an empty function with ignored parameters is dead code (as-built 8cb5158). The contract lives in the comment and the marked insertion point; Phase 6 adds the real function there.
 
 - [ ] **Step 9: Write `src/game/systems/deaths.test.ts`**
 
@@ -4500,10 +4545,13 @@ describe('resolveDeaths', () => {
     expect(state.totalKills).toBe(1);
   });
 
-  it('pays nothing for an enemy that leaked', () => {
+  it('pays nothing for an enemy that dies as it leaks — decision D11', () => {
     const state = simFor();
     state.energy = 0;
-    const leaked = addEnemy(state, 'staph', { hp: 12 });
+    // hp 0 AND already leaked: the only input where the dead-set guard does the
+    // work. A full-health leaker lets the hp check pass the test vacuously —
+    // mutating the guard away failed nothing until this fixture (as-built 8cb5158).
+    const leaked = addEnemy(state, 'staph', { hp: 0 });
 
     resolveDeaths(state, new Set([leaked.id]));
     expect(state.energy).toBe(0);
@@ -4513,7 +4561,7 @@ describe('resolveDeaths', () => {
 
   it('rests a phagocyte briefly between meals', () => {
     const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
+    const tower = addTower(state, 'phago', 0, 0, 0);
     const prey = addEnemy(state, 'staph', { hp: 0 });
     tower.holdingEnemyId = prey.id;
 
@@ -4525,7 +4573,7 @@ describe('resolveDeaths', () => {
 
   it('rests a phagocyte for much longer after every fourth meal', () => {
     const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
+    const tower = addTower(state, 'phago', 0, 0, 0);
     tower.eaten = 3;
     const prey = addEnemy(state, 'staph', { hp: 0 });
     tower.holdingEnemyId = prey.id;
@@ -4543,31 +4591,41 @@ Run: `npx vitest run src/game/systems/deaths.test.ts` — Expected: PASS, 7 test
 
 Add to `src/game/step.test.ts`:
 
+The integration test is **pinned by construction, not by balance** (as-built 8cb5158): a phagocyte holds the prey still, so no retune can move it out of the antibody's or killer cell's reach, while the run still exercises hold → tag → execute → tagged bounty → counters through the real `step`. The draft's tag-and-execute chase depended on `nk.dmg` beating staph hp over the path length — a balance assertion dressed as an integration test, which a legitimate retune turns red (criterion 5 violation).
+
 ```ts
 import { describe, expect, it } from 'vitest';
 import { step } from './step';
 import { addEnemy, addTower, simFor } from './testing';
+import { PATHOGENS } from './content/pathogens';
+import { TAG_REWARD_MULTIPLIER, TISSUE_PIPS } from './content/rules';
 
 describe('step', () => {
-  it('runs a wave down to nothing with a tag-and-execute board', () => {
-    const state = simFor();
-    addTower(state, 'anti', 0, 86, 58);
-    addTower(state, 'nk', 1, 86, 58);
-    for (let i = 0; i < 5; i += 1) addEnemy(state, 'staph', { x: 86, y: 58, distance: 60 + i });
-
-    for (let i = 0; i < 600 && state.enemies.length > 0; i += 1) step(state, 1 / 60);
-    expect(state.enemies).toHaveLength(0);
-    expect(state.waveKills).toBe(5);
-  });
-
-  it('lets an unopposed wave leak all five tissue pips and end the case', () => {
+  it('kills a held, tagged enemy through the full pipeline and pays the tagged bounty', () => {
     const state = simFor();
     state.queue = [];
-    addEnemy(state, 'staph', { distance: state.path.total - 1 });
-    addEnemy(state, 'staph', { distance: state.path.total - 1 });
-    addEnemy(state, 'staph', { distance: state.path.total - 1 });
-    addEnemy(state, 'staph', { distance: state.path.total - 1 });
-    addEnemy(state, 'staph', { distance: state.path.total - 1 });
+    // The phagocyte's grab pins the prey in place — no tuning moves it out of reach.
+    addTower(state, 'phago', 0, 86, 58);
+    addTower(state, 'anti', 1, 86, 58);
+    addTower(state, 'nk', 2, 86, 58);
+    const prey = addEnemy(state, 'staph', { x: 86, y: 58, distance: 60 });
+    state.energy = 0;
+
+    const limit = 60 * 240;
+    for (let i = 0; i < limit && state.enemies.length > 0; i += 1) step(state, 1 / 60);
+
+    expect(state.enemies).toHaveLength(0);
+    expect(state.waveKills).toBe(1);
+    expect(prey.tag).toBeGreaterThan(0);
+    expect(state.energy).toBe(Math.round(PATHOGENS.staph.reward * TAG_REWARD_MULTIPLIER));
+  });
+
+  it('lets an unopposed wave leak every tissue pip and end the case', () => {
+    const state = simFor();
+    state.queue = [];
+    for (let i = 0; i < TISSUE_PIPS; i += 1) {
+      addEnemy(state, 'staph', { distance: state.path.total - 1 });
+    }
 
     step(state, 1);
     expect(state.tissue).toBeLessThanOrEqual(0);
@@ -4577,7 +4635,7 @@ describe('step', () => {
 });
 ```
 
-Run: `npx vitest run src/game/step.test.ts` — Expected: PASS, 2 tests.
+Run: `npx vitest run src/game/step.test.ts` — Expected: PASS, 2 tests (plus the D9 same-step-freeze test added below in Step 6's follow-up).
 
 - [ ] **Step 11: Watch it in the browser**
 
@@ -4676,7 +4734,6 @@ describe('mast cell — burst', () => {
     addEnemy(state, 'staph', { x: 10, y: 0 });
 
     runDefenders(state, 1 / 60, new Set());
-    if (tower.kind !== 'mast') throw new Error('expected a mast cell');
     expect(tower.cooldown).toBeCloseTo(DEFENDERS.mast.rate, 6);
     expect(tower.flash).toBeGreaterThan(0);
   });
@@ -4686,7 +4743,6 @@ describe('mast cell — burst', () => {
     const tower = addTower(state, 'mast', 0, 0, 0);
 
     runDefenders(state, 1 / 60, new Set());
-    if (tower.kind !== 'mast') throw new Error('expected a mast cell');
     expect(tower.cooldown).toBeLessThanOrEqual(0);
   });
 });
@@ -4705,7 +4761,6 @@ describe('memory cell — learn', () => {
   it('adds its earned bonus to every hit', () => {
     const state = simFor();
     const tower = addTower(state, 'mem', 0, 0, 0);
-    if (tower.kind !== 'mem') throw new Error('expected a memory cell');
     tower.xp = 20;
     const prey = addEnemy(state, 'film', { x: 10, y: 0, tag: 6 });
 
@@ -4719,7 +4774,6 @@ describe('memory cell — learn', () => {
     addEnemy(state, 'staph', { x: 10, y: 0 });
 
     runDefenders(state, 1 / 60, new Set());
-    if (tower.kind !== 'mem') throw new Error('expected a memory cell');
     expect(tower.cooldown).toBeCloseTo(DEFENDERS.mem.rate, 6);
   });
 
@@ -4744,7 +4798,7 @@ Expected: FAIL — 10 new tests, since the `mast` and `mem` cases are still `bre
 - [ ] **Step 3: Implement burst and learn in `src/game/systems/damage.ts`**
 
 ```ts
-function burst(state: SimState, tower: MastTower, dt: number, dead: Set<number>): void {
+function burst(state: SimState, tower: MastTower, dt: number, dead: ReadonlySet<number>): void {
   const stats = DEFENDERS.mast;
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
@@ -4764,7 +4818,7 @@ function burst(state: SimState, tower: MastTower, dt: number, dead: Set<number>)
   }
 }
 
-function learn(state: SimState, tower: MemoryTower, dt: number, dead: Set<number>): void {
+function learn(state: SimState, tower: MemoryTower, dt: number, dead: ReadonlySet<number>): void {
   const stats = DEFENDERS.mem;
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
@@ -4859,7 +4913,6 @@ describe('memory cells learn from nearby kills', () => {
     addEnemy(state, 'staph', { hp: 0, x: DEFENDERS.mem.range - 1, y: 0 });
 
     resolveDeaths(state, new Set());
-    if (tower.kind !== 'mem') throw new Error('expected a memory cell');
     expect(tower.xp).toBe(DEFENDERS.mem.learn);
   });
 
@@ -4869,14 +4922,12 @@ describe('memory cells learn from nearby kills', () => {
     addEnemy(state, 'staph', { hp: 0, x: DEFENDERS.mem.range + 1, y: 0 });
 
     resolveDeaths(state, new Set());
-    if (tower.kind !== 'mem') throw new Error('expected a memory cell');
     expect(tower.xp).toBe(0);
   });
 
   it('caps at its ceiling and keeps what it learned', () => {
     const state = simFor();
     const tower = addTower(state, 'mem', 0, 0, 0);
-    if (tower.kind !== 'mem') throw new Error('expected a memory cell');
     tower.xp = DEFENDERS.mem.cap - DEFENDERS.mem.learn / 2;
     addEnemy(state, 'staph', { hp: 0, x: 10, y: 0 });
 
@@ -4891,6 +4942,8 @@ Add `IMMUNITY_MAX`, `SPLIT_BACK_OFFSET`, `SPLIT_BACK_SPACING`, `SPLIT_COUNT`, `S
 - [ ] **Step 5: Run to verify failure, then implement `splitOnDeath`**
 
 Run: `npx vitest run src/game/systems/deaths.test.ts` — Expected: FAIL on the split suite.
+
+There is no stub to replace (dropped as-built, 8cb5158) — add the function to `deaths.ts` and insert the `splitOnDeath(state, enemy)` call at the marked point inside `resolveDeaths`.
 
 ```ts
 function splitOnDeath(state: SimState, enemy: Enemy): void {
@@ -5563,35 +5616,39 @@ export function seasonRows(profile: Profile): readonly SeasonRow[] {
 
 Run: `npx vitest run src/game/progression.test.ts` — Expected: PASS, 16 tests.
 
+- [ ] **Step 2b: Repatriate `Profile` from the progress layer (task #12)**
+
+The persistence phase (39e9556) landed before this one and had to declare `Profile` locally in `src/progress/ProgressRepository.ts`. Now that `src/game/progression.ts` exists:
+
+1. Delete the local `Profile` declaration in `src/progress/ProgressRepository.ts` and replace it with `import type { Profile } from '@game/progression';` — progression state is domain vocabulary; progress depends on game, never the reverse (same direction rule as `PaletteToken`).
+2. In the persistence tests, delete the local `testFreshProfile()` helper and import the real `createFreshProfile()` — the "first run equals reset, from one factory" guarantee is only genuinely tested against the real factory.
+3. Run: `npm run verify`. Expected: green, and `npx vitest run src/progress` still passes all 30 persistence tests unchanged — the shapes were already identical; this step removes the duplication, not behaviour.
+
 - [ ] **Step 3: Write the failing run-flow tests**
 
 `src/game/run.test.ts`:
 
+Flow tests do not fight. A board of killer cells clearing a real wave couples the test to whether damage-per-second beats hit-points-over-distance — a retune turns it red (criterion 5). The flow under test is "queue empty + board empty ⇒ wave ends", so the tests drain the wave directly and drive exactly that condition. The pinned-by-construction combat pipeline is already covered in `step.test.ts`.
+
 ```ts
 import { describe, expect, it } from 'vitest';
-import { advanceToNextWave, startWave } from './commands';
 import { step } from './step';
 import { addTower, simFor } from './testing';
-import { WAVE_CLEAR_ENERGY } from './content/rules';
 
-/** Run until the wave resolves, or fail loudly rather than hang. */
-function runWave(state: ReturnType<typeof simFor>, maxSeconds = 240): void {
-  const limit = Math.round(maxSeconds * 60);
-  for (let i = 0; i < limit; i += 1) {
-    if (state.phase !== 'wave') return;
-    step(state, 1 / 60);
-  }
-  throw new Error('Wave did not resolve within the time limit');
+/** End the running wave by fiat: drain the spawn queue and the board, then step once. */
+function drainWave(state: ReturnType<typeof simFor>): void {
+  state.queue = [];
+  state.enemies = [];
+  step(state, 1 / 60);
 }
 
 describe('wave flow', () => {
-  it('ends the wave and pays 50 energy when the queue and the board are empty', () => {
+  it('ends the wave and pays the wave bonus when the queue and the board are empty', () => {
     const state = simFor();
-    for (let i = 0; i < 5; i += 1) addTower(state, 'nk', i, ...pointFor(state, i));
     startWave(state);
     const before = state.energy;
 
-    runWave(state);
+    drainWave(state);
     expect(state.phase).toBe('built');
     expect(state.result).toBe('wave');
     expect(state.energy).toBe(before + WAVE_CLEAR_ENERGY);
@@ -5599,9 +5656,8 @@ describe('wave flow', () => {
 
   it('carries unspent energy into the next wave and clears the result', () => {
     const state = simFor();
-    for (let i = 0; i < 5; i += 1) addTower(state, 'nk', i, ...pointFor(state, i));
     startWave(state);
-    runWave(state);
+    drainWave(state);
     const banked = state.energy;
 
     advanceToNextWave(state);
@@ -5614,10 +5670,9 @@ describe('wave flow', () => {
 
   it('marks the case cleared after the final wave', () => {
     const state = simFor();
-    state.waveIndex = 4;
-    for (let i = 0; i < 5; i += 1) addTower(state, 'nk', i, ...pointFor(state, i));
+    state.waveIndex = state.waveCount - 1;
     startWave(state);
-    runWave(state);
+    drainWave(state);
 
     expect(state.phase).toBe('done');
     expect(state.result).toBe('case');
@@ -5625,9 +5680,13 @@ describe('wave flow', () => {
 
   it('ends the case the moment tissue runs out, even on the last wave', () => {
     const state = simFor();
-    state.waveIndex = 4;
+    state.waveIndex = state.waveCount - 1;
     startWave(state);
-    runWave(state);
+    state.queue = [];
+    for (let i = 0; i < TISSUE_PIPS; i += 1) {
+      addEnemy(state, 'staph', { distance: state.path.total - 1 });
+    }
+    step(state, 1);
 
     expect(state.result).toBe('lost');
     expect(state.phase).toBe('done');
@@ -5683,18 +5742,12 @@ describe('restartCase', () => {
 });
 ```
 
-The file needs these imports and one helper at the top:
+The file needs these imports at the top:
 
 ```ts
 import { advanceToNextWave, restartCase, startWave, triggerFever } from './commands';
-import { CASE_BY_ID } from './content/cases';
-import { FEVER_DURATION, IMMUNITY_MAX, WAVE_CLEAR_ENERGY } from './content/rules';
-import type { SimState } from './types';
-
-function pointFor(state: SimState, index: number): [number, number] {
-  const spot = CASE_BY_ID[state.caseId].spots[index]!;
-  return [spot[0], spot[1]];
-}
+import { FEVER_DURATION, IMMUNITY_MAX, TISSUE_PIPS, WAVE_CLEAR_ENERGY } from './content/rules';
+import { addEnemy } from './testing';
 ```
 
 - [ ] **Step 4: Run to verify failure, then implement `endWave` and `advanceToNextWave`**
@@ -6437,7 +6490,7 @@ export function FightPage() {
 
 `run()` calls `loop.publish()` after every command so a tap feels immediate rather than up to 100 ms late. The 10 Hz throttle governs the simulation's own changes, not the player's.
 
-`useProfile` and `recordClear` arrive in Phase 11. Until then, stub `ProfileProvider` with `createFreshProfile()` and a no-op `recordClear` so this phase compiles and runs.
+`useProfile` and `recordClear` arrive in Phase 12 (the app-layer half of persistence moved there). Until then, stub `ProfileProvider` with `createFreshProfile()` and a no-op `recordClear` so this phase compiles and runs.
 
 - [ ] **Step 9: Write `src/app/fight.css`**
 
@@ -6877,12 +6930,17 @@ git commit -m "feat(dev): live tuning panel with content-module export, tree-sha
 
 ## Phase 11 — Persistence port and adapters
 
+> **BUILT AND COMMITTED (39e9556), out of plan order** — landed before Phases 6–8. 30 tests; all 15 stated guarantees mutation-tested individually. Scope as-built is the **port, adapters and validator only**. Three consequences:
+>
+> - **The app-layer half is NOT built.** `ProfileProvider.tsx`, `SaveErrorBanner.tsx` and the `main.tsx` wiring move to Phase 12 (screens), which is where they are first consumed. Steps 7–8 below are annotated accordingly — do not assume a working `useProfile` exists before Phase 12.
+> - **`Profile` is temporarily declared in `src/progress/ProgressRepository.ts`** because `src/game/progression.ts` did not exist yet. Phase 8 has an explicit step to move it into the game layer and make `src/progress` import it — progression state is domain vocabulary; progress may depend on game, never the reverse (the `PaletteToken` trap again). Its tests likewise use a local `testFreshProfile()` derived from `FRESH_PROFILE`; Phase 8 swaps in the real `createFreshProfile()` so "first run equals reset, from one factory" is genuinely tested rather than approximated.
+> - As-built additions beyond the draft: a read-failure guard for storage that throws on access (private browsing mode), and `afterEach(vi.restoreAllMocks)` hardening after a mutation run exposed a mock leaking between sibling tests.
+
 **Files:**
 - Create: `src/progress/ProgressRepository.ts`, `parseProfile.ts` + `parseProfile.test.ts`
 - Create: `src/progress/LocalStorageProgressRepository.ts` + `.test.ts`
 - Create: `src/progress/PreferencesProgressRepository.ts`, `createProgressRepository.ts`
-- Create: `src/app/state/ProfileProvider.tsx`, `src/app/components/SaveErrorBanner.tsx`
-- Modify: `src/main.tsx` — wrap `App` in `ProfileProvider`
+- Moved to Phase 12: `src/app/state/ProfileProvider.tsx`, `src/app/components/SaveErrorBanner.tsx`, the `src/main.tsx` wiring
 - Port from: prototype lines 471–489 (load and save), 579–581 (reset)
 
 **Interfaces:**
@@ -7218,7 +7276,9 @@ export function createProgressRepository(): ProgressRepository {
 
 The two adapters share their envelope handling by duplication rather than by a base class. Two implementations is not the third real case; if a third storage backend ever appears, extract then.
 
-- [ ] **Step 7: Write `src/app/state/ProfileProvider.tsx`**
+- [ ] **Step 7 (MOVED TO PHASE 12): Write `src/app/state/ProfileProvider.tsx`**
+
+This step and the next execute in Phase 12, where the screens first consume them — the persistence commit (39e9556) deliberately stopped at the port boundary. Kept here so the code sits beside the port it wraps.
 
 ```tsx
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -7282,7 +7342,7 @@ export function useProfile(): ProfileContextValue {
 
 An empty store yields `createFreshProfile()` — day 1, bank 240, no immunity. First run and "Start a new body" are the same factory, so there is no second constant to drift (decision D7).
 
-- [ ] **Step 8: Write `SaveErrorBanner` and mount it**
+- [ ] **Step 8 (MOVED TO PHASE 12): Write `SaveErrorBanner` and mount it**
 
 ```tsx
 // src/app/components/SaveErrorBanner.tsx
@@ -7325,9 +7385,12 @@ git commit -m "feat(progress): versioned repository port with localStorage and P
 
 ## Phase 12 — Map, Brief, Immunity and Season screens
 
-**Why now:** the profile is real and the fight screen is real, so these four screens have live data to render and somewhere to navigate to.
+**Why now:** the persistence port is real (39e9556) and the fight screen is real, so these four screens have live data to render and somewhere to navigate to.
+
+**First: build the profile app layer moved here from Phase 11.** The persistence commit stopped at the port boundary, so `ProfileProvider.tsx`, `SaveErrorBanner.tsx` and the `main.tsx` wiring (Phase 11 Steps 7–8, kept there beside the port they wrap) execute at the start of THIS phase — the screens are their first consumer.
 
 **Files:**
+- Create (moved from Phase 11): `src/app/state/ProfileProvider.tsx`, `src/app/components/SaveErrorBanner.tsx`; Modify: `src/main.tsx` — wrap `App` in `ProfileProvider`
 - Create: `src/app/components/BodyMap.tsx` + `BodyMap.test.tsx`
 - Rewrite: `src/app/pages/MapPage.tsx`, `BriefPage.tsx`, `ImmunityPage.tsx`, `SeasonPage.tsx`
 - Create: `src/app/screens.css`
@@ -8259,6 +8322,9 @@ test('an unaffordable defender shows a red price and cannot be placed', async ({
   await expect(page.getByTestId('energy')).toHaveText(String(afterOne));
 });
 
+// Deliberately combat-coupled — the ONE sanctioned place. It restates a design
+// invariant (pacing rule 5: waves 1–2 winnable with starter defenders). A retune
+// that fails this violates the design, not the test.
 test('running a wave clears it and offers the next one', async ({ page }) => {
   await page.goto('/play/forearm');
   await page.getByTestId('dock-card-nk').click();
