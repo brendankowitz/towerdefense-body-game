@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { parseProfile } from './parseProfile';
+import { IMMUNITY_MAX } from '@game/content/rules';
+
+const valid = {
+  cleared: ['forearm'],
+  immunity: { staph: 1, film: 0, virus: 2 },
+  day: 5,
+  bank: 700,
+  kills: 42,
+};
+
+describe('parseProfile', () => {
+  it('accepts a well-formed profile', () => {
+    expect(parseProfile(valid)).toEqual(valid);
+  });
+
+  it('rejects a non-object', () => {
+    for (const raw of [null, undefined, 3, 'x', []]) expect(parseProfile(raw)).toBeNull();
+  });
+
+  it('rejects a missing field', () => {
+    const rest: Record<string, unknown> = { ...valid };
+    delete rest['day'];
+    expect(parseProfile(rest)).toBeNull();
+  });
+
+  it('rejects a field of the wrong type', () => {
+    expect(parseProfile({ ...valid, bank: '700' })).toBeNull();
+    expect(parseProfile({ ...valid, cleared: 'forearm' })).toBeNull();
+  });
+
+  it('rejects a cleared entry that is not a known case', () => {
+    expect(parseProfile({ ...valid, cleared: ['elbow'] })).toBeNull();
+  });
+
+  it('rejects an immunity value outside 0 to the content-defined maximum', () => {
+    expect(parseProfile({ ...valid, immunity: { staph: IMMUNITY_MAX + 1, film: 0, virus: 0 } })).toBeNull();
+    expect(parseProfile({ ...valid, immunity: { staph: -1, film: 0, virus: 0 } })).toBeNull();
+  });
+
+  it('accepts an immunity value at the content-defined maximum', () => {
+    expect(parseProfile({ ...valid, immunity: { staph: IMMUNITY_MAX, film: 0, virus: 0 } })).not.toBeNull();
+  });
+
+  it('rejects a missing strain', () => {
+    expect(parseProfile({ ...valid, immunity: { staph: 1, virus: 0 } })).toBeNull();
+  });
+
+  it('rejects a non-integer counter', () => {
+    expect(parseProfile({ ...valid, kills: 1.5 })).toBeNull();
+  });
+
+  it('rejects a negative counter', () => {
+    expect(parseProfile({ ...valid, day: -1 })).toBeNull();
+  });
+
+  it('drops unknown extra keys rather than carrying them forward', () => {
+    const parsed = parseProfile({ ...valid, sneaky: true });
+    if (parsed === null) throw new Error('a profile with an unknown key should still parse');
+    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills']);
+  });
+});
