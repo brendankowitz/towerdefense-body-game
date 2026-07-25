@@ -45,7 +45,7 @@ describe('BriefPage', () => {
   it('pushes /play/:caseId when "Get in there" is tapped', () => {
     renderBrief('/brief/throat');
     fireEvent.click(screen.getByTestId('get-in-there'));
-    expect(screen.getByTestId('location')).toHaveTextContent('/play/throat');
+    expect(screen.getByTestId('location').textContent).toBe('/play/throat');
   });
 
   it('pushes / when "Back to the body" is tapped', () => {

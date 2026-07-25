@@ -25,13 +25,13 @@ describe('MapPage', () => {
   it('shows the day and the bank from the profile', () => {
     renderMap();
     expect(screen.getByText(`DAY ${String(PLACEHOLDER_PROFILE.day)} · MORNING`)).toBeInTheDocument();
-    expect(screen.getByTestId('bank')).toHaveTextContent(String(PLACEHOLDER_PROFILE.bank));
+    expect(screen.getByTestId('bank').textContent).toBe(String(PLACEHOLDER_PROFILE.bank));
   });
 
   it('reports regions held against the total number of non-core body nodes', () => {
     renderMap();
     const nonCoreCount = BODY_NODES.filter((n) => n.core !== true).length;
-    expect(screen.getByTestId('held-count')).toHaveTextContent(
+    expect(screen.getByTestId('held-count').textContent).toBe(
       `${String(PLACEHOLDER_PROFILE.cleared.length)} / ${String(nonCoreCount)}`,
     );
   });
@@ -49,7 +49,7 @@ describe('MapPage', () => {
     renderMap();
     const nextId = placeholderNextCaseId(PLACEHOLDER_PROFILE.cleared);
     fireEvent.click(screen.getByTestId('go-there'));
-    expect(screen.getByTestId('location')).toHaveTextContent(`/brief/${String(nextId)}`);
+    expect(screen.getByTestId('location').textContent).toBe(`/brief/${String(nextId)}`);
   });
 
   it('navigates to the brief when the region under attack is tapped on the map', () => {
@@ -57,12 +57,12 @@ describe('MapPage', () => {
     const nextId = placeholderNextCaseId(PLACEHOLDER_PROFILE.cleared);
     if (nextId === null) throw new Error('fixture expects an open case');
     fireEvent.click(screen.getByTestId(`map-node-${CASE_BY_ID[nextId].node}`));
-    expect(screen.getByTestId('location')).toHaveTextContent(`/brief/${nextId}`);
+    expect(screen.getByTestId('location').textContent).toBe(`/brief/${nextId}`);
   });
 
   it('navigates to the season screen when "Season" is tapped', () => {
     renderMap();
     fireEvent.click(screen.getByText('Season'));
-    expect(screen.getByTestId('location')).toHaveTextContent('/season');
+    expect(screen.getByTestId('location').textContent).toBe('/season');
   });
 });
