@@ -1,6 +1,7 @@
 import { DEFENDERS } from '../content/defenders';
-import type { SimState } from '../types';
-import { pickLeader } from './targeting';
+import { PATHOGENS } from '../content/pathogens';
+import type { AntibodyTower, NkTower, PhagocyteTower, SimState } from '../types';
+import { armourMultiplier, inRange, isAlive, pickLeader, pickMostWounded } from './targeting';
 
 /**
  * Phagocyte grabs, as their own pass. `step` calls this before movement so an enemy is frozen
@@ -20,12 +21,67 @@ export function acquireHolds(state: SimState, held: Set<number>, dead: ReadonlyS
   }
 }
 
+/** One meal at a time, digested where it stands. Acquisition already happened in `acquireHolds`. */
+function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
+  if (tower.rest > 0) {
+    tower.rest -= dt;
+    return;
+  }
+  if (tower.holdingEnemyId === null) return;
+
+  const prey = state.enemies.find((enemy) => enemy.id === tower.holdingEnemyId);
+  if (prey === undefined) {
+    tower.holdingEnemyId = null;
+    return;
+  }
+
+  prey.hp -= DEFENDERS.phago.dps * armourMultiplier(state, prey) * dt;
+}
+
+/** Marks everything in reach at once. A tag strips armour, burns, and pays more on the kill. */
+function tag(state: SimState, tower: AntibodyTower, dt: number, dead: ReadonlySet<number>): void {
+  const stats = DEFENDERS.anti;
+  tower.cooldown -= dt;
+  if (tower.cooldown > 0) return;
+
+  let tagged = false;
+  for (const enemy of state.enemies) {
+    if (!isAlive(enemy, dead)) continue;
+    if (!inRange(tower, enemy, stats.range)) continue;
+    if (PATHOGENS[enemy.kind].noTag === true) continue;
+
+    enemy.tag = stats.tag;
+    tagged = true;
+    state.beams.push({
+      fromX: tower.x, fromY: tower.y, toX: enemy.x, toY: enemy.y, life: 0.2, source: 'anti',
+    });
+  }
+
+  if (tagged) tower.cooldown = stats.rate;
+}
+
+/** One heavy hit on the most wounded thing in reach, and a clean finish below the threshold. */
+function execute(state: SimState, tower: NkTower, dt: number, dead: ReadonlySet<number>): void {
+  const stats = DEFENDERS.nk;
+  tower.cooldown -= dt;
+  if (tower.cooldown > 0) return;
+
+  const target = pickMostWounded(state, tower, stats.range, dead);
+  if (target === null) return;
+
+  const fraction = target.hp / target.maxHp;
+  target.hp = fraction <= stats.execute ? 0 : target.hp - stats.dmg * armourMultiplier(state, target);
+  tower.cooldown = stats.rate;
+  state.beams.push({
+    fromX: tower.x, fromY: tower.y, toX: target.x, toY: target.y, life: 0.22, source: 'nk',
+  });
+}
+
 /**
- * The shared defender gate: a stunned cell does nothing this step. The per-kind work — digest,
- * tag, execute, burst, learn — lands in Phases 5 and 6, which also add the `dead` set the
- * damaging branches need. Acquisition deliberately does not live here; see `acquireHolds`.
+ * The defender action pass. A stunned cell does nothing this step. The switch is exhaustive so
+ * a new defender kind cannot be silently forgotten; `mast` and `mem` land in Phase 6.
  */
-export function runDefenders(state: SimState, dt: number): void {
+export function runDefenders(state: SimState, dt: number, dead: ReadonlySet<number>): void {
   for (const tower of state.towers) {
     if (tower.stun > 0) {
       tower.stun -= dt;
@@ -34,15 +90,24 @@ export function runDefenders(state: SimState, dt: number): void {
 
     switch (tower.kind) {
       case 'phago':
-        if (tower.rest > 0) tower.rest -= dt;
+        engulf(state, tower, dt);
         break;
       case 'clot':
-        break; // Blocks and slows. Handled in movement; deals no damage at all.
+        // Blocks and slows. Handled in movement; deals no damage at all.
+        break;
       case 'anti':
+        tag(state, tower, dt, dead);
+        break;
       case 'nk':
+        execute(state, tower, dt, dead);
+        break;
       case 'mast':
       case 'mem':
         break;
+      default: {
+        const unhandled: never = tower;
+        throw new Error(`Unhandled defender kind: ${JSON.stringify(unhandled)}`);
+      }
     }
   }
 }

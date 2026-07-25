@@ -4,8 +4,8 @@ import { createSimState } from './state';
 import { startWave } from './commands';
 import { DEFENDERS } from './content/defenders';
 import { PATHOGENS } from './content/pathogens';
-import { STEP_SECONDS, TISSUE_PIPS, TOWER_MAX_HP } from './content/rules';
-import { positionAt } from './path';
+import { STEP_SECONDS, TAG_REWARD_MULTIPLIER, TISSUE_PIPS } from './content/rules';
+import { addEnemy, addTowerOnPath, simFor } from './testing';
 import type { CaseId, Enemy, PathogenKind, PhagocyteTower, SimState } from './types';
 
 function build(caseId: CaseId = 'forearm'): SimState {
@@ -19,32 +19,25 @@ function build(caseId: CaseId = 'forearm'): SimState {
 
 /** Mid-wave with nothing queued, so a test controls exactly what is on the board. */
 function fighting(caseId: CaseId = 'forearm'): SimState {
-  const state = build(caseId);
-  state.phase = 'wave';
-  return state;
+  return simFor(caseId);
 }
 
 function spawnAt(state: SimState, kind: PathogenKind, travelled: number): Enemy {
-  const stats = PATHOGENS[kind];
-  const [x, y] = positionAt(state.path, travelled);
-  const enemy: Enemy = {
-    id: state.nextEnemyId, kind, distance: travelled, x, y,
-    hp: stats.hp, maxHp: stats.hp, tag: 0, generation: 0,
-  };
-  state.nextEnemyId += 1;
-  state.enemies.push(enemy);
-  return enemy;
+  return addEnemy(state, kind, { distance: travelled });
 }
 
 /** A phagocyte placed exactly on the path at `travelled`, so anything there is inside its reach. */
 function phagocyteOnPathAt(state: SimState, travelled: number): PhagocyteTower {
-  const [x, y] = positionAt(state.path, travelled);
-  const tower: PhagocyteTower = {
-    kind: 'phago', spotIndex: state.towers.length, x, y, hp: TOWER_MAX_HP, stun: 0,
-    holdingEnemyId: null, eaten: 0, rest: 0,
-  };
-  state.towers.push(tower);
-  return tower;
+  return addTowerOnPath(state, 'phago', travelled);
+}
+
+/** Bounded so a mechanic that never fires fails the suite instead of hanging it. */
+function advanceUntil(state: SimState, done: () => boolean, maxSteps = 3000): number {
+  for (let taken = 0; taken < maxSteps; taken += 1) {
+    if (done()) return taken;
+    step(state, STEP_SECONDS);
+  }
+  throw new Error(`condition never held within ${String(maxSteps)} steps`);
 }
 
 describe('step — engulf acquisition', () => {
@@ -109,6 +102,47 @@ describe('step — engulf acquisition', () => {
     step(state, STEP_SECONDS);
 
     expect(tower.holdingEnemyId).toBeNull();
+  });
+});
+
+describe('step — the starting dock working together', () => {
+  /**
+   * The whole Phase 5 chain through the real loop: a phagocyte holds its prey still, an
+   * antibody marks it, a killer cell finishes it, the economy pays the tagged rate, and the
+   * phagocyte drops into a rest. Nothing here depends on the enemy outrunning anything —
+   * it is engulfed, so tuning cannot move it out of reach.
+   */
+  it('engulfs, tags and executes one enemy, then pays the tagged bounty', () => {
+    // Throat, so no wound bleed or poison tick moves energy or defender health underneath us.
+    const state = fighting('throat');
+    const phago = phagocyteOnPathAt(state, 100);
+    addTowerOnPath(state, 'anti', 100);
+    addTowerOnPath(state, 'nk', 100);
+    const prey = spawnAt(state, 'staph', 100);
+    state.energy = 0;
+
+    advanceUntil(state, () => state.enemies.length === 0);
+
+    expect(prey.tag).toBeGreaterThan(0);
+    expect(state.energy).toBe(Math.round(PATHOGENS.staph.reward * TAG_REWARD_MULTIPLIER));
+    expect(state.energy).toBeGreaterThan(PATHOGENS.staph.reward);
+    expect(state.waveKills).toBe(1);
+    expect(state.tissue).toBe(TISSUE_PIPS);
+    expect(phago.holdingEnemyId).toBeNull();
+    expect(phago.eaten).toBe(1);
+    expect(phago.rest).toBeGreaterThan(0);
+  });
+
+  it('pays nothing and costs a pip when an enemy gets through', () => {
+    const state = fighting();
+    state.energy = 0;
+    spawnAt(state, 'staph', state.path.total);
+
+    step(state, STEP_SECONDS);
+
+    expect(state.energy).toBe(0);
+    expect(state.waveKills).toBe(0);
+    expect(state.tissue).toBe(TISSUE_PIPS - 1);
   });
 });
 

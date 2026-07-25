@@ -40,7 +40,7 @@ export function step(state: SimState, dt: number): void {
   acquireHolds(state, held, dead);
 
   applyMovement(state, dt, held, dead);
-  runDefenders(state, dt);
+  runDefenders(state, dt, dead);
 
   for (const tower of state.towers) {
     if (tower.kind === 'mast' && tower.flash > 0) tower.flash -= dt;

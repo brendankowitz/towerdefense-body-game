@@ -154,6 +154,28 @@ describe('applyMovement', () => {
     expect(state.towers[0]?.hp).toBeCloseTo(TOWER_MAX_HP - 2 * DEFENDERS.clot.wear, 6);
   });
 
+  /**
+   * Decision D10, spec §5.1. Load-proportional wear is kept deliberately: a clot under a crowd
+   * buckles in a fraction of the time it survives a single body. Held enemies stand still inside
+   * the zone so the comparison measures wear, not how fast anything walked out of it.
+   */
+  it('is destroyed far sooner by a crowd than by one body — decision D10', () => {
+    function secondsToFail(bodies: number): number {
+      const state = fresh();
+      const held = new Set<number>();
+      for (let i = 0; i < bodies; i += 1) held.add(spawn(state, 'staph').id);
+      clotAtStart(state);
+
+      for (let elapsed = 1; elapsed <= 600; elapsed += 1) {
+        applyMovement(state, 1, held, new Set());
+        if ((state.towers[0]?.hp ?? 0) <= 0) return elapsed;
+      }
+      throw new Error(`a clot under ${String(bodies)} bodies never failed`);
+    }
+
+    expect(secondsToFail(4)).toBeLessThan(secondsToFail(1));
+  });
+
   it('costs one tissue pip when an enemy reaches the end', () => {
     const state = fresh();
     const enemy = spawn(state, 'staph', state.path.total - 1);
