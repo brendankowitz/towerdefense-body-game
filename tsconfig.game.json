@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    // Our own sources are still checked against a DOM-free lib — that is the gate.
+    // Dependencies' declarations legitimately reference DOM types and are not our concern.
+    "skipLibCheck": true,
+    "types": [],
+    "baseUrl": ".",
+    "paths": { "@game/*": ["src/game/*"] }
+  },
+  "include": ["src/game/**/*.ts"]
+}
