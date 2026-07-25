@@ -140,3 +140,48 @@ describe('body graph coherence', () => {
     expect(visited.size).toBe(BODY_NODES.length);
   });
 });
+
+// Magnitude sanity. Deliberately loose — these bounds exist to catch a typo (an extra
+// digit, a dropped sign, a NaN), never to constrain balance. Any value a designer would
+// plausibly choose passes. If a bound ever blocks a real tuning decision, raise it.
+describe('numeric sanity', () => {
+  const FRACTIONS = new Set(['armour', 'slow', 'execute']);
+  // Zero is a legitimate tuning choice nearly everywhere — unlock: 0 means "available
+  // from the start". These few are structurally meaningless at zero, not merely unbalanced.
+  const MUST_EXCEED_ZERO = new Set(['hp', 'speed', 'radius', 'cost', 'range']);
+  const CEILINGS: Record<string, number> = {
+    hp: 5000, speed: 1000, reward: 1000, radius: 100,
+    cost: 5000, range: 1000, dps: 1000, dmg: 1000, dot: 1000,
+  };
+
+  function check(source: string, entries: Record<string, unknown>): void {
+    for (const [field, value] of Object.entries(entries)) {
+      if (typeof value !== 'number') continue;
+      const where = `${source}.${field}`;
+      expect(Number.isFinite(value), `${where} must be a finite number`).toBe(true);
+      expect(value, `${where} must not be negative`).toBeGreaterThanOrEqual(0);
+      if (MUST_EXCEED_ZERO.has(field)) {
+        expect(value, `${where} is meaningless at zero`).toBeGreaterThan(0);
+      }
+      if (FRACTIONS.has(field)) {
+        expect(value, `${where} is a fraction and must be at most 1`).toBeLessThanOrEqual(1);
+      }
+      const ceiling = CEILINGS[field];
+      if (ceiling !== undefined) {
+        expect(value, `${where} looks like a typo`).toBeLessThanOrEqual(ceiling);
+      }
+    }
+  }
+
+  it('gives every defender plausible numbers', () => {
+    for (const [kind, stats] of Object.entries(DEFENDERS)) check(`DEFENDERS.${kind}`, stats);
+  });
+
+  it('gives every pathogen plausible numbers', () => {
+    for (const [kind, stats] of Object.entries(PATHOGENS)) check(`PATHOGENS.${kind}`, stats);
+  });
+
+  it('gives every case plausible starting energy', () => {
+    for (const c of CASES) check(`CASES.${c.id}`, { cost: c.startingEnergy });
+  });
+});

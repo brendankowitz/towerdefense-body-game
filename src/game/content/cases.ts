@@ -61,7 +61,7 @@ export const CASES: readonly CaseDefinition[] = [
   {
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', rule: 'poison', credits: 'film',
     story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
-    ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders — cells die, the region holds',
+    ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders. Antibodies survive toxins far better than phagocytes',
     startingEnergy: 250,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'toxin', count: 2 }],
