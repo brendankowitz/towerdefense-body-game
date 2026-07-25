@@ -1500,7 +1500,7 @@ git commit -m "feat(content): defender, pathogen, case, vaccine and body tables 
 
 **Files:**
 - Modify: `src/game/types.ts` — add the sim state types
-- Create: `src/game/rng.ts` + `rng.test.ts`
+- Already built (Phase 0): `src/game/rng.ts` + `rng.test.ts`
 - Create: `src/game/path.ts` + `path.test.ts`
 - Create: `src/game/state.ts` + `state.test.ts`
 - Create: `src/game/hash.ts`
@@ -1631,6 +1631,7 @@ export interface SimState {
 - [ ] **Steps 2–5: superseded — the RNG landed in Phase 0**
 
 `createRng` (mulberry32, 32-bit serialisable state) and `waveSeed` (FNV-1a over caseId mixed with the wave index) are already implemented and tested in `src/game/rng.ts` / `rng.test.ts` as part of the committed Phase 0. Confirm `npx vitest run src/game/rng.test.ts` is green and move on; the interfaces listed above are exactly what it exports.
+
 - [ ] **Step 6: Write the failing path test**
 
 `src/game/path.test.ts`:

@@ -2,9 +2,56 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { visualizer } from 'rollup-plugin-visualizer';
+
+// react/react-dom and the react-router family change far less often than app
+// code and don't share internals with it, so splitting them into their own
+// vendor chunks lets browsers cache them across deploys at no size cost
+// (measured: identical total bytes to the unsplit build).
+//
+// @ionic/core is deliberately left out of this scheme. Measuring it showed
+// that pinning @ionic/react (and therefore its statically-reached @ionic/core
+// modules) into a manual chunk inflates the total by ~270 kB minified: the two
+// packages share enough internal, per-component surface that forcing a chunk
+// boundary between them defeats scope-hoisting and forces otherwise-manglable
+// exports to keep stable names. @ionic/core's own lazy-element loader already
+// splits most component implementations into on-demand chunks for free
+// (the p-*.js files); a manual chunk here would also swallow those.
+//
+// Once src/game imports pixi.js, it will only ever be reached through the
+// lazy route below, so Rollup's default async-chunk splitting already gives
+// it an on-demand chunk — no entry needs to be added here for that to work.
+const vendorChunks: ReadonlyArray<readonly [string, RegExp]> = [
+  ['vendor-react', /\/node_modules\/(react|react-dom|scheduler)\//],
+  ['vendor-router', /\/node_modules\/(react-router|react-router-dom|history|path-to-regexp|resolve-pathname|value-equal|tiny-invariant|isarray|prop-types|react-is|hoist-non-react-statics)\//],
+];
+
+function manualChunks(id: string): string | undefined {
+  const normalized = id.replace(/\\/g, '/');
+  if (!normalized.includes('/node_modules/')) return undefined;
+  const match = vendorChunks.find(([, pattern]) => pattern.test(normalized));
+  return match ? match[0] : undefined;
+}
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    ...(process.env.ANALYZE
+      ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, template: 'treemap' })]
+      : []),
+  ],
+  build: {
+    sourcemap: process.env.ANALYZE ? true : false,
+    rollupOptions: {
+      output: { manualChunks },
+    },
+    // The remaining warning is the index chunk, which is almost entirely
+    // @ionic/core (measured ~780 kB of it pre-minify) plus react-dom's share
+    // that couldn't be split further without growing the total (see above).
+    // Raised just past the current ~830 kB so real regressions still warn.
+    chunkSizeWarningLimit: 900,
+  },
   test: {
     environment: 'jsdom',
     globals: true,

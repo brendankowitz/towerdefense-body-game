@@ -174,11 +174,11 @@ describe('numeric sanity', () => {
   }
 
   it('gives every defender plausible numbers', () => {
-    for (const [kind, stats] of Object.entries(DEFENDERS)) check(`DEFENDERS.${kind}`, stats);
+    for (const [kind, stats] of Object.entries(DEFENDERS)) check(`DEFENDERS.${kind}`, { ...stats });
   });
 
   it('gives every pathogen plausible numbers', () => {
-    for (const [kind, stats] of Object.entries(PATHOGENS)) check(`PATHOGENS.${kind}`, stats);
+    for (const [kind, stats] of Object.entries(PATHOGENS)) check(`PATHOGENS.${kind}`, { ...stats });
   });
 
   it('gives every case plausible starting energy', () => {
