@@ -63,7 +63,7 @@ Read this before starting. The rule (spec §5.1): quirks that are *surprising bu
 | D3 | Bleed is `if (energy > 0) energy -= 2` (line 619), so energy can settle at −1; only the display clamps. | **Fix (spec §5.1).** Clamp at the source: `energy = Math.max(0, energy - BLEED_AMOUNT)`. A currency that goes negative is a bug wearing a display workaround. Test: energy at 1 bleeds to exactly 0. |
 | D4 | `cleared` is `cleared.concat([c.id])` — a repeat clear would duplicate. | **Fix (spec §5.1).** Ordered unique list; append only if absent. |
 | D5 | Result sheet always shows `+50`, including on case clear where +180 is banked (lines 571, 1101). | **Fix (spec §5.1).** Report what was actually awarded: `+WAVE_CLEAR_ENERGY` on a held wave, `+CASE_CLEAR_BANK` on a clear, `0` on a loss. |
-| D6 | `film` immunity is never incremented — the strain bump is a two-way `illness === 'virus' ? 'virus' : 'staph'` branch (line 569) — so Biofilm serum permanently shows 0/3. | **Fix (spec §5.1).** A visible goal the player cannot reach is a broken promise. Each case declares `credits: StrainKey` in its content entry; `clearCase` increments that strain. Seed assignment: forearm → `staph`, throat → `virus`, stomach → `film` (its waves are the biofilm-heavy ones). A structural test asserts every displayed strain vaccine is credited by at least one case (spec criterion 6). **The stomach → film assignment is my call — flag to the user.** |
+| D6 | `film` immunity is never incremented — the strain bump is a two-way `illness === 'virus' ? 'virus' : 'staph'` branch (line 569) — so Biofilm serum permanently shows 0/3. | **Fix (spec §5.1).** A visible goal the player cannot reach is a broken promise. Each case declares `credits: StrainKey` in its content entry; `clearCase` increments that strain. Seed assignment: forearm → `staph`, throat → `virus`, stomach → `film` (its waves are the biofilm-heavy ones). A structural test asserts every displayed strain vaccine is credited by at least one case (spec criterion 6). **Settled: the assignment was approved by the user (noting stomach is thematically the toxin case) and is implemented and tested in the committed Phase 2.** |
 | D7 | First run is day 4 / bank 520 / staph 1 (line 466); "Start a new body" is day 1 / 240 / zero (line 580). | **Ruled by the user:** day-4 was demo staging. One fresh profile — day 1, bank 240, no immunity — defined once (`FRESH_PROFILE` in `rules.ts` → `createFreshProfile()`), used by both first run and reset. Applied throughout. |
 | D8 | Poison damages every non-clot tower including memory cells (line 660), while toxin stun exempts clot **and** mem (line 655). | **Keep, on merit.** The asymmetry is coherent: stun resistance is the memory cell's stated perk ("Toxins cannot stun it"), while the poison case rule harms every living cell — only the inert clot is exempt. Full poison immunity would make Learn strictly dominant in the stomach case. |
 | D9 | The `held` list is built before movement but a grab lands mid-defender-pass, so a newly engulfed enemy is not frozen until the next step (lines 626–630, 687). | **Fix (spec §5.1).** Invisible at 60 Hz, indefensible at any other rate. A dedicated `acquireHolds` pass runs before movement: phagocytes grab first, movement then freezes what was grabbed, the defender pass only digests. Test: an enemy does not advance on the step it is engulfed. |
@@ -78,8 +78,8 @@ Read this before starting. The rule (spec §5.1): quirks that are *surprising bu
 | D18 | Defender colours for `nk`, `mast`, `mem` and all six pathogen colours fall outside the five role tokens. | Extend the role vocabulary with verb/role names — `--execute`, `--burst`, `--learn`, `--armoured`, `--splitter`, `--fungal`, `--chemical`, `--resistant`. Still named by role, never by decoration. |
 | D19 | Pixi needs numeric colours; the palette is oklch, which Pixi's colour parser does not accept. | `src/theme/oklch.ts` implements `oklchToSrgbHex()` (Ottosson matrices). Every colour is written once, as oklch, in `src/theme/tokens.ts`. |
 | D20 | Vite 8 shipped recently. | Use Vite 7.3 + `@vitejs/plugin-react` 5.2 + Vitest 4.1. Vitest 4 supports Vite 6/7/8; Vite 7 is the mature choice and carries no downside here. **Flagged.** |
-| D21 | `@ionic/react-router` 8.8 peer-depends on `react-router-dom@^5.0.1`, which predates React 19. | Use `react-router-dom@5.3.4` + `@types/react-router-dom@5.3.3`. Phase 1 explicitly verifies routing and a clean console under React 19. If it breaks, the documented fallback is pinning `react@18.3.1` / `react-dom@18.3.1` — record which was used in the README. |
-| D22 | The Biofilm serum's stated effect — "Armour drops — phagocytes bite properly" — is never implemented; earning it (once D6 makes it earnable) would change nothing. | **Fix — consequence of D6.** An earned vaccine with no effect is the same broken promise. `armourMultiplier(state, enemy)` treats biofilm as unarmoured when `immunity.film >= IMMUNITY_MAX`, mirroring how the Flu B vaccine already suppresses splitting. Test: a maxed film immunity makes an untagged biofilm take full damage. |
+| D21 | `@ionic/react-router` 8.8 peer-depends on `react-router-dom@^5.0.1`, which predates React 19. | Use `react-router-dom@5.3.4` + `@types/react-router-dom@5.3.3`. **RESOLVED as-built (Phase 1, c6b4815): the gate passed under React 19** — all routes render, redirects work, console clean. The React 18.3 fallback was never needed. Do not re-run the gate. |
+| D22 | The Biofilm serum's stated effect — "Armour drops — phagocytes bite properly" — is never implemented; earning it (once D6 makes it earnable) would change nothing. | **Fix — consequence of D6, approved by the user.** An earned vaccine with no effect is the same broken promise. `armourMultiplier(state, enemy)` treats biofilm as unarmoured when `immunity.film >= IMMUNITY_MAX`, mirroring how the Flu B vaccine already suppresses splitting. Two named tests: the multiplier drops to 1 at maxed immunity (Phase 3), and a serum-held biofilm demonstrably takes more digest damage than an un-immune one, both derived from `PATHOGENS.film.armour` (Phase 5). |
 | D23 | The brief's shield line and the case-clear immunity credit both derived from the same two-way illness branch. | The brief's shield/progress line now reads the case's `credits` strain and looks its display copy up from `STRAIN_ROWS` — data-driven, no per-strain branch in the page. |
 | D24 | An earlier draft froze the golden hash as an inline constant that must "never change". | **Superseded by spec §9.** The hash is a Vitest snapshot: `toMatchSnapshot()`. Re-bless is one command — `npx vitest run src/game/golden.test.ts -u` — and the snapshot diff is reviewed like any other change. Presentation phases must still never change it; tuning changes it deliberately and re-blesses. |
 
@@ -564,6 +564,10 @@ git commit -m "chore: scaffold Vite/React/TS toolchain with enforced layer bound
 
 ## Phase 1 — Ionic shell, theme tokens, fonts, five routes
 
+> **BUILT AND COMMITTED (c6b4815).** Matches this text with two as-built corrections, folded into the listings below: `tokens.test.ts` resolves the stylesheet via `resolve(process.cwd(), ...)` (Vitest's transform does not give test modules a `file:` `import.meta.url`, so `new URL(..., import.meta.url)` throws `TypeError: The URL must be of scheme file`), and `PaletteToken` already lives in `src/game/types.ts` with `tokens.ts` re-exporting it — Phase 2's Step 2 is therefore already done. **The D21 gate PASSED**: all five routes render under React 19, unknown paths redirect, console clean, zero Google Fonts requests. No React downgrade was needed; do not re-run the gate.
+>
+> **Post-phase interlude (d739211), unplanned bundle work, also committed:** all five routes are `React.lazy` behind ONE `<Suspense>` around `IonRouterOutlet` (not per `Route` — the outlet's child cloning for transitions must see the routes directly); `vendor-react`/`vendor-router` split out; `@ionic/core` deliberately **excluded** from `manualChunks` (grouping it grew the bundle ~60 kB and collapsed the lazy chunks — forcing that boundary defeats scope hoisting); `chunkSizeWarningLimit: 900`; `rollup-plugin-visualizer` behind `ANALYZE=1`. Measured composition: `@ionic/core` 778 kB (49%) — Stencil's lazy-element loader, near a hard floor — and `react-dom` 548 kB (34%). Named Ionic imports already tree-shake; a barrel-import hypothesis was tested and disproven. CI actions bumped to `checkout@v7` / `setup-node@v7`.
+
 **Files:**
 - Create: `src/theme/oklch.ts`, `src/theme/oklch.test.ts`, `src/theme/tokens.ts`, `src/theme/tokens.test.ts`, `src/theme/variables.css`, `src/theme/typography.css`
 - Create: `src/app/pages/MapPage.tsx`, `BriefPage.tsx`, `FightPage.tsx`, `ImmunityPage.tsx`, `SeasonPage.tsx`
@@ -754,10 +758,13 @@ export const palette = Object.fromEntries(
 
 ```ts
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { palette, type PaletteToken } from './tokens';
 
-const css = readFileSync(new URL('./variables.css', import.meta.url), 'utf8');
+// resolve(cwd), not new URL(import.meta.url): Vitest's transform does not give
+// test modules a file: URL, so the URL constructor throws at collection time.
+const css = readFileSync(resolve(process.cwd(), 'src/theme/variables.css'), 'utf8');
 
 function cssVariableName(token: string): string {
   return `--${token.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
@@ -945,6 +952,12 @@ git commit -m "feat: Ionic shell with five routes, oklch palette and self-hosted
 
 ## Phase 2 — Content data modules and the structural invariants test
 
+> **BUILT AND COMMITTED (4822cf8, 1125205), reconciled against this revised text** — `credits` on every case, no `shield` field, `heldCopy` on `STRAIN_ROWS`, credits-coverage check present; the only drift found was the test filename, fixed to `content.invariants.test.ts`. As-built additions beyond the listings below:
+>
+> - A `describe('numeric sanity')` block in the invariants test: bounds, never values — every numeric stat finite and non-negative, fractions ≤ 1, and loose ceilings (hp ≤ 5000, speed ≤ 1000, cost ≤ 5000, range ≤ 1000, radius ≤ 100) that catch a fat-fingered `12000` without constraining balance. `MUST_EXCEED_ZERO` = hp, speed, radius, cost, range; everything else may legitimately be zero (`unlock: 0`). Verified both ways: film hp 120→12000 fails, 120→240 passes.
+> - TypeScript trap for anyone writing similar iteration: `Object.entries(PATHOGENS)` yields `PathogenStats`, and **interfaces get no implicit index signature**, so passing one where `Record<string, unknown>` is expected is TS2345. Spread into a literal (`{ ...stats }`) to get an assignable anonymous type.
+> - The stomach's `ruleSub` carries the tactical hint that died with the removed `shield` field (reflected in the listing below).
+
 **Why now:** every later phase reads these tables. Getting the numbers in, verbatim, with a test that fails when the published asset sheet and the code disagree, means no later phase can quietly drift the balance.
 
 **Files:**
@@ -983,17 +996,9 @@ export type PaletteToken =
 export type Point = readonly [x: number, y: number];
 ```
 
-- [ ] **Step 2: Point `src/theme/tokens.ts` at the shared union**
+- [ ] **Step 2: (already done in Phase 1) `src/theme/tokens.ts` re-exports the shared union**
 
-Replace the local `PaletteToken` declaration with a re-export, so the vocabulary has exactly one definition and the dependency runs theme → game:
-
-```ts
-import type { PaletteToken } from '@game/types';
-export type { PaletteToken };
-```
-
-Run: `npm run typecheck && npm run test`
-Expected: still green — the union is byte-identical to the one Phase 1 declared.
+Phase 1 shipped this as-built: `PaletteToken` is declared once in `src/game/types.ts` — the simulation owns the role vocabulary — and `tokens.ts` does `import type { PaletteToken } from '@game/types'; export type { PaletteToken };`, mapping roles to colours. Type-only, so no runtime dependency in either direction, and the `src/game` import bans are untouched. Verify with `npm run typecheck` and move on.
 
 - [ ] **Step 3: Write `src/game/content/defenders.ts`**
 
@@ -1142,7 +1147,7 @@ export const CASES: readonly CaseDefinition[] = [
   {
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', rule: 'poison', credits: 'film',
     story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
-    ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders — cells die, the region holds',
+    ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders. Antibodies survive toxins far better than phagocytes',
     startingEnergy: 250,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'toxin', count: 2 }],
@@ -3000,6 +3005,8 @@ git commit -m "feat(game): fixed-step loop, seeded RNG, path geometry, spawn and
 
 **Why now:** the sim state types are complete, so the renderer can be written against all of them at once even though Phases 5–8 have not yet filled them in. This is the first phase that produces something to look at, and it de-risks Pixi early rather than at the end.
 
+**Bundle note (from the committed d739211 interlude):** `FightPage` is already `React.lazy`, so Rollup's default async splitting puts Pixi in its own on-demand chunk the moment this phase imports it there. Do **not** add a `vendor-pixi` entry to `manualChunks` — forcing chunk boundaries was tried with `@ionic/core` and made the bundle worse. After this phase's build, confirm Pixi lives in the `FightPage` chunk, not the eager one.
+
 **Files:**
 - Create: `src/render/viewport.ts` + `viewport.test.ts`
 - Create: `src/render/colors.ts`, `src/render/shapes.ts`
@@ -3936,6 +3943,7 @@ import { acquireHolds, runDefenders } from './damage';
 import { addEnemy, addTower, simFor } from '../testing';
 import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
+import { IMMUNITY_MAX } from '../content/rules';
 import type { PhagocyteTower, SimState } from '../types';
 
 function tick(state: SimState, dt: number, dead = new Set<number>()): void {
@@ -3985,6 +3993,21 @@ describe('phagocyte — engulf', () => {
 
     tick(state, 1);
     expect(prey.hp).toBeCloseTo(PATHOGENS.film.hp - DEFENDERS.phago.dps * PATHOGENS.film.armour!, 6);
+  });
+
+  it('digests a biofilm at the full rate once the serum is held — decision D22', () => {
+    const immune = simFor('forearm', { immunity: { film: IMMUNITY_MAX } });
+    addTower(immune, 'phago', 0, 0, 0);
+    const immunePrey = addEnemy(immune, 'film', { x: 10, y: 0 });
+
+    const raw = simFor();
+    addTower(raw, 'phago', 0, 0, 0);
+    const rawPrey = addEnemy(raw, 'film', { x: 10, y: 0 });
+
+    tick(immune, 1);
+    tick(raw, 1);
+    expect(immunePrey.hp).toBeCloseTo(PATHOGENS.film.hp - DEFENDERS.phago.dps, 6);
+    expect(PATHOGENS.film.hp - immunePrey.hp).toBeGreaterThan(PATHOGENS.film.hp - rawPrey.hp);
   });
 
   it('holds one target at a time and never steals another phagocyte’s meal', () => {
@@ -4131,7 +4154,7 @@ The `clot` case is an explicit empty `break` with a comment rather than an omiss
 - [ ] **Step 5: Run the engulf tests to verify they pass**
 
 Run: `npx vitest run src/game/systems/damage.test.ts`
-Expected: PASS, 7 tests.
+Expected: PASS, 8 tests.
 
 - [ ] **Step 6: Append the block, tag and execute suites to `damage.test.ts`**
 
@@ -4262,7 +4285,7 @@ describe('killer cell — execute', () => {
 
 Add `import { armourMultiplier } from './targeting';` to the test file.
 
-Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 19 tests.
+Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 20 tests.
 
 Then confirm the D9 fix end to end in `src/game/step.test.ts` — this is the test spec criterion 4 demands, proving the old one-step lag is gone:
 
@@ -4688,7 +4711,7 @@ Wire them into the switch:
 
 Add `TAGGED_BURST_MULTIPLIER` to the `../content/rules` import, `isTagged` to the `./targeting` import, and `MastTower`/`MemoryTower` to the type import.
 
-Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 29 tests.
+Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 30 tests.
 
 - [ ] **Step 4: Write the failing split and regen tests**
 
