@@ -20,24 +20,28 @@ export function useGameLoop(loop: GameLoop | null, onFrame: (state: SimState) =>
     if (loop === null) return;
 
     let handle = 0;
-    /** Timestamp of the previous frame in seconds. Zero means "no previous frame". */
-    let previous = 0;
+    /**
+     * Timestamp of the previous frame in seconds, or null for "no previous frame" — a
+     * separate sentinel rather than zero, so a frame that legitimately arrives at t=0 is
+     * a baseline like any other rather than being silently discarded.
+     */
+    let previous: number | null = null;
 
     const frame = (timestamp: number): void => {
       handle = requestAnimationFrame(frame);
       if (document.hidden) {
-        previous = 0;
+        previous = null;
         return;
       }
       const now = timestamp / 1000;
-      const elapsed = previous === 0 ? 0 : now - previous;
+      const elapsed = previous === null ? 0 : now - previous;
       previous = now;
       loop.advance(elapsed);
       onFrameRef.current(loop.state);
     };
 
     const onVisibilityChange = (): void => {
-      previous = 0;
+      previous = null;
       loop.resetClock();
     };
 

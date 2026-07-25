@@ -217,3 +217,38 @@ describe('brief copy stays true to the stats it describes', () => {
     }
   });
 });
+
+// A build spot no cell can shoot from is dead content, the same class of defect as a vaccine
+// that cannot be earned. This does not assert any particular range — only that whatever the
+// ranges are, every spot a case offers can be used by something.
+describe('build spots are usable', () => {
+  function distanceToPath(spot: readonly [number, number], path: readonly (readonly [number, number])[]): number {
+    let best = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < path.length - 1; i += 1) {
+      const a = path[i];
+      const b = path[i + 1];
+      if (a === undefined || b === undefined) continue;
+      const vx = b[0] - a[0];
+      const vy = b[1] - a[1];
+      const lengthSquared = vx * vx + vy * vy;
+      const along = lengthSquared === 0
+        ? 0
+        : Math.max(0, Math.min(1, ((spot[0] - a[0]) * vx + (spot[1] - a[1]) * vy) / lengthSquared));
+      const dx = a[0] + along * vx - spot[0];
+      const dy = a[1] + along * vy - spot[1];
+      best = Math.min(best, Math.sqrt(dx * dx + dy * dy));
+    }
+    return best;
+  }
+
+  it('offers no spot that every defender is too short-ranged to use', () => {
+    const longest = Math.max(...Object.values(DEFENDERS).map((d) => d.range));
+    for (const c of CASES) {
+      c.spots.forEach((spot, index) => {
+        const reach = distanceToPath(spot, c.path);
+        expect(reach, `${c.id} spot ${String(index)} sits ${reach.toFixed(0)} from the vessel`)
+          .toBeLessThanOrEqual(longest);
+      });
+    }
+  });
+});

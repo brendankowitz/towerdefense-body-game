@@ -24,6 +24,7 @@ const TETHER_WIDTH = 9;
 const XP_LABEL_OFFSET = 30;
 const XP_LABEL_SIZE = 11;
 
+const PREVIEW_RANGE_ALPHA = 0.09;
 const RANGE_ALPHA = 0.1;
 const CLOT_RANGE_ALPHA = 0.13;
 const MAST_FLASH_ALPHA = 0.22;
@@ -241,8 +242,17 @@ export class TowerLayer {
     // The reference lights every open spot in one colour the moment anything is picked up,
     // rather than in the colour of what was picked up: it answers "where can this go".
     const stroke = state.selected === null ? EMPTY_SPOT_STROKE : tokenHex('frontline');
+    const picked = state.selected === null ? null : DEFENDERS[state.selected];
+
     CASE_BY_ID[this.#caseId].spots.forEach(([x, y], index) => {
       if ((occupied & (1 << index)) !== 0) return;
+      // Reach preview. Spots sit as far as 93 from the vessel while most cells reach 54-78,
+      // so without this a player can spend on a cell that can never fire and only find out
+      // by losing the wave. Showing the ring before the tap answers "will this reach".
+      if (picked !== null) {
+        filledCircle(this.#spots, x, y, picked.range, defenderHex(picked.kind), PREVIEW_RANGE_ALPHA);
+        dashedRing(this.#spots, x, y, picked.range, defenderHex(picked.kind), 1.5, 5, 7, 0.45);
+      }
       filledCircle(this.#spots, x, y, BUILD_SPOT_RADIUS, EMPTY_SPOT_FILL, 0.5);
       dashedRing(this.#spots, x, y, BUILD_SPOT_RADIUS, stroke, 3, 6, 6);
       bar(this.#spots, x - 7, y - 1.5, 14, 3, 1.5, EMPTY_SPOT_CROSS);
