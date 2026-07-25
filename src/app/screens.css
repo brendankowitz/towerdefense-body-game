@@ -359,3 +359,297 @@ section {
   color: var(--ink);
   flex: none;
 }
+
+/* Immunity */
+
+.strain-card {
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 2px solid transparent;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+/* Immunity is always support-coloured — it's what's already won, never the pathogen's own colour. */
+.strain-card[data-held='true'] {
+  background: color-mix(in oklch, var(--support) 12%, transparent);
+  border-color: var(--support);
+}
+
+.strain-swatch {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-chip);
+  background: var(--support); /* overridden inline per strain; identity, not state */
+  flex: none;
+  position: relative;
+}
+
+.strain-swatch::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: var(--screen-paper);
+}
+
+.strain-progress {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.stats-card {
+  border-radius: var(--radius-card);
+  border: 2px dashed var(--surface-strong);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+
+.stats {
+  display: flex;
+  gap: 9px;
+}
+
+.stat-tile {
+  flex: 1;
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-value {
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ink {
+  height: 54px;
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--screen-paper);
+  background: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ink:active {
+  opacity: 0.85;
+}
+
+.pale {
+  height: 52px;
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-strong);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pale:active {
+  background: var(--surface);
+}
+
+/* Season */
+
+.season-row {
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 2px solid transparent;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+/* The case under way today reads as under attack, same as the map — but it never pulses here. */
+.season-row[data-state='now'] {
+  background: color-mix(in oklch, var(--threat) 10%, transparent);
+  border-color: var(--threat);
+}
+
+.season-row[data-state='done'] {
+  opacity: 0.55;
+}
+
+.season-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--not-reached);
+  flex: none;
+}
+
+.season-row[data-state='now'] .season-dot {
+  background: var(--threat);
+}
+
+.season-row[data-state='done'] .season-dot {
+  background: var(--frontline);
+}
+
+.season-row[data-state='warn'] .season-dot {
+  background: var(--burst);
+}
+
+.season-row[data-state='unknown'] .season-dot {
+  background: var(--learn);
+}
+
+.season-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.season-meta {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.tier {
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  padding: 3px 7px;
+  border-radius: var(--radius-tile);
+  color: var(--label);
+  background: var(--surface-strong);
+  white-space: nowrap;
+}
+
+.tier[data-tier='2'] {
+  color: var(--burst);
+  background: color-mix(in oklch, var(--burst) 14%, transparent);
+}
+
+.tier[data-tier='3'] {
+  color: var(--learn);
+  background: color-mix(in oklch, var(--learn) 14%, transparent);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.vaccine-row {
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.vaccine-row[data-status='held'] {
+  background: color-mix(in oklch, var(--support) 12%, transparent);
+}
+
+.vaccine-row[data-status='available'] {
+  background: color-mix(in oklch, var(--energy) 14%, transparent);
+}
+
+.vaccine-row[data-status='locked'],
+.vaccine-row[data-status='none'] {
+  opacity: 0.6;
+}
+
+.vaccine-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-tile);
+  background: var(--not-reached);
+  flex: none;
+  position: relative;
+}
+
+.vaccine-swatch::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--screen-paper);
+}
+
+.vaccine-row[data-status='held'] .vaccine-swatch {
+  background: var(--support);
+}
+
+.vaccine-row[data-status='available'] .vaccine-swatch {
+  background: var(--energy);
+}
+
+.vaccine-row[data-status='progress'] .vaccine-swatch {
+  background: var(--frontline);
+}
+
+.row-cost {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--label);
+  margin-top: 2px;
+}
+
+.vaccine-status {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: var(--label);
+  white-space: nowrap;
+  flex: none;
+}
+
+.vaccine-row[data-status='held'] .vaccine-status {
+  color: var(--support);
+}
+
+.vaccine-row[data-status='available'] .vaccine-status {
+  color: var(--energy);
+}
+
+.vaccine-row[data-status='progress'] .vaccine-status {
+  color: var(--frontline);
+}
+
+.policy-card {
+  border-radius: var(--radius-card);
+  border: 2px dashed var(--surface-strong);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  flex: none;
+}

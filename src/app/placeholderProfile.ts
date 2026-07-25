@@ -14,6 +14,8 @@ export interface PlaceholderProfile {
   readonly bank: number;
   readonly cleared: readonly CaseId[];
   readonly immunity: Readonly<Record<StrainId, number>>;
+  /** Mirrors `Profile.kills` from `@game/progression` so the Immunity screen's run stats need no reshaping at swap time. */
+  readonly kills: number;
 }
 
 /** Matches the fresh-profile factory in spec §5 (day 1, 240 banked, no immunity, nothing cleared). */
@@ -22,6 +24,7 @@ export const PLACEHOLDER_PROFILE: PlaceholderProfile = {
   bank: 240,
   cleared: [],
   immunity: { staph: 0, virus: 0, film: 0 },
+  kills: 0,
 };
 
 export function placeholderNextCaseId(cleared: readonly CaseId[]): CaseId | null {
