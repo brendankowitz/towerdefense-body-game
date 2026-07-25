@@ -1,10 +1,9 @@
+import type { PaletteToken } from '@game/types';
 import { oklchToSrgbHex } from './oklch';
 
-export type PaletteToken =
-  | 'threat' | 'frontline' | 'support' | 'control' | 'energy'
-  | 'execute' | 'burst' | 'learn'
-  | 'armoured' | 'splitter' | 'fungal' | 'chemical' | 'resistant'
-  | 'fever' | 'notReached' | 'vesselCasing' | 'vesselLumen' | 'tissueField' | 'core';
+// The simulation owns the role vocabulary; the theme decides what each role looks
+// like. Type-only, so this carries no runtime dependency in either direction.
+export type { PaletteToken };
 
 const OKLCH: Record<PaletteToken, string> = {
   threat: 'oklch(0.66 0.15 25)',
