@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; font-family:'Outfit',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:oklch(0.62 0.15 300); text-decoration:none; }
+  a:hover { color:oklch(0.52 0.16 300); }
+  @keyframes pulse { 0%,100% { opacity:0.9; transform:scale(1); } 50% { opacity:0.45; transform:scale(1.08); } }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#F4EFE6;display:flex;align-items:center;justify-content:center;padding:36px 20px;box-sizing:border-box">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+
+    <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 30px 60px -20px oklch(0.3 0.02 60 / 0.4)">
+      <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column;position:relative">
+
+        <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none;z-index:5">
+          <span>9:41</span>
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+            <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+          </div>
+        </div>
+
+        <!-- ─────────── MAP ─────────── -->
+        <sc-if value="{{ isMap }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <div style="flex:none;padding:10px 22px 10px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">DAY {{ day }} · MORNING</span>
+                <span style="font-size:20px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">The body</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:7px 12px 7px 9px;border-radius:999px">
+                <div style="width:13px;height:13px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.42 0.06 80)">{{ bank }}</span>
+              </div>
+            </div>
+
+            <div style="flex:1;position:relative;background:oklch(0.955 0.01 45);min-height:0">
+              {{ mapLayer }}
+              <div style="position:absolute;left:16px;top:12px;display:flex;flex-direction:column;gap:6px;pointer-events:none">
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.66 0.15 25)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">UNDER ATTACK</span></div>
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.66 0.15 195)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">HELD</span></div>
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.9 0.014 60)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">NOT REACHED</span></div>
+              </div>
+              <div style="position:absolute;right:14px;bottom:14px;background:#FBF7F0;border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:3px;box-shadow:0 4px 12px -4px oklch(0.3 0.02 60 / 0.2);pointer-events:none">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">REGIONS HELD</span>
+                <span style="font-family:'DM Mono',monospace;font-size:18px;color:#2C2A28">{{ heldLabel }}</span>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:15px 22px 13px;display:flex;flex-direction:column;gap:12px;background:#FBF7F0;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+              <div style="display:flex;align-items:center;gap:13px">
+                <div style="width:44px;height:44px;border-radius:14px;background:{{ pickColor }};display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:50%;background:#FFF9F2"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:19px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">{{ pickName }}</span>
+                  <span style="font-size:13px;color:oklch(0.5 0.01 60)">{{ pickSub }}</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <div onClick="{{ openBrief }}" style="flex:1;height:54px;border-radius:18px;background:{{ pickColor }};display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FFF9F2;cursor:pointer;user-select:none" style-active="opacity:0.85">{{ pickCta }}</div>
+                <div onClick="{{ openSeason }}" style="width:112px;height:54px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#2C2A28;cursor:pointer;user-select:none" style-hover="background:oklch(0.89 0.01 70)">Season</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─────────── BRIEF ─────────── -->
+        <sc-if value="{{ isBrief }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;animation:rise 0.25s ease-out">
+            <div style="flex:1;padding:12px 24px 4px;display:flex;flex-direction:column;gap:13px;min-height:0;overflow-y:auto">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">{{ briefRegion }}</span>
+                <h2 style="margin:0;font-size:31px;line-height:1.04;font-weight:800;letter-spacing:-0.028em;color:#2C2A28">{{ briefTitle }}</h2>
+                <p style="margin:0;font-size:14px;line-height:1.4;color:oklch(0.48 0.01 60);text-wrap:pretty">{{ briefStory }}</p>
+              </div>
+
+              <div style="border-radius:18px;background:oklch(0.66 0.15 25 / 0.1);border:2px solid oklch(0.66 0.15 25);padding:13px;display:flex;align-items:center;gap:12px;flex:none">
+                <div style="width:36px;height:36px;border-radius:12px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:6px;border-radius:3px;background:#FFF6F4"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:15px;font-weight:700;color:#2C2A28">{{ briefRule }}</span>
+                  <span style="font-size:12px;line-height:1.3;color:oklch(0.48 0.01 60)">{{ briefRuleSub }}</span>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">COMING THROUGH</span>
+                <sc-for list="{{ briefEnemies }}" as="row" hint-placeholder-count="2">
+                  <div style="border-radius:14px;background:oklch(0.95 0.008 70);padding:9px 13px;display:flex;align-items:center;gap:11px;flex:none">
+                    <div style="width:24px;height:24px;border-radius:{{ row.radius }};background:{{ row.color }};flex:none"></div>
+                    <span style="flex:1;font-size:14px;font-weight:700;color:#2C2A28">{{ row.name }}</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.01 60)">{{ row.note }}</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">{{ row.count }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">WAYS TO STOP THEM</span>
+                <sc-for list="{{ verbs }}" as="v" hint-placeholder-count="6">
+                  <div style="border-radius:14px;background:oklch(0.95 0.008 70);padding:9px 13px;display:flex;align-items:flex-start;gap:10px;flex:none">
+                    <div style="width:24px;height:24px;border-radius:{{ v.radius }};background:{{ v.color }};flex:none;margin-top:1px"></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                      <span style="font-size:13px;font-weight:700;color:#2C2A28">{{ v.name }}</span>
+                      <span style="font-size:12px;line-height:1.3;color:oklch(0.48 0.01 60);text-wrap:pretty">{{ v.text }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border-radius:16px;background:oklch(0.7 0.14 145 / 0.14);padding:12px 13px;display:flex;align-items:center;gap:11px;flex:none">
+                <div style="width:30px;height:30px;border-radius:10px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:11px;height:11px;border-radius:50%;border:3px solid #F4FAF6"></div></div>
+                <div style="font-size:12px;line-height:1.35;color:oklch(0.42 0.01 60);text-wrap:pretty">{{ briefShield }}</div>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:14px 24px 12px;display:flex;flex-direction:column;gap:8px">
+              <div onClick="{{ startCase }}" style="height:58px;border-radius:19px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#FFF9F2;cursor:pointer;user-select:none" style-active="opacity:0.85">Get in there</div>
+              <div onClick="{{ goMap }}" style="height:40px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.5 0.01 60);cursor:pointer;user-select:none">Back to the body</div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─────────── FIGHT ─────────── -->
+        <sc-if value="{{ isFight }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+            <div style="padding:4px 18px 10px;display:flex;flex-direction:column;gap:10px;flex:none">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">{{ fightRegion }}</span>
+                  <span style="font-size:19px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">{{ waveLabel }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:7px 12px 7px 9px;border-radius:999px">
+                  <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:15px;color:oklch(0.42 0.06 80)">{{ energy }}</span>
+                </div>
+                <div onClick="{{ goMap }}" style="width:36px;height:36px;border-radius:12px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;gap:3px;cursor:pointer" style-hover="background:oklch(0.89 0.01 70)">
+                  <div style="width:4px;height:13px;border-radius:1px;background:#2C2A28"></div>
+                  <div style="width:4px;height:13px;border-radius:1px;background:#2C2A28"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <sc-for list="{{ pips }}" as="pip" hint-placeholder-count="5">
+                  <div style="flex:1;height:8px;border-radius:4px;background:{{ pip.color }}"></div>
+                </sc-for>
+                <span style="margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;color:oklch(0.58 0.01 60)">{{ tissueLabel }}</span>
+              </div>
+            </div>
+
+            <div style="flex:1;position:relative;background:oklch(0.95 0.012 40);min-height:0;overflow:hidden">
+              {{ board }}
+              <div style="position:absolute;left:12px;bottom:12px;background:oklch(0.98 0.005 70 / 0.94);border-radius:10px;padding:7px 11px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.05em;color:oklch(0.5 0.01 60);pointer-events:none">{{ boardHint }}</div>
+              <sc-if value="{{ showModifier }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:12px;top:12px;background:oklch(0.66 0.15 25);border-radius:10px;padding:7px 11px;display:flex;align-items:center;gap:7px;pointer-events:none">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#FFF6F4;animation:pulse 1.1s ease-in-out infinite"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#FFF6F4">{{ modifierLabel }}</span>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:none;background:#FBF7F0;padding:12px 16px 10px;display:flex;flex-direction:column;gap:11px;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+              <div style="display:flex;gap:7px;align-items:stretch">
+                <div style="flex:1;min-width:0;display:grid;grid-template-columns:repeat(6,1fr);gap:5px">
+                  <sc-for list="{{ dock }}" as="d" hint-placeholder-count="6">
+                    <div onClick="{{ d.tap }}" style="border-radius:14px;background:{{ d.bg }};border:2px solid {{ d.ring }};padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:{{ d.opacity }};min-width:0">
+                      <div style="width:26px;height:26px;border-radius:50%;background:{{ d.color }};display:flex;align-items:center;justify-content:center;flex:none">
+                        <div style="width:{{ d.gw }};height:{{ d.gh }};border-radius:{{ d.gr }};background:{{ d.gbg }};border:{{ d.gborder }};transform:{{ d.grot }};box-sizing:border-box"></div>
+                      </div>
+                      <span style="font-size:9px;font-weight:600;color:#2C2A28;white-space:nowrap;letter-spacing:-0.01em">{{ d.label }}</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:10px;color:{{ d.costColor }}">{{ d.cost }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div onClick="{{ useFever }}" style="width:54px;flex:none;border-radius:14px;background:{{ feverBg }};border:2px solid oklch(0.58 0.16 15 / 0.35);padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:{{ feverOpacity }}">
+                  <div style="width:26px;height:26px;border-radius:50%;background:oklch(0.58 0.16 15);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:11px;height:11px;border-radius:50%;border:3px solid #FFF6F4;box-sizing:border-box"></div></div>
+                  <span style="font-size:9px;font-weight:600;color:#2C2A28">Fever</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.02em;color:oklch(0.5 0.01 60)">{{ feverLabel }}</span>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;align-items:center">
+                <div onClick="{{ primary }}" style="flex:1;height:52px;border-radius:18px;background:{{ primaryBg }};display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;user-select:none" style-active="opacity:0.85">
+                  <span style="font-size:17px;font-weight:700;color:{{ primaryFg }}">{{ primaryLabel }}</span>
+                </div>
+                <div onClick="{{ toggleSpeed }}" style="width:52px;height:52px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:15px;color:#2C2A28;cursor:pointer;user-select:none">{{ speedLabel }}</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:1px auto 0"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─────────── SEASON ─────────── -->
+        <sc-if value="{{ isSeason }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;animation:rise 0.25s ease-out">
+            <div style="flex:1;padding:12px 22px 4px;display:flex;flex-direction:column;gap:16px;min-height:0;overflow-y:auto">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">{{ seasonRange }}</span>
+                <h2 style="margin:0;font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-0.028em;color:#2C2A28">What's coming</h2>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ season }}" as="s" hint-placeholder-count="5">
+                  <div style="border-radius:16px;background:{{ s.bg }};border:2px solid {{ s.ring }};padding:12px 14px;display:flex;align-items:center;gap:12px;flex:none;opacity:{{ s.opacity }}">
+                    <div style="width:9px;height:9px;border-radius:50%;background:{{ s.dot }};flex:none"></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                      <div style="display:flex;align-items:baseline;gap:8px">
+                        <span style="font-size:15px;font-weight:700;color:#2C2A28">{{ s.name }}</span>
+                        <span style="font-size:12px;color:oklch(0.55 0.01 60)">{{ s.region }}</span>
+                      </div>
+                      <sc-if value="{{ s.hasNote }}" hint-placeholder-val="{{ true }}">
+                        <span style="font-size:12px;line-height:1.3;color:oklch(0.48 0.01 60);text-wrap:pretty">{{ s.note }}</span>
+                      </sc-if>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none">
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.5 0.01 60)">{{ s.day }}</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.07em;color:{{ s.tierColor }};background:{{ s.tierBg }};padding:3px 7px;border-radius:6px;white-space:nowrap">{{ s.tierLabel }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">VACCINATION SCHEDULE</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.58 0.01 60)">EARNED, NEVER BOUGHT</span>
+                </div>
+                <sc-for list="{{ vaccines }}" as="v" hint-placeholder-count="6">
+                  <div style="border-radius:16px;background:{{ v.bg }};padding:12px 14px;display:flex;align-items:center;gap:12px;flex:none;opacity:{{ v.opacity }}">
+                    <div style="width:26px;height:26px;border-radius:9px;background:{{ v.color }};display:flex;align-items:center;justify-content:center;flex:none"><div style="width:9px;height:9px;border-radius:50%;background:#FBF7F0"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                      <span style="font-size:14px;font-weight:700;color:#2C2A28">{{ v.name }}</span>
+                      <span style="font-size:12px;line-height:1.3;color:oklch(0.48 0.01 60);text-wrap:pretty">{{ v.effect }}</span>
+                      <sc-if value="{{ v.hasCost }}" hint-placeholder-val="{{ true }}">
+                        <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;color:oklch(0.55 0.01 60)">{{ v.cost }}</span>
+                      </sc-if>
+                    </div>
+                    <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.07em;color:{{ v.fg }};white-space:nowrap;flex:none">{{ v.status }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border-radius:16px;border:2px dashed oklch(0.85 0.02 70);padding:14px;display:flex;flex-direction:column;gap:6px;flex:none">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">HOW NAMING WORKS</span>
+                <span style="font-size:12px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty">Everyday illnesses use their real names. A disease is only named when the mechanic is its real mechanic — measles really does erase immunity you already had. Everything dramatic beyond that is an invented strain.</span>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:12px 22px 12px;display:flex;flex-direction:column;gap:8px">
+              <div onClick="{{ openImmunity }}" style="height:52px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#2C2A28;cursor:pointer;user-select:none">What I'm immune to</div>
+              <div onClick="{{ goMap }}" style="height:54px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FBF7F0;cursor:pointer;user-select:none">Back to the body</div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─────────── IMMUNITY ─────────── -->
+        <sc-if value="{{ isImmunity }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;animation:rise 0.25s ease-out">
+            <div style="flex:1;padding:14px 24px 0;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">KEPT FOREVER · {{ immunityCount }}</span>
+                <h2 style="margin:0;font-size:31px;line-height:1.05;font-weight:800;letter-spacing:-0.028em;color:#2C2A28">Immunity</h2>
+                <p style="margin:0;font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Clear a strain three times and it's blocked in every run after this one.</p>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ strains }}" as="s" hint-placeholder-count="3">
+                  <div style="border-radius:20px;background:{{ s.bg }};border:2px solid {{ s.ring }};padding:15px;display:flex;align-items:center;gap:13px">
+                    <div style="width:44px;height:44px;border-radius:14px;background:{{ s.color }};display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:{{ s.radius }};background:#FFF9F2"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                      <span style="font-size:16px;font-weight:700;color:#2C2A28">{{ s.name }}</span>
+                      <span style="font-size:12px;line-height:1.35;color:oklch(0.48 0.01 60)">{{ s.effect }}</span>
+                    </div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.5 0.01 60)">{{ s.progress }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border-radius:20px;border:2px dashed oklch(0.85 0.02 70);padding:15px;display:flex;flex-direction:column;gap:8px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">RUN SO FAR</span>
+                <div style="display:flex;gap:9px">
+                  <div style="flex:1;border-radius:14px;background:oklch(0.95 0.008 70);padding:12px;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:#2C2A28">{{ statDays }}</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Days</span>
+                  </div>
+                  <div style="flex:1;border-radius:14px;background:oklch(0.95 0.008 70);padding:12px;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:#2C2A28">{{ statKills }}</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Cleared</span>
+                  </div>
+                  <div style="flex:1;border-radius:14px;background:oklch(0.95 0.008 70);padding:12px;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:#2C2A28">{{ statRegions }}</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Regions</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:14px 24px 12px;display:flex;flex-direction:column;gap:8px">
+              <div onClick="{{ openSeason }}" style="height:56px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FBF7F0;cursor:pointer;user-select:none">Season &amp; vaccines</div>
+              <div onClick="{{ resetRun }}" style="height:38px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:oklch(0.58 0.01 60);cursor:pointer;user-select:none">Start a new body</div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ─────────── RESULT ─────────── -->
+        <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:oklch(0.28 0.02 60 / 0.5);display:flex;align-items:flex-end;z-index:10">
+            <div style="width:100%;background:#FBF7F0;border-radius:30px 30px 38px 38px;padding:24px 26px 16px;display:flex;flex-direction:column;gap:20px;animation:rise 0.28s ease-out">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:{{ resultAccent }}">{{ resultKicker }}</span>
+                <h2 style="margin:0;font-size:36px;line-height:1.03;font-weight:800;letter-spacing:-0.03em;color:#2C2A28">{{ resultTitle }}</h2>
+                <p style="margin:0;font-size:15px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">{{ resultBody }}</p>
+              </div>
+
+              <div style="display:flex;gap:9px">
+                <div style="flex:1;border-radius:18px;background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-family:'DM Mono',monospace;font-size:22px;color:#2C2A28">{{ resultKills }}</span>
+                  <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Cleared</span>
+                </div>
+                <div style="flex:1;border-radius:18px;background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-family:'DM Mono',monospace;font-size:22px;color:oklch(0.55 0.15 25)">{{ resultLeaks }}</span>
+                  <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Got through</span>
+                </div>
+                <div style="flex:1;border-radius:18px;background:oklch(0.78 0.13 80 / 0.2);padding:14px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-family:'DM Mono',monospace;font-size:22px;color:oklch(0.45 0.08 80)">{{ resultReward }}</span>
+                  <span style="font-size:12px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div onClick="{{ resultPrimary }}" style="height:56px;border-radius:19px;background:{{ resultAccent }};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#FBF7F0;cursor:pointer;user-select:none" style-active="opacity:0.85">{{ resultCta }}</div>
+                <sc-if value="{{ resultHasAlt }}" hint-placeholder-val="{{ false }}">
+                  <div onClick="{{ goMap }}" style="height:42px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.5 0.01 60);cursor:pointer;user-select:none">Leave the region</div>
+                </sc-if>
+                <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60);text-align:center">3A PROTOTYPE — TAP A REGION, PICK A CELL, TAP A JUNCTION</div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:900}}">
+const CELLS = {
+  phago: { cost: 40, range: 56, dps: 15, gap: 0.7, streak: 4, rest: 3.4, color: 'oklch(0.66 0.15 195)', label: 'Engulf', unlock: 0 },
+  clot:  { cost: 70, range: 62, slow: 0.28, wear: 13, color: 'oklch(0.45 0.14 320)', label: 'Block', unlock: 0 },
+  anti:  { cost: 95, range: 94, rate: 1.5, tag: 6, dot: 4, color: 'oklch(0.7 0.14 145)', label: 'Tag', unlock: 0 },
+  nk:    { cost: 130, range: 78, rate: 2.4, dmg: 58, execute: 0.35, color: 'oklch(0.55 0.16 265)', label: 'Execute', unlock: 0 },
+  mast:  { cost: 150, range: 54, rate: 1.1, dmg: 11, color: 'oklch(0.62 0.16 350)', label: 'Burst', unlock: 1 },
+  mem:   { cost: 175, range: 82, rate: 1.3, dmg: 12, learn: 2.5, cap: 46, color: 'oklch(0.5 0.1 210)', label: 'Learn', unlock: 2 }
+};
+const ORDER = ['phago', 'clot', 'anti', 'nk', 'mast', 'mem'];
+
+const CASES = [
+  {
+    id: 'forearm', region: 'FOREARM · CASE 04', node: 'forearm', title: 'Deep cut', illness: 'wound',
+    story: 'Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.',
+    rule: 'Bleeding', ruleSub: 'You lose energy every second until a clot is placed',
+    shield: 'Tetanus shield active. The first Staph of each wave bounce off for free.',
+    energy: 170, waves: [{ staph: 8 }, { staph: 13 }, { staph: 12, film: 3 }, { staph: 15, film: 4, mrsa: 1 }, { staph: 18, film: 5, mrsa: 3 }],
+    path: [[-24, 46], [86, 58], [150, 116], [232, 146], [252, 238], [168, 298], [112, 342], [104, 430]],
+    spots: [[70, 118], [206, 88], [292, 196], [58, 268], [206, 372]]
+  },
+  {
+    id: 'throat', region: 'THROAT · CASE 05', node: 'throat', title: 'Flu', illness: 'virus',
+    story: 'Someone coughed on the train. The virus is already copying itself in your throat.',
+    rule: 'Multiplying', ruleSub: 'Every virus that dies splits into two smaller ones',
+    shield: 'No shield for this strain yet. Clear it three times to be done with it.',
+    energy: 215, waves: [{ virus: 6 }, { virus: 9, spore: 2 }, { virus: 11, spore: 4 }, { virus: 13, spore: 5, film: 3 }, { virus: 16, spore: 6, mrsa: 2 }],
+    path: [[-24, 120], [90, 120], [150, 60], [240, 74], [268, 170], [180, 230], [180, 320], [96, 380], [104, 430]],
+    spots: [[64, 62], [220, 148], [96, 216], [258, 286], [246, 386]]
+  },
+  {
+    id: 'stomach', region: 'STOMACH · CASE 06', node: 'stomach', title: 'Food poisoning', illness: 'poison',
+    story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
+    rule: 'Toxic', ruleSub: 'Pathogens damage your defenders — cells die, the region holds',
+    shield: 'No shield. Antibodies survive toxins far better than phagocytes.',
+    energy: 250, waves: [{ staph: 10, toxin: 2 }, { staph: 9, toxin: 4, film: 3 }, { staph: 13, toxin: 5, spore: 3 }, { staph: 15, toxin: 6, film: 5 }, { staph: 18, toxin: 8, film: 6, mrsa: 2 }],
+    path: [[-24, 70], [100, 90], [180, 62], [268, 120], [230, 214], [120, 250], [90, 330], [180, 392], [180, 430]],
+    spots: [[74, 168], [212, 132], [292, 216], [46, 264], [246, 330]]
+  }
+];
+
+// Naming policy — tier 1: everyday, freely named. tier 2: named only because the mechanic is the
+// real mechanic. tier 3: invented strains, never a real outbreak. No bioterror framing anywhere.
+// Later season entries that aren't playable cases yet. Tier 2 is named only because the mechanic is
+// the real mechanic; tier 3 is invented. No real outbreak is ever framed as an attack.
+const LATER = [
+  { offset: 4, name: 'Measles', region: 'Whole body', tier: 2, note: 'Wipes one immunity you already earned' },
+  { offset: 7, name: 'Strain Vesper', region: 'Lungs', tier: 3, note: 'Novel — nothing known about it yet' }
+];
+
+// Each vaccine is earned by clearing its strain three times. Never purchasable.
+const VACCINES = [
+  { name: 'Tetanus', key: 'staph', tier: 1, effect: 'First Staph of every wave bounces off' },
+  { name: 'Flu B', key: 'virus', tier: 1, effect: 'Flu no longer splits when it dies' },
+  { name: 'Biofilm serum', key: 'film', tier: 1, effect: 'Armour drops — phagocytes bite properly' },
+  { name: 'Measles, mumps, rubella', gate: 2, tier: 2, effect: 'Blocks the immune-amnesia wipe entirely', cost: 'Costs a day you don\u2019t fight' },
+  { name: 'Chickenpox', gate: 99, tier: 2, effect: 'Stops a cleared case reopening later', cost: 'Survive a dormancy case first' },
+  { name: 'Strain Vesper', tier: 3, effect: 'No vaccine exists yet — this one you fight raw' }
+];
+
+const KINDS = {
+  staph: { hp: 26, speed: 50, reward: 6, r: 8, color: 'oklch(0.66 0.15 25)', name: 'Staph', note: 'Fast, weak, endless', radius: '50%' },
+  film:  { hp: 120, speed: 28, reward: 16, r: 12, color: 'oklch(0.58 0.16 15)', name: 'Biofilm', note: 'Armoured — tag it first', radius: '4px', armour: 0.25 },
+  virus: { hp: 34, speed: 58, reward: 8, r: 9, color: 'oklch(0.62 0.15 300)', name: 'Flu virus', note: 'Splits when it dies', radius: '50%', splits: true },
+  spore: { hp: 60, speed: 34, reward: 12, r: 10, color: 'oklch(0.6 0.11 115)', name: 'Spore', note: 'Heals itself unless tagged', radius: '50%', regen: 7 },
+  toxin: { hp: 44, speed: 40, reward: 14, r: 11, color: 'oklch(0.52 0.13 45)', name: 'Toxin', note: 'Stuns the cells it passes', radius: '4px', stun: 1.6 },
+  mrsa:  { hp: 150, speed: 36, reward: 24, r: 12, color: 'oklch(0.42 0.13 10)', name: 'Resistant', note: 'Tags do nothing — engulf it', radius: '50%', armour: 0.6, noTag: true }
+};
+
+const NODES = [
+  { id: 'sinus', x: 187, y: 56, r: 24, label: 'SINUS' },
+  { id: 'throat', x: 187, y: 108, r: 19, label: 'THROAT' },
+  { id: 'lungL', x: 128, y: 148, r: 21 },
+  { id: 'lungR', x: 246, y: 148, r: 21 },
+  { id: 'heart', x: 187, y: 176, r: 30, core: true, label: 'HEART · CORE' },
+  { id: 'stomach', x: 187, y: 254, r: 23, label: 'STOMACH' },
+  { id: 'gut', x: 187, y: 322, r: 19 },
+  { id: 'shoulder', x: 104, y: 196, r: 15 },
+  { id: 'forearm', x: 64, y: 252, r: 26, label: 'FOREARM' },
+  { id: 'shoulderR', x: 270, y: 196, r: 15 },
+  { id: 'handR', x: 310, y: 252, r: 22 },
+  { id: 'kneeL', x: 146, y: 386, r: 15 },
+  { id: 'kneeR', x: 228, y: 386, r: 15 },
+  { id: 'footL', x: 146, y: 452, r: 21 },
+  { id: 'footR', x: 228, y: 452, r: 21 }
+];
+
+const LINKS = [['sinus', 'throat'], ['throat', 'heart'], ['heart', 'lungL'], ['heart', 'lungR'],
+  ['heart', 'stomach'], ['stomach', 'gut'], ['heart', 'shoulder'], ['shoulder', 'forearm'],
+  ['heart', 'shoulderR'], ['shoulderR', 'handR'], ['gut', 'kneeL'], ['gut', 'kneeR'],
+  ['kneeL', 'footL'], ['kneeR', 'footR']];
+
+const HELD = 'oklch(0.66 0.15 195)';
+const HOT = 'oklch(0.66 0.15 25)';
+const COLD = 'oklch(0.9 0.014 60)';
+const CORE = 'oklch(0.78 0.13 80)';
+const PAPER = '#FBF7F0';
+
+class Component extends DCLogic {
+  state = {
+    screen: 'map', caseIndex: 0, sel: null, energy: 0, tissue: 5, wave: 0,
+    phase: 'build', result: null, cleared: [], day: 4, bank: 520,
+    immunity: { staph: 1, film: 0, virus: 0 }, kills: 0, leaks: 0, waveKills: 0, waveLeaks: 0,
+    fever: 0, feverUsed: false, fast: false, tick: 0
+  };
+
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem('bodydefense.progress');
+      if (raw) {
+        const p = JSON.parse(raw);
+        this.setState({ cleared: p.cleared || [], immunity: p.immunity || this.state.immunity, day: p.day || 4, bank: p.bank || 520, kills: p.kills || 0 });
+      }
+    } catch (e) {}
+    this.raf = requestAnimationFrame(this.loop);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+  save() {
+    try {
+      localStorage.setItem('bodydefense.progress', JSON.stringify({
+        cleared: this.state.cleared, immunity: this.state.immunity, day: this.state.day, bank: this.state.bank, kills: this.state.kills
+      }));
+    } catch (e) {}
+  }
+
+  // ── geometry ──
+  buildPath(pts) {
+    const segs = []; let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      segs.push({ a, b, len, at: total }); total += len;
+    }
+    return { segs, total };
+  }
+  posAt(d) {
+    const p = this.path;
+    for (const s of p.segs) {
+      if (d <= s.at + s.len) {
+        const k = (d - s.at) / s.len;
+        return [s.a[0] + (s.b[0] - s.a[0]) * k, s.a[1] + (s.b[1] - s.a[1]) * k];
+      }
+    }
+    const last = p.segs[p.segs.length - 1];
+    return last ? last.b : [0, 0];
+  }
+
+  // ── flow ──
+  theCase() { return CASES[this.state.caseIndex]; }
+  goMap = () => { this.setState({ screen: 'map', result: null, sel: null, phase: 'build' }); };
+  openImmunity = () => this.setState({ screen: 'immunity', result: null });
+  openSeason = () => this.setState({ screen: 'season', result: null });
+  openBrief = () => {
+    const next = this.nextCaseIndex();
+    if (next < 0) return;
+    this.setState({ screen: 'brief', caseIndex: next, result: null });
+  };
+  nextCaseIndex() {
+    for (let i = 0; i < CASES.length; i++) if (this.state.cleared.indexOf(CASES[i].id) < 0) return i;
+    return -1;
+  }
+
+  startCase = () => {
+    const c = this.theCase();
+    this.path = this.buildPath(c.path);
+    this.towers = []; this.enemies = []; this.beams = []; this.queue = [];
+    this.spawnT = 0; this.last = 0; this.bleedT = 0;
+    this.setState({ screen: 'fight', phase: 'build', wave: 0, energy: c.energy, tissue: 5, sel: 'phago', fever: 0, feverUsed: false, waveKills: 0, waveLeaks: 0, result: null });
+  };
+
+  startWave = () => {
+    const c = this.theCase();
+    const w = c.waves[this.state.wave] || {};
+    const q = [];
+    Object.keys(w).forEach(k => { for (let i = 0; i < w[k]; i++) q.push(k); });
+    for (let i = q.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = q[i]; q[i] = q[j]; q[j] = t; }
+    this.queue = q; this.spawnT = 0.3; this.last = 0;
+    this.setState({ phase: 'wave', sel: null, feverUsed: false, fever: 0, waveKills: 0, waveLeaks: 0 });
+  };
+
+  place = (i) => {
+    if (this.state.sel === null) return;
+    const c = this.theCase(), spot = c.spots[i];
+    if (this.towers.some(t => t.i === i)) return;
+    const def = CELLS[this.state.sel];
+    if (this.state.energy < def.cost) return;
+    this.towers.push({ i, x: spot[0], y: spot[1], type: this.state.sel, cd: 0, hp: 100 });
+    this.setState(s => ({ energy: s.energy - def.cost, tick: s.tick + 1 }));
+  };
+
+  pick = (t) => () => this.setState(s => ({ sel: s.sel === t ? null : t }));
+  useFever = () => {
+    if (this.state.feverUsed || this.state.phase !== 'wave') return;
+    this.setState({ fever: 5, feverUsed: true });
+  };
+  toggleSpeed = () => this.setState(s => ({ fast: !s.fast }));
+
+  endWave() {
+    const c = this.theCase();
+    const last = this.state.wave >= c.waves.length - 1;
+    if (last) {
+      const cleared = this.state.cleared.concat([c.id]);
+      const imm = Object.assign({}, this.state.immunity);
+      const strain = c.illness === 'virus' ? 'virus' : 'staph';
+      imm[strain] = Math.min(3, (imm[strain] || 0) + 1);
+      this.setState({ phase: 'done', result: 'case', cleared, immunity: imm, day: this.state.day + 1, bank: this.state.bank + 180 }, () => this.save());
+    } else {
+      this.setState(s => ({ phase: 'built', result: 'wave', energy: s.energy + 50 }));
+    }
+  }
+  nextWave = () => this.setState(s => ({ wave: s.wave + 1, phase: 'build', result: null, sel: 'phago' }));
+  finishCase = () => { this.setState({ screen: 'map', result: null }); };
+  retry = () => this.startCase();
+  resetRun = () => {
+    this.setState({ cleared: [], immunity: { staph: 0, film: 0, virus: 0 }, day: 1, bank: 240, kills: 0, screen: 'map', result: null }, () => this.save());
+  };
+
+  // ── simulation ──
+  loop = (ts) => {
+    this.raf = requestAnimationFrame(this.loop);
+    if (this.state.screen !== 'fight' || this.state.phase !== 'wave') { this.last = 0; return; }
+    if (document.hidden) { this.last = 0; return; }
+    const now = ts / 1000;
+    let dt = this.last ? now - this.last : 0;
+    this.last = now;
+    if (dt > 0.5) return;
+    dt = Math.min(dt, 0.06) * (this.state.fast ? 2 : 1);
+    if (!dt) return;
+    this.step(dt);
+    this.forceUpdate();
+  };
+
+  step(dt) {
+    const c = this.theCase();
+    const slowAll = this.state.fever > 0 ? 0.4 : 1;
+    if (this.state.fever > 0) this.state.fever = Math.max(0, this.state.fever - dt);
+
+    // spawn
+    if (this.queue.length) {
+      this.spawnT -= dt;
+      if (this.spawnT <= 0) {
+        const kind = this.queue.shift();
+        const k = KINDS[kind];
+        const shielded = c.illness === 'wound' && kind === 'staph' && this.state.immunity.staph >= 3 && this.spawnFirst !== this.state.wave;
+        if (shielded) { this.spawnFirst = this.state.wave; }
+        else this.enemies.push({ kind, d: 0, hp: k.hp, max: k.hp, gen: 0, tag: 0 });
+        this.spawnT = Math.max(0.4, 0.72 - this.state.wave * 0.07);
+      }
+    }
+
+    // bleed
+    if (c.illness === 'wound' && !this.towers.some(t => t.type === 'clot')) {
+      this.bleedT += dt;
+      if (this.bleedT >= 1) { this.bleedT = 0; if (this.state.energy > 0) this.state.energy -= 2; }
+    }
+
+    const dead = [];
+
+    // phagocytes hold what they've engulfed
+    const held = [];
+    for (const t of this.towers) {
+      if (t.type !== 'phago') continue;
+      if (t.holding && (this.enemies.indexOf(t.holding) < 0 || t.holding.hp <= 0)) t.holding = null;
+      if (t.holding) held.push(t.holding);
+    }
+
+    // movement, tags, regen, clot friction, toxin stun
+    for (const e of this.enemies) {
+      const k = KINDS[e.kind];
+      e.pos = this.posAt(e.d);
+      if (e.tag > 0) { e.tag -= dt; e.hp -= CELLS.anti.dot * dt; }
+      if (k.regen && !(e.tag > 0)) e.hp = Math.min(e.max, e.hp + k.regen * dt);
+      let mult = held.indexOf(e) >= 0 ? 0 : slowAll;
+      for (const t of this.towers) {
+        if (t.type !== 'clot') continue;
+        if (Math.hypot(t.x - e.pos[0], t.y - e.pos[1]) < CELLS.clot.range) {
+          mult = Math.min(mult, CELLS.clot.slow);
+          t.hp -= CELLS.clot.wear * dt;
+        }
+      }
+      e.d += k.speed * (e.gen ? 0.85 : 1) * mult * dt;
+      e.pos = this.posAt(e.d);
+      if (e.d >= this.path.total) {
+        dead.push(e);
+        this.state.tissue -= 1;
+        this.state.waveLeaks += 1; this.state.leaks += 1;
+      }
+      if (k.stun) {
+        for (const t of this.towers) {
+          if (t.type === 'clot' || t.type === 'mem') continue;
+          if (Math.hypot(t.x - e.pos[0], t.y - e.pos[1]) < 40) t.stun = Math.max(t.stun || 0, k.stun);
+        }
+      }
+      if (c.illness === 'poison') {
+        for (const t of this.towers) {
+          if (t.type === 'clot') continue;
+          if (Math.hypot(t.x - e.pos[0], t.y - e.pos[1]) < 42) t.hp -= (t.type === 'anti' ? 5 : 10) * dt;
+        }
+      }
+    }
+
+    const live = (e) => e.hp > 0 && dead.indexOf(e) < 0 && e.pos;
+    const inRange = (t, e, r) => Math.hypot(t.x - e.pos[0], t.y - e.pos[1]) <= r;
+    const soft = (e, def) => {
+      const k = KINDS[e.kind];
+      return k.armour && !(e.tag > 0 && !k.noTag) ? k.armour : 1;
+    };
+
+    for (const t of this.towers) {
+      if (t.stun > 0) { t.stun -= dt; continue; }
+      const def = CELLS[t.type];
+
+      // ENGULF — one target at a time, held still while digested
+      if (t.type === 'phago') {
+        if (t.rest > 0) { t.rest -= dt; continue; }
+        if (!t.holding) {
+          let best = null;
+          for (const e of this.enemies) {
+            if (!live(e) || held.indexOf(e) >= 0 || !inRange(t, e, def.range)) continue;
+            if (!best || e.d > best.d) best = e;
+          }
+          if (best) { t.holding = best; held.push(best); }
+        }
+        if (t.holding) t.holding.hp -= def.dps * soft(t.holding) * dt;
+        continue;
+      }
+
+      // TAG — strips armour, burns slowly, worth more energy
+      if (t.type === 'anti') {
+        t.cd -= dt;
+        if (t.cd > 0) continue;
+        let any = false;
+        for (const e of this.enemies) {
+          if (!live(e) || !inRange(t, e, def.range) || KINDS[e.kind].noTag) continue;
+          e.tag = def.tag; any = true;
+          this.beams.push({ x1: t.x, y1: t.y, x2: e.pos[0], y2: e.pos[1], life: 0.2, color: def.color });
+        }
+        if (any) t.cd = def.rate;
+        continue;
+      }
+
+      // EXECUTE — one heavy hit on the most wounded thing in range
+      if (t.type === 'nk') {
+        t.cd -= dt;
+        if (t.cd > 0) continue;
+        let best = null, bestFrac = 2;
+        for (const e of this.enemies) {
+          if (!live(e) || !inRange(t, e, def.range)) continue;
+          const frac = e.hp / e.max;
+          if (frac < bestFrac) { bestFrac = frac; best = e; }
+        }
+        if (!best) continue;
+        best.hp = bestFrac <= def.execute ? 0 : best.hp - def.dmg * soft(best);
+        t.cd = def.rate;
+        this.beams.push({ x1: t.x, y1: t.y, x2: best.pos[0], y2: best.pos[1], life: 0.22, color: def.color, wide: true });
+        continue;
+      }
+
+      // BURST — hits everything close, twice as hard on tagged
+      if (t.type === 'mast') {
+        t.cd -= dt;
+        if (t.cd > 0) continue;
+        let any = false;
+        for (const e of this.enemies) {
+          if (!live(e) || !inRange(t, e, def.range)) continue;
+          e.hp -= def.dmg * (e.tag > 0 ? 2 : 1) * soft(e);
+          any = true;
+        }
+        if (any) { t.cd = def.rate; t.flash = 0.18; }
+        continue;
+      }
+
+      // LEARN — weak at first, permanently stronger with every kill nearby
+      if (t.type === 'mem') {
+        t.cd -= dt;
+        if (t.cd > 0) continue;
+        let best = null;
+        for (const e of this.enemies) {
+          if (!live(e) || !inRange(t, e, def.range)) continue;
+          if (!best || e.d > best.d) best = e;
+        }
+        if (!best) continue;
+        best.hp -= (def.dmg + (t.xp || 0)) * soft(best);
+        t.cd = def.rate;
+        this.beams.push({ x1: t.x, y1: t.y, x2: best.pos[0], y2: best.pos[1], life: 0.16, color: def.color });
+      }
+    }
+    for (const t of this.towers) if (t.flash > 0) t.flash -= dt;
+
+    // deaths
+    for (const e of this.enemies) {
+      if (e.hp > 0 || dead.indexOf(e) >= 0) continue;
+      dead.push(e);
+      const k = KINDS[e.kind];
+      this.state.energy += Math.round(k.reward * (e.tag > 0 ? 1.5 : 1));
+      this.state.waveKills += 1; this.state.kills += 1;
+      for (const t of this.towers) {
+        if (t.type !== 'mem') continue;
+        if (Math.hypot(t.x - e.pos[0], t.y - e.pos[1]) <= CELLS.mem.range) {
+          t.xp = Math.min(CELLS.mem.cap, (t.xp || 0) + CELLS.mem.learn);
+        }
+      }
+      if (k.splits && e.gen < 1 && this.state.immunity.virus < 3) {
+        for (let n = 0; n < 2; n++) this.enemies.push({ kind: e.kind, d: Math.max(0, e.d - 14 - n * 12), hp: k.hp * 0.5, max: k.hp * 0.5, gen: 1, tag: 0 });
+      }
+    }
+
+    if (dead.length) {
+      this.enemies = this.enemies.filter(e => dead.indexOf(e) < 0);
+      for (const t of this.towers) {
+        if (!t.holding || dead.indexOf(t.holding) < 0) continue;
+        t.holding = null;
+        t.eaten = (t.eaten || 0) + 1;
+        t.rest = t.eaten % CELLS.phago.streak === 0 ? CELLS.phago.rest : CELLS.phago.gap;
+      }
+    }
+    this.towers = this.towers.filter(t => t.hp > 0);
+    for (const b of this.beams) b.life -= dt;
+    this.beams = this.beams.filter(b => b.life > 0);
+
+    if (this.state.tissue <= 0) {
+      this.setState({ phase: 'done', result: 'lost' });
+      return;
+    }
+    if (!this.queue.length && !this.enemies.length) this.endWave();
+  }
+
+  seasonRows() {
+    const s = this.state;
+    const nextIdx = Math.max(0, this.nextCaseIndex());
+    const rows = CASES.map((c, i) => {
+      const done = s.cleared.indexOf(c.id) >= 0;
+      const day = s.day + (i - nextIdx);
+      return {
+        rawDay: day, day: 'DAY ' + day, name: c.title, region: c.region.split(' · ')[0].toLowerCase().replace(/^./, m => m.toUpperCase()),
+        tier: 1, note: done ? 'Cleared — this region is holding' : '', state: done ? 'done' : i === nextIdx ? 'now' : 'next'
+      };
+    });
+    LATER.forEach(l => rows.push({
+      rawDay: s.day + l.offset, day: 'DAY ' + (s.day + l.offset), name: l.name, region: l.region,
+      tier: l.tier, note: l.note, state: l.tier === 3 ? 'unknown' : 'warn'
+    }));
+    return rows;
+  }
+
+  vaccineRows() {
+    const s = this.state;
+    return VACCINES.map(v => {
+      const n = v.key ? (s.immunity[v.key] || 0) : 0;
+      let status = 'none';
+      if (v.key) status = n >= 3 ? 'earned' : 'progress';
+      else if (v.gate !== undefined) status = s.cleared.length >= v.gate ? 'due' : 'locked';
+      return {
+        name: v.name, effect: v.effect,
+        cost: status === 'due' ? v.cost : status === 'locked' ? v.cost : '',
+        label: status === 'earned' ? 'HELD' : status === 'progress' ? n + '/3' : status === 'due' ? 'AVAILABLE' : status === 'locked' ? 'LOCKED' : 'NONE EXISTS',
+        status
+      };
+    });
+  }
+
+  // ── rendering ──
+  boardLayer() {
+    const h = React.createElement, c = this.theCase();
+    const pts = c.path.map(p => p.join(',')).join(' ');
+    const kids = [
+      h('polyline', { key: 'v1', points: pts, stroke: 'oklch(0.87 0.05 20)', strokeWidth: 34, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+      h('polyline', { key: 'v2', points: pts, stroke: 'oklch(0.93 0.03 20)', strokeWidth: 22, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' })
+    ];
+
+    this.towers.forEach((t, n) => {
+      const def = CELLS[t.type];
+      if (t.type === 'clot') {
+        kids.push(h('circle', { key: 'r' + n, cx: t.x, cy: t.y, r: def.range, fill: def.color, opacity: 0.13 }));
+        kids.push(h('circle', { key: 'rr' + n, cx: t.x, cy: t.y, r: def.range, fill: 'none', stroke: def.color, strokeWidth: 2.5, strokeDasharray: '7 6', opacity: 0.6 }));
+      } else {
+        kids.push(h('circle', { key: 'r' + n, cx: t.x, cy: t.y, r: def.range, fill: def.color, opacity: 0.1 }));
+      }
+      if (t.type === 'phago' && t.holding && t.holding.pos) {
+        kids.push(h('line', { key: 'gr' + n, x1: t.x, y1: t.y, x2: t.holding.pos[0], y2: t.holding.pos[1], stroke: def.color, strokeWidth: 9, strokeLinecap: 'round', opacity: 0.5 }));
+      }
+      const spent = (t.type === 'phago' && t.rest > CELLS.phago.gap) || t.stun > 0;
+      if (t.type === 'mast' && t.flash > 0) kids.push(h('circle', { key: 'fl' + n, cx: t.x, cy: t.y, r: def.range, fill: def.color, opacity: 0.22 }));
+      kids.push(h('circle', { key: 'tw' + n, cx: t.x, cy: t.y, r: 20, fill: def.color, stroke: PAPER, strokeWidth: 4, opacity: spent ? 0.4 : 1 }));
+      if (spent) kids.push(h('circle', { key: 'sp' + n, cx: t.x, cy: t.y, r: 20, fill: 'none', stroke: def.color, strokeWidth: 3, strokeDasharray: '4 6' }));
+      if (t.type === 'phago') kids.push(h('circle', { key: 'ti' + n, cx: t.x, cy: t.y, r: t.holding ? 9 : 6, fill: PAPER, opacity: spent ? 0.5 : 1 }));
+      if (t.type === 'anti') kids.push(h('rect', { key: 'ti' + n, x: t.x - 8, y: t.y - 3, width: 16, height: 6, rx: 3, fill: PAPER }));
+      if (t.type === 'clot') kids.push(h('circle', { key: 'ti' + n, cx: t.x, cy: t.y, r: 7, fill: 'none', stroke: PAPER, strokeWidth: 3.5 }));
+      if (t.type === 'nk') kids.push(h('rect', { key: 'ti' + n, x: t.x - 6, y: t.y - 6, width: 12, height: 12, rx: 2, fill: PAPER, transform: 'rotate(45 ' + t.x + ' ' + t.y + ')' }));
+      if (t.type === 'mast') kids.push(h('g', { key: 'ti' + n }, [
+        h('circle', { key: 'a', cx: t.x, cy: t.y - 7, r: 3.2, fill: PAPER }),
+        h('circle', { key: 'b', cx: t.x - 6, cy: t.y + 4, r: 3.2, fill: PAPER }),
+        h('circle', { key: 'c', cx: t.x + 6, cy: t.y + 4, r: 3.2, fill: PAPER })
+      ]));
+      if (t.type === 'mem') {
+        kids.push(h('circle', { key: 'ti' + n, cx: t.x, cy: t.y, r: 8, fill: 'none', stroke: PAPER, strokeWidth: 3 }));
+        kids.push(h('circle', { key: 'ti2' + n, cx: t.x, cy: t.y, r: 3, fill: PAPER }));
+        if (t.xp) kids.push(h('text', {
+          key: 'xp' + n, x: t.x, y: t.y + 34, fill: def.color, textAnchor: 'middle',
+          style: { fontFamily: 'DM Mono, monospace', fontSize: '11px' }
+        }, '+' + Math.round(t.xp)));
+      }
+      if (t.hp < 100) {
+        kids.push(h('rect', { key: 'th' + n, x: t.x - 14, y: t.y - 30, width: 28, height: 4, rx: 2, fill: 'oklch(0.9 0.01 70)' }));
+        kids.push(h('rect', { key: 'thf' + n, x: t.x - 14, y: t.y - 30, width: 28 * Math.max(0, t.hp) / 100, height: 4, rx: 2, fill: def.color }));
+      }
+    });
+
+    if (this.state.phase === 'build' || this.state.phase === 'built') {
+      c.spots.forEach((s, i) => {
+        if (this.towers.some(t => t.i === i)) return;
+        kids.push(h('circle', {
+          key: 'sp' + i, cx: s[0], cy: s[1], r: 24, fill: 'oklch(0.98 0.005 70 / 0.5)',
+          stroke: this.state.sel ? 'oklch(0.66 0.15 195)' : 'oklch(0.72 0.03 60)',
+          strokeWidth: 3, strokeDasharray: '6 6', style: { cursor: 'pointer' },
+          onClick: () => this.place(i)
+        }));
+        kids.push(h('g', { key: 'spp' + i, style: { pointerEvents: 'none' } }, [
+          h('rect', { key: 'a', x: s[0] - 7, y: s[1] - 1.5, width: 14, height: 3, rx: 1.5, fill: 'oklch(0.6 0.02 60)' }),
+          h('rect', { key: 'b', x: s[0] - 1.5, y: s[1] - 7, width: 3, height: 14, rx: 1.5, fill: 'oklch(0.6 0.02 60)' })
+        ]));
+      });
+    }
+
+    this.beams.forEach((b, n) => kids.push(h('line', {
+      key: 'b' + n, x1: b.x1, y1: b.y1, x2: b.x2, y2: b.y2, stroke: b.color, strokeWidth: b.wide ? 7 : 4, strokeLinecap: 'round', opacity: 0.85
+    })));
+
+    this.enemies.forEach((e, n) => {
+      if (!e.pos) e.pos = this.posAt(e.d);
+      const k = KINDS[e.kind];
+      const r = k.r * (e.gen ? 0.75 : 1);
+      if (e.tag > 0) kids.push(h('circle', { key: 'tg' + n, cx: e.pos[0], cy: e.pos[1], r: r + 6, fill: 'none', stroke: CELLS.anti.color, strokeWidth: 3, strokeDasharray: '3 4' }));
+      if (k.noTag) kids.push(h('circle', { key: 'ns' + n, cx: e.pos[0], cy: e.pos[1], r: r + 5, fill: 'none', stroke: k.color, strokeWidth: 2.5 }));
+      if (k.radius === '4px') kids.push(h('rect', { key: 'e' + n, x: e.pos[0] - r, y: e.pos[1] - r, width: r * 2, height: r * 2, rx: 3, fill: k.color, transform: k.stun ? 'rotate(45 ' + e.pos[0] + ' ' + e.pos[1] + ')' : undefined }));
+      else kids.push(h('circle', { key: 'e' + n, cx: e.pos[0], cy: e.pos[1], r: r, fill: k.color }));
+      kids.push(h('circle', { key: 'ec' + n, cx: e.pos[0], cy: e.pos[1], r: r * 0.35, fill: 'oklch(0.35 0.09 20)' }));
+      if (k.regen && e.hp >= e.max && !(e.tag > 0)) kids.push(h('circle', { key: 'rg' + n, cx: e.pos[0], cy: e.pos[1], r: r + 4, fill: 'none', stroke: k.color, strokeWidth: 2, opacity: 0.5 }));
+      if (e.hp < e.max) {
+        kids.push(h('rect', { key: 'eh' + n, x: e.pos[0] - 11, y: e.pos[1] - r - 9, width: 22, height: 4, rx: 2, fill: 'oklch(0.98 0.005 70 / 0.8)' }));
+        kids.push(h('rect', { key: 'ehf' + n, x: e.pos[0] - 11, y: e.pos[1] - r - 9, width: 22 * Math.max(0, e.hp) / e.max, height: 4, rx: 2, fill: 'oklch(0.5 0.16 20)' }));
+      }
+    });
+
+    return h('svg', { viewBox: '0 0 374 430', preserveAspectRatio: 'xMidYMid slice', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } }, kids);
+  }
+
+  mapLayer() {
+    const h = React.createElement;
+    const byId = {}; NODES.forEach(n => byId[n.id] = n);
+    const cleared = this.state.cleared;
+    const activeCase = CASES[Math.max(0, this.nextCaseIndex())];
+    const stateOf = (id) => {
+      if (cleared.some(cid => CASES.find(c => c.id === cid && c.node === id))) return 'held';
+      if (id === 'heart') return 'core';
+      if (activeCase && activeCase.node === id) return 'hot';
+      if (id === 'throat' && cleared.length > 0) return 'cold';
+      return 'cold';
+    };
+    const colorOf = (st) => st === 'held' ? HELD : st === 'hot' ? HOT : st === 'core' ? CORE : COLD;
+
+    const kids = [];
+    LINKS.forEach(([a, b], i) => {
+      const A = byId[a], B = byId[b];
+      const lit = stateOf(a) === 'held' || stateOf(b) === 'held';
+      const hot = stateOf(a) === 'hot' || stateOf(b) === 'hot';
+      kids.push(h('line', {
+        key: 'l' + i, x1: A.x, y1: A.y, x2: B.x, y2: B.y,
+        stroke: hot ? HOT : lit ? HELD : 'oklch(0.87 0.02 60)', strokeWidth: 6, strokeLinecap: 'round'
+      }));
+    });
+
+    NODES.forEach(n => {
+      const st = stateOf(n.id);
+      const isCase = CASES.some(c => c.node === n.id);
+      if (st === 'hot') kids.push(h('circle', { key: 'g' + n.id, cx: n.x, cy: n.y, r: n.r + 20, fill: HOT, opacity: 0.14 }));
+      kids.push(h('circle', {
+        key: 'n' + n.id, cx: n.x, cy: n.y, r: n.r, fill: colorOf(st), stroke: PAPER, strokeWidth: st === 'core' ? 5 : 4,
+        style: { cursor: isCase && st === 'hot' ? 'pointer' : 'default' },
+        onClick: isCase && st === 'hot' ? this.openBrief : undefined
+      }));
+      if (st !== 'cold') kids.push(h('circle', { key: 'i' + n.id, cx: n.x, cy: n.y, r: Math.max(6, n.r * 0.33), fill: PAPER, style: { pointerEvents: 'none' } }));
+      if (n.label) kids.push(h('text', {
+        key: 't' + n.id, x: n.x + n.r + 10, y: n.y + 4, fill: st === 'cold' ? 'oklch(0.55 0.01 60)' : 'oklch(0.3 0.02 60)',
+        style: { fontFamily: 'DM Mono, monospace', fontSize: '10px', letterSpacing: '0.06em', pointerEvents: 'none' }
+      }, n.label));
+    });
+
+    return h('svg', { viewBox: '0 0 374 500', preserveAspectRatio: 'xMidYMid meet', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } }, kids);
+  }
+
+  renderVals() {
+    const s = this.state, c = this.theCase();
+    const screen = s.screen;
+    const next = this.nextCaseIndex();
+    const nextCase = next >= 0 ? CASES[next] : null;
+    const total = c.waves.length;
+
+    const pips = [];
+    for (let i = 0; i < 5; i++) pips.push({ color: i < s.tissue ? HELD : 'oklch(0.9 0.01 70)' });
+
+    const enemyRows = [];
+    const w = c.waves[Math.min(s.wave, total - 1)];
+    let allKinds = {};
+    c.waves.forEach(wv => Object.keys(wv).forEach(k => allKinds[k] = (allKinds[k] || 0) + wv[k]));
+    Object.keys(allKinds).forEach(k => {
+      const K = KINDS[k];
+      enemyRows.push({ name: K.name, note: K.note, count: '×' + allKinds[k], color: K.color, radius: K.radius });
+    });
+
+    const glyphs = {
+      phago: { w: 11, h: 11, r: '50%', b: null },
+      clot: { w: 12, h: 12, r: '50%', b: '3px solid ' },
+      anti: { w: 14, h: 5, r: '3px', b: null },
+      nk: { w: 10, h: 10, r: '2px', b: null, rot: true },
+      mast: { w: 12, h: 12, r: '50%', b: '3px solid ' },
+      mem: { w: 12, h: 12, r: '50%', b: '4px solid ' }
+    };
+    const dock = ORDER.map(key => {
+      const def = CELLS[key], g = glyphs[key];
+      const locked = s.cleared.length < def.unlock;
+      const on = s.sel === key;
+      return {
+        key, label: def.label, cost: locked ? 'LOCK' : String(def.cost), color: def.color,
+        bg: on ? def.color.replace(')', ' / 0.14)') : 'oklch(0.95 0.008 70)',
+        ring: on ? def.color : 'transparent',
+        costColor: locked ? 'oklch(0.58 0.01 60)' : s.energy >= def.cost ? 'oklch(0.42 0.06 80)' : 'oklch(0.66 0.15 25)',
+        opacity: locked ? 0.4 : 1,
+        gw: g.w + 'px', gh: g.h + 'px', gr: g.r,
+        gbg: g.b ? 'transparent' : '#FBF7F0',
+        gborder: g.b ? g.b + '#FBF7F0' : 'none',
+        grot: g.rot ? 'rotate(45deg)' : 'none',
+        tap: locked ? () => {} : this.pick(key)
+      };
+    });
+
+    const buildPhase = s.phase === 'build' || s.phase === 'built';
+    const strainRows = [
+      { key: 'staph', name: 'Tetanus', effect: 'The first Staph of every wave bounces off', color: 'oklch(0.7 0.14 145)', radius: '50%' },
+      { key: 'virus', name: 'Flu B', effect: 'Flu can no longer split when it dies', color: 'oklch(0.62 0.15 300)', radius: '50%' },
+      { key: 'film', name: 'Biofilm', effect: 'Armour drops — phagocytes hurt it properly', color: 'oklch(0.58 0.16 15)', radius: '4px' }
+    ].map(r => {
+      const n = s.immunity[r.key] || 0;
+      const done = n >= 3;
+      return Object.assign({}, r, {
+        progress: done ? 'DONE' : n + '/3',
+        bg: done ? 'oklch(0.7 0.14 145 / 0.12)' : 'oklch(0.95 0.008 70)',
+        ring: done ? 'oklch(0.7 0.14 145)' : 'transparent'
+      });
+    });
+
+    const resultMap = {
+      wave: { kicker: 'WAVE ' + (s.wave + 1) + ' OF ' + total + ' HELD', title: 'Swelling\ngoing down.', body: 'Build before the next one arrives. Unspent energy carries over.', cta: 'Build for wave ' + (s.wave + 2), accent: HELD, alt: true, primary: this.nextWave },
+      case: { kicker: c.title.toUpperCase() + ' CLEARED', title: 'The region\nis yours.', body: 'Tissue is closing on its own now. Immunity to this strain went up.', cta: 'Back to the body', accent: 'oklch(0.7 0.14 145)', alt: false, primary: this.finishCase },
+      lost: { kicker: 'TISSUE FAILED · WAVE ' + (s.wave + 1), title: 'It got into\nthe blood.', body: 'The region is lost. Take the case again — you keep what you learned.', cta: 'Try this case again', accent: HOT, alt: true, primary: this.retry }
+    };
+    const R = resultMap[s.result] || resultMap.wave;
+    const seasonRows = this.seasonRows();
+    const vaccineRows = this.vaccineRows();
+    const shieldStrain = c.illness === 'virus' ? 'virus' : 'staph';
+    const shieldHeld = (s.immunity[shieldStrain] || 0) >= 3;
+    const shieldText = shieldHeld
+      ? (shieldStrain === 'virus' ? 'Flu B vaccine held. Nothing splits when it dies.' : 'Tetanus vaccine held. The first Staph of every wave bounces off.')
+      : 'No vaccine for this strain yet — ' + (s.immunity[shieldStrain] || 0) + ' of 3 clears done. Earned, never bought.';
+
+    return {
+      isMap: screen === 'map', isBrief: screen === 'brief', isFight: screen === 'fight',
+      isImmunity: screen === 'immunity', isSeason: screen === 'season',
+      openSeason: this.openSeason,
+      seasonRange: 'SEASON · DAYS ' + seasonRows[0].rawDay + '—' + seasonRows[seasonRows.length - 1].rawDay,
+      season: seasonRows.map(d => ({
+        day: d.day, name: d.name, region: d.region, note: d.note, hasNote: !!d.note,
+        tierLabel: d.tier === 3 ? 'INVENTED STRAIN' : d.tier === 2 ? 'REAL MECHANIC' : 'EVERYDAY',
+        tierColor: d.tier === 3 ? 'oklch(0.5 0.1 210)' : d.tier === 2 ? 'oklch(0.62 0.16 350)' : 'oklch(0.58 0.01 60)',
+        tierBg: d.tier === 3 ? 'oklch(0.5 0.1 210 / 0.14)' : d.tier === 2 ? 'oklch(0.62 0.16 350 / 0.14)' : 'oklch(0.93 0.012 60)',
+        bg: d.state === 'now' ? 'oklch(0.66 0.15 25 / 0.1)' : 'oklch(0.95 0.008 70)',
+        ring: d.state === 'now' ? 'oklch(0.66 0.15 25)' : 'transparent',
+        opacity: d.state === 'done' ? 0.55 : 1,
+        dot: d.state === 'now' ? 'oklch(0.66 0.15 25)' : d.state === 'done' ? 'oklch(0.66 0.15 195)' : d.state === 'warn' ? 'oklch(0.62 0.16 350)' : d.state === 'unknown' ? 'oklch(0.5 0.1 210)' : 'oklch(0.86 0.012 70)'
+      })),
+      vaccines: vaccineRows.map(v => ({
+        name: v.name, effect: v.effect, cost: v.cost, hasCost: !!v.cost, status: v.label,
+        color: v.status === 'earned' ? 'oklch(0.7 0.14 145)' : v.status === 'due' ? 'oklch(0.78 0.13 80)' : v.status === 'progress' ? 'oklch(0.66 0.15 195)' : 'oklch(0.86 0.012 70)',
+        fg: v.status === 'earned' ? 'oklch(0.34 0.07 145)' : v.status === 'due' ? 'oklch(0.38 0.07 80)' : v.status === 'progress' ? 'oklch(0.4 0.06 195)' : 'oklch(0.5 0.01 60)',
+        bg: v.status === 'earned' ? 'oklch(0.7 0.14 145 / 0.12)' : v.status === 'due' ? 'oklch(0.78 0.13 80 / 0.14)' : 'oklch(0.95 0.008 70)',
+        opacity: v.status === 'locked' || v.status === 'none' ? 0.6 : 1
+      })),
+      isResult: !!s.result && screen === 'fight',
+      day: s.day, bank: s.bank,
+      mapLayer: screen === 'map' ? this.mapLayer() : null,
+      heldLabel: s.cleared.length + ' / 14',
+      pickName: nextCase ? nextCase.title : 'All clear',
+      pickSub: nextCase ? nextCase.region.split(' · ')[0].toLowerCase().replace(/^./, m => m.toUpperCase()) + ' · ' + nextCase.rule.toLowerCase() + ' · ' + nextCase.waves.length + ' waves' : 'Nothing needs you today',
+      pickCta: nextCase ? 'Go there' : 'Sleep',
+      pickColor: nextCase ? HOT : HELD,
+      openBrief: nextCase ? this.openBrief : this.goMap,
+      openImmunity: this.openImmunity, goMap: this.goMap,
+
+      briefRegion: c.region, briefTitle: c.title, briefStory: c.story,
+      briefRule: c.rule, briefRuleSub: c.ruleSub, briefShield: shieldText,
+      briefEnemies: enemyRows, startCase: this.startCase,
+
+      fightRegion: c.region.split(' · ')[0] + ' · ' + c.rule.toUpperCase(),
+      waveLabel: 'Wave ' + (s.wave + 1) + ' of ' + total,
+      energy: Math.max(0, Math.round(s.energy)),
+      pips, tissueLabel: 'TISSUE ' + s.tissue + '/5',
+      board: screen === 'fight' ? this.boardLayer() : null,
+      boardHint: buildPhase ? (s.sel ? 'TAP A JUNCTION TO PLACE' : 'PICK A CELL BELOW') : this.enemies && this.enemies.length ? this.enemies.length + ' IN THE VESSEL' : 'INCOMING',
+      verbs: [
+        { name: 'Phagocyte · engulf', color: CELLS.phago.color, radius: '50%', text: 'Digests one at a time, then tires — four and it rests.' },
+        { name: 'Clot · block', color: CELLS.clot.color, radius: '50%', text: 'Everything crawls through, and it wears away. Stops bleeding.' },
+        { name: 'Antibody · tag', color: CELLS.anti.color, radius: '50%', text: 'Kills little. Marked: no armour, slow burn, +50% energy.' },
+        { name: 'Killer cell · execute', color: CELLS.nk.color, radius: '50%', text: 'Slow, heavy hit on the most wounded thing. Finishes anything under 35%.' },
+        { name: 'Mast cell · burst', color: CELLS.mast.color, radius: '50%', text: 'Hits everything close at once — double damage on tagged. Clear one case to unlock.' },
+        { name: 'Memory cell · learn', color: CELLS.mem.color, radius: '50%', text: 'Weak, then permanently stronger with every kill nearby. Immune to toxin. Clear two cases.' }
+      ],
+      showModifier: s.phase === 'wave', modifierLabel: c.rule.toUpperCase(),
+
+      dock, useFever: this.useFever,
+      feverBg: s.fever > 0 ? 'oklch(0.58 0.16 15 / 0.2)' : 'oklch(0.95 0.008 70)',
+      feverOpacity: s.phase === 'wave' && !s.feverUsed ? 1 : 0.45,
+      feverLabel: s.fever > 0 ? Math.ceil(s.fever) + 'S' : s.feverUsed ? 'USED' : '1 USE',
+
+      primary: buildPhase ? this.startWave : () => {},
+      primaryLabel: buildPhase ? 'Start wave ' + (s.wave + 1) : 'Wave in progress',
+      primaryBg: buildPhase ? HOT : 'oklch(0.93 0.008 70)',
+      primaryFg: buildPhase ? '#FFF9F2' : 'oklch(0.55 0.01 60)',
+      toggleSpeed: this.toggleSpeed, speedLabel: s.fast ? '2×' : '1×',
+
+      immunityCount: strainRows.filter(r => r.progress === 'DONE').length + ' of 3',
+      strains: strainRows, statDays: s.day, statKills: s.kills, statRegions: s.cleared.length,
+      resetRun: this.resetRun,
+
+      resultKicker: R.kicker, resultTitle: R.title, resultBody: R.body, resultCta: R.cta,
+      resultAccent: R.accent, resultHasAlt: R.alt, resultPrimary: R.primary,
+      resultKills: s.waveKills, resultLeaks: s.waveLeaks, resultReward: s.result === 'lost' ? '0' : '+50'
+    };
+  }
+}
+</script>
+</body>
+</html>

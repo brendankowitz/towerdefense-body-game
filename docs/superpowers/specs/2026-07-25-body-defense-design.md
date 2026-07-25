@@ -1,0 +1,372 @@
+# Body Defense — Design Spec
+
+**Date:** 2026-07-25
+**Status:** Approved
+**Source of truth:** `design/Body Defense Prototype.dc.html`, `design/Body Defense Assets.dc.html`
+
+---
+
+## 1. What we are building
+
+A mobile tower-defense game in which the player defends regions of a human body
+against pathogens. The playable Claude Design prototype is a complete, balanced
+game: five screens, six defender types, six pathogen types, three cases, and a
+persistent progression layer. This project ports that prototype to a real
+application with a web development target and an iOS release target.
+
+The prototype is the specification. Its numbers are already balanced and the
+asset sheet states plainly: *"Numbers here match the playable prototype exactly —
+if you change one, change it in both places."* We treat gameplay values as
+inherited data, not as decisions to revisit.
+
+### Scope
+
+Full port in one pass:
+
+- All five screens: map, brief, fight, immunity, season.
+- All six defenders and six pathogens with their exact mechanics.
+- All three cases (forearm / throat / stomach) plus the "later" season entries.
+- Progression: cleared cases, immunity counters, vaccines, day counter, bank.
+- Web target fully runnable; iOS target configured (see §10 for the Mac caveat).
+
+### Explicitly out of scope
+
+- New gameplay content beyond what the prototype defines.
+- Bitmap art. The prototype's art is entirely procedural flat vector shapes and
+  stays that way (§7).
+- Audio, multiplayer, analytics, accounts, monetisation.
+- Answering the asset sheet's four open design questions. They are recorded, not
+  resolved.
+
+---
+
+## 2. Stack
+
+| Concern | Choice | Reason |
+|---|---|---|
+| Shell | Ionic React 8 + React 19 | Requested. Gives native-feeling navigation, safe-area handling, and an iOS-credible component set. |
+| Language | TypeScript, strict | Sim correctness depends on exhaustive union handling over defender/pathogen kinds. |
+| Build | Vite | Ionic React's supported default; fast HMR matters when tuning a game loop. |
+| Renderer | PixiJS v8 | WebGL/WebGPU with canvas fallback. Batches the per-frame draw the prototype does in SVG. |
+| Native | Capacitor 7 | First-party Ionic path to iOS. |
+| Unit tests | Vitest | Vite-native, no second toolchain. |
+| E2E | Playwright | Drives the real web build. |
+
+### Why Pixi, and why not `@pixi/react`
+
+Pixi is driven **imperatively**. The React tree stops at the `<canvas>` element;
+Pixi owns everything inside it and owns the frame loop.
+
+`@pixi/react` would let us express the board as JSX, but it reconciles a React
+tree every frame. That is the same cost profile as the prototype's
+`forceUpdate()`-per-frame over an SVG document — acceptable in a desktop
+prototype, the first thing to fail in an iOS WKWebView with fifty entities, six
+range circles, and beam effects. The board is not a component tree; it is a
+render target.
+
+Phaser was considered and rejected: it brings its own scene, state, input and
+asset systems that would duplicate or fight Ionic's, for a game whose simulation
+fits comfortably in a few hundred lines of pure TypeScript.
+
+---
+
+## 3. Architecture
+
+Three layers, dependencies pointing one way only:
+
+```
+src/game/     pure TypeScript simulation — no DOM, no React, no Pixi
+src/render/   Pixi scene graph; reads sim state          → depends on game
+src/app/      Ionic React shell, HUD, routing            → depends on game
+src/progress/ persistence port + adapters                → depends on game types
+```
+
+`src/game/` never imports from `render/` or `app/`. This is the constraint that
+makes the ruleset testable without a browser, and it is enforced by lint rule,
+not convention.
+
+### The simulation
+
+State is a plain mutable object. The loop is `step(state, dt)`, composed of
+systems that each own one mechanic:
+
+| System | Responsibility |
+|---|---|
+| `spawn` | Wave queue, spawn cadence, tetanus shield bounce |
+| `movement` | Path traversal, clot friction, fever slow, engulf hold |
+| `hazards` | Toxin stun, poison-case defender damage, wound bleed |
+| `targeting` | Per-defender target selection (each defender picks differently) |
+| `damage` | Damage application, armour, tag stripping, execute threshold |
+| `economy` | Energy rewards, tag bonus, memory-cell XP |
+| `deaths` | Removal, virus splitting, phagocyte digest/rest cycle |
+
+Each is a pure function over state. Every mechanic listed in §5 is verifiable in
+a unit test with no rendering involved.
+
+### Two corrections to the prototype's loop
+
+Both are defects in the prototype rather than design choices, and both are worth
+fixing at the port:
+
+**Frame-rate independence.** The prototype clamps `dt` to `0.06` and steps once
+per animation frame. A 120 Hz iPhone therefore simulates the same case
+differently from a 60 Hz browser — enemies advance in coarser or finer
+increments, and range checks sample at different points. Replace with a fixed
+timestep accumulator at 1/60 s, draining up to a bounded number of steps per
+frame. Rendering may interpolate; the simulation may not.
+
+**Determinism.** Wave composition is shuffled with `Math.random()`. A seeded
+mulberry32 PRNG, keyed on `(caseId, waveIndex)` and carried in sim state, makes
+a run reproducible. This is what makes balance regressions detectable at all: it
+is the precondition for the golden-run test in §9.
+
+### State ownership and the React boundary
+
+Sim state lives in a `GameLoop` instance outside React. Two distinct update
+rates:
+
+- **Board** — 60 Hz, Pixi reads sim state directly. React is not involved.
+- **HUD** — ~10 Hz, React subscribes to a throttled immutable snapshot
+  (`energy`, `tissue`, `wave`, `phase`, `feverAvailable`) via
+  `useSyncExternalStore`.
+
+Energy is the exception worth naming: the asset sheet's motion rules say *"Kills
+are instant. No death animation; the energy number ticking up is the feedback."*
+Energy is therefore the one value the HUD must not feel laggy on, and 10 Hz is
+chosen to keep it readable as a tick rather than a jump.
+
+Nothing on the play surface round-trips through React state.
+
+---
+
+## 4. Content as data
+
+`src/game/content/` holds the prototype's values as typed constants:
+
+| File | Contents |
+|---|---|
+| `defenders.ts` | The six defenders: cost, range, rates, damage, unlock tier, role colour |
+| `pathogens.ts` | The six pathogens: hp, speed, reward, radius, armour, behaviour flags |
+| `cases.ts` | Three cases: energy, wave tables, path polyline, build spots, illness rule |
+| `vaccines.ts` | Six vaccine entries with earn conditions and effects |
+| `body.ts` | Fifteen body-map nodes and fourteen links |
+| `later.ts` | Season entries not yet playable |
+
+These are the single source of truth. Because the asset sheet is a published
+document that must agree with them, a test asserts the documented values
+directly, so divergence fails CI rather than shipping quietly.
+
+### Content naming policy — carried over verbatim
+
+The prototype encodes a deliberate naming policy in a comment, and it is a
+product constraint rather than a stylistic one. It is preserved:
+
+- **Tier 1** — everyday illnesses, freely named.
+- **Tier 2** — named only because the mechanic *is* the real mechanic.
+- **Tier 3** — invented strains, never a real outbreak.
+- No real outbreak is ever framed as an attack. No bioterror framing anywhere.
+
+---
+
+## 5. Mechanics to preserve exactly
+
+Enumerated so the implementation plan can produce one test per row.
+
+### Defenders
+
+| Defender | Behaviour |
+|---|---|
+| Phagocyte (Engulf) | Holds one target at a time, frozen in place while digested; rests briefly between meals and longer every fourth. |
+| Clot (Block) | Area slow, no damage; wears itself down while anything is inside it. |
+| Antibody (Tag) | Tags everything in range; tags strip armour, burn over time, and raise the energy reward. Cannot tag resistant strains. |
+| NK cell (Execute) | Single heavy hit on the *most wounded* target in range; instant kill below a health fraction. |
+| Mast cell (Burst) | Hits everything in range, double damage on tagged targets. |
+| Memory cell (Learn) | Weak initially; permanently gains damage from every kill nearby, up to a cap. |
+
+### Pathogens
+
+| Pathogen | Behaviour |
+|---|---|
+| Staph | Fast, weak, endless. |
+| Biofilm | Armoured; armour only drops while tagged. |
+| Flu virus | Splits into two weaker copies on death — unless flu immunity is maxed. |
+| Spore | Regenerates unless tagged. |
+| Toxin | Stuns non-clot, non-memory defenders it passes. |
+| Resistant | Heavily armoured and untaggable; must be engulfed. |
+
+### Case rules
+
+- **Wound** — energy drains every second until a clot exists. Tetanus shield (at
+  full staph immunity) bounces the first staph of each wave.
+- **Virus** — every virus killed splits in two.
+- **Poison** — pathogens damage defenders directly; antibodies resist far better
+  than phagocytes.
+
+### Run-level
+
+Fever is a once-per-wave slow. Five tissue pips; a leak costs one; zero ends the
+case. Clearing a case advances the day, banks a reward, and raises the strain's
+immunity counter toward three. Three clears earn that strain's vaccine.
+
+---
+
+## 6. Screens
+
+Ionic routes:
+
+| Route | Screen |
+|---|---|
+| `/` | Map — body graph, nodes and links, current case pulsing |
+| `/brief/:caseId` | Story, rule, shield status |
+| `/play/:caseId` | Fight — board, dock, HUD, wave/result sheets |
+| `/immunity` | Vaccine list with earn progress |
+| `/season` | Day timeline including not-yet-playable entries |
+
+---
+
+## 7. Design system
+
+### Colour is role, never decoration
+
+Encoded as CSS custom properties in oklch, named by role:
+
+| Token | Value | Meaning |
+|---|---|---|
+| `--threat` | `oklch(.66 .15 25)` | Pathogens, region under attack, the start-wave button |
+| `--frontline` | `oklch(.66 .15 195)` | Phagocytes, tissue pips, regions held |
+| `--support` | `oklch(.7 .14 145)` | Antibodies, tags, immunity, anything already won |
+| `--control` | `oklch(.45 .14 320)` | Clots, anything that changes time rather than health |
+| `--energy` | `oklch(.78 .13 80)` | Currency and the heart. Never a button fill. |
+
+Neutrals: desk paper `#F4EFE6`, screen paper `#FBF7F0`, tissue field
+`oklch(.95 .012 40)`, ink `#2C2A28`. Only two backgrounds ever appear on one
+screen.
+
+The night set is defined and left unused, exactly as the asset sheet instructs —
+it belongs to a different art direction and is kept only so nobody reinvents it.
+
+Type: Outfit for UI, DM Mono for numerals and labels. Self-hosted rather than
+loaded from Google Fonts, so the game works offline and in a native shell.
+
+### Motion rules, enforced in code
+
+- Sheets rise 14 px over 250 ms. Nothing slides sideways. Nothing bounces.
+- Only threats pulse. A pulsing ring always means *here, now*.
+- Kills are instant — no death animation.
+- The simulation pauses when the page is hidden. Backgrounding never costs a wave.
+
+### Copy rules
+
+Headlines are physical, not clinical. Real names imply honest behaviour. Never
+scold the player — a lost region states what happened and offers the next move.
+No exclamation marks, no emoji.
+
+### Art
+
+Procedural flat vector shapes drawn at runtime in Pixi — circles, rounded rects,
+polylines — from a single `shapes.ts` vocabulary. No sprite atlas, no asset
+pipeline, no binary assets in the repo. This is faithful to the stated direction
+("shapes are flat, filled, and never outlined except to show a range or an empty
+slot") and keeps the palette themeable from one place.
+
+---
+
+## 8. Persistence
+
+A `ProgressRepository` port with two adapters: `localStorage` for web,
+Capacitor `Preferences` for native.
+
+The stored shape is versioned and validated on read. Where the prototype does
+`try { ... } catch (e) {}` around both load and save — silently discarding
+corrupt state and silently failing to persist — the port distinguishes the
+cases: an unreadable or outdated save falls back to a fresh profile and reports
+it; a failed *write* surfaces, because losing a cleared case without warning is
+the one failure the player will notice and resent.
+
+---
+
+## 9. Testing
+
+| Layer | Approach |
+|---|---|
+| Systems | Vitest, one focused suite per mechanic in §5 |
+| Determinism | Golden run: seeded case, N fixed steps, assert state hash |
+| Content | Assert published asset-sheet values against content modules |
+| HUD | Vitest + Testing Library on snapshot-driven components |
+| E2E | Playwright over the web build: place a defender, run a wave, assert HUD |
+
+Systems are pure functions over state, so mechanics get real coverage without a
+browser or a rendering harness. The golden-run test is the balance regression
+net; it is only possible because of the seeded PRNG in §3.
+
+---
+
+## 10. iOS target
+
+Capacitor is configured in the repo: `capacitor.config.ts`, portrait lock, real
+`env(safe-area-inset-*)` handling in place of the prototype's hardcoded 44 px
+status bar, and a documented build path.
+
+**Constraint:** `npx cap add ios` requires macOS and Xcode. Development here is
+on Windows, so the iOS *project* cannot be generated or verified in this
+environment. Everything that does not require Xcode is committed and the single
+Mac command is documented in the README. The web target is fully runnable and is
+the development surface.
+
+---
+
+## 11. Repository structure
+
+```
+towerdefense-body-game/
+├── .github/workflows/ci.yml
+├── design/                     # imported Claude Design artifacts (reference)
+├── docs/superpowers/specs/
+├── public/
+├── src/
+│   ├── app/                    # Ionic React shell
+│   │   ├── pages/              # MapPage, BriefPage, FightPage, ImmunityPage, SeasonPage
+│   │   └── components/         # Hud, DefenderDock, TissuePips, WaveResultSheet, ...
+│   ├── game/                   # pure simulation
+│   │   ├── content/            # defenders, pathogens, cases, vaccines, body, later
+│   │   ├── systems/            # spawn, movement, hazards, targeting, damage, economy, deaths
+│   │   ├── loop.ts state.ts path.ts rng.ts types.ts
+│   ├── render/                 # Pixi
+│   │   ├── BoardRenderer.ts shapes.ts
+│   │   └── layers/             # PathLayer, TowerLayer, EnemyLayer, BeamLayer
+│   ├── progress/               # repository port + localStorage / Preferences adapters
+│   ├── theme/                  # tokens.ts, variables.css
+│   └── main.tsx
+├── tests/e2e/
+├── capacitor.config.ts
+└── vite.config.ts
+```
+
+---
+
+## 12. Recorded open questions
+
+From the asset sheet. Not resolved by this work; recorded so they are not lost:
+
+- Is Allergy too clever for the first hour, or is it the thing people tell their
+  friends about?
+- Should a lost region stay lost for the whole run, or heal after two days?
+- Six defenders is a full dock on a phone. Is a seventh a replacement rather than
+  an addition?
+- Does the heart ever get attacked directly, or is it only ever the thing being
+  protected?
+
+---
+
+## 13. Success criteria
+
+1. All three cases are playable end to end on the web build, and clearing one
+   advances progression as the prototype does.
+2. Simulation behaviour is identical at 60 Hz and 120 Hz.
+3. A seeded run reproduces byte-identically across executions.
+4. Every mechanic in §5 has a passing unit test.
+5. Progress survives a reload; a corrupt save yields a fresh profile rather than
+   a crash.
+6. `src/game/` has no import from `render/`, `app/`, or any browser global.
+7. The five screens match the prototype's layout, palette, and copy.
+8. iOS configuration is committed and the Mac-only step is documented.

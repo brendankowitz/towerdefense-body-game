@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; font-family:'Outfit',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:oklch(0.62 0.15 300); text-decoration:none; border-bottom:1.5px solid oklch(0.62 0.15 300 / 0.35); }
+  a:hover { color:oklch(0.52 0.16 300); border-bottom-color:oklch(0.52 0.16 300 / 0.7); }
+  @keyframes pulse { 0%,100% { opacity:0.9; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.06); } }
+</style>
+</helmet>
+
+<section style="background:{{ paper }};padding:72px 80px 96px;display:flex;flex-direction:column;gap:44px;font-family:'Outfit',sans-serif;border-bottom:3px solid oklch(0.86 0.012 70)">
+
+  <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
+    <div style="font-size:13px;font-family:'DM Mono',monospace;letter-spacing:0.14em;text-transform:uppercase;color:#fff;background:#2C2A28;padding:7px 12px;border-radius:6px">Turn 3</div>
+    <h1 style="margin:0;font-size:38px;font-weight:700;letter-spacing:-0.02em;color:#2C2A28">Bloodstream + an abstract body</h1>
+    <p style="margin:0;font-size:16px;line-height:1.5;color:oklch(0.5 0.01 60);max-width:700px;text-wrap:pretty"><a href="#2a">2a</a>'s game, but the level list becomes a body you move around — nodes and lines, roughly body-shaped, no anatomy drawing. Illnesses change the rules rather than the enemy count, and vaccines are the one thing that survives a lost run.</p>
+  </div>
+
+  <div id="3a" style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;align-items:flex-start;gap:14px">
+      <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.66 0.15 25);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">3a</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:26px;font-weight:700;color:#2C2A28;letter-spacing:-0.015em">Where you are, what you're saving</h2>
+        <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+          <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:900px;text-wrap:pretty">Regions read as held, under attack, or not reached yet. The heart is the run — lose it and it's over, which is what makes a far-away forearm worth defending. Cases are different kinds of trouble: a cut bleeds you dry, flu multiplies mid-wave, food poisoning attacks your own cells, an allergy turns your immune response into the threat.</p>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:34px;flex-wrap:wrap">
+
+      <!-- 3a-1 abstract body map -->
+      <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+        <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+          <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+            <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+              <span>9:41</span>
+              <div style="display:flex;gap:5px;align-items:center">
+                <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:12px 22px 10px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">DAY 4 · MORNING</span>
+                <span style="font-size:20px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">The body</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:7px 12px 7px 9px;border-radius:999px">
+                <div style="width:13px;height:13px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.42 0.06 80)">520</span>
+              </div>
+            </div>
+
+            <div style="flex:1;position:relative;background:oklch(0.955 0.01 45);overflow:hidden">
+              <svg viewBox="0 0 374 500" style="position:absolute;inset:0;width:100%;height:100%">
+                <path d="M187 56 L187 108 L187 176" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 176 L128 148 M187 176 L246 148" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 176 L187 254 L187 322" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 176 L104 196 L64 252" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 176 L270 196 L310 252" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 322 L146 386 L146 452 M187 322 L228 386 L228 452" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+                <path d="M187 56 L187 108" stroke="oklch(0.66 0.15 195)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 108 L187 176" stroke="oklch(0.66 0.15 195)" stroke-width="6" fill="none" stroke-linecap="round"/>
+                <path d="M187 176 L104 196 L64 252" stroke="oklch(0.66 0.15 25)" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+                <circle cx="64" cy="252" r="46" fill="oklch(0.66 0.15 25 / 0.14)"/>
+                <circle cx="187" cy="176" r="30" fill="oklch(0.78 0.13 80)" stroke="#FBF7F0" stroke-width="5"/>
+                <circle cx="187" cy="176" r="11" fill="#FFFCF2"/>
+                <circle cx="187" cy="56" r="24" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="187" cy="56" r="8" fill="#F6FBFB"/>
+                <circle cx="187" cy="108" r="19" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="187" cy="108" r="7" fill="#F6FBFB"/>
+                <circle cx="128" cy="148" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="246" cy="148" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="187" cy="254" r="23" fill="oklch(0.78 0.13 80)" stroke="#FBF7F0" stroke-width="4"/>
+                <rect x="179" y="246" width="16" height="16" rx="5" fill="#FFFCF2"/>
+                <circle cx="187" cy="322" r="19" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="104" cy="196" r="15" fill="oklch(0.86 0.05 25)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="64" cy="252" r="26" fill="oklch(0.66 0.15 25)" stroke="#FBF7F0" stroke-width="5"/>
+                <circle cx="64" cy="252" r="9" fill="#FFF6F4"/>
+                <circle cx="270" cy="196" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="310" cy="252" r="22" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="146" cy="386" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="228" cy="386" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="146" cy="452" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+                <circle cx="228" cy="452" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+              </svg>
+
+              <div style="position:absolute;left:14px;top:170px;padding:5px 10px;border-radius:9px;background:oklch(0.66 0.15 25);font-size:11px;font-weight:700;letter-spacing:0.03em;color:#FFF6F4;animation:pulse 1.8s ease-in-out infinite">FOREARM</div>
+              <div style="position:absolute;left:216px;top:158px;padding:4px 9px;border-radius:8px;background:oklch(0.78 0.13 80);font-size:11px;font-weight:700;letter-spacing:0.03em;color:oklch(0.32 0.06 80)">HEART · CORE</div>
+              <div style="position:absolute;left:214px;top:243px;padding:4px 9px;border-radius:8px;background:oklch(0.78 0.13 80 / 0.28);font-size:11px;font-weight:700;letter-spacing:0.03em;color:oklch(0.4 0.07 80)">STOMACH · TODAY</div>
+              <div style="position:absolute;left:216px;top:44px;padding:4px 9px;border-radius:8px;background:oklch(0.93 0.008 70);font-size:11px;font-weight:700;letter-spacing:0.03em;color:oklch(0.45 0.01 60)">SINUS</div>
+
+              <div style="position:absolute;left:16px;top:14px;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.66 0.15 25)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">UNDER ATTACK</span></div>
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.66 0.15 195)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">HELD</span></div>
+                <div style="display:flex;align-items:center;gap:7px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.9 0.014 60)"></div><span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.05em;color:oklch(0.5 0.01 60)">NOT REACHED</span></div>
+              </div>
+
+              <div style="position:absolute;right:14px;bottom:14px;background:#FBF7F0;border-radius:12px;padding:10px 13px;display:flex;flex-direction:column;gap:4px;box-shadow:0 4px 12px -4px oklch(0.3 0.02 60 / 0.2)">
+                <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">REGIONS HELD</span>
+                <span style="font-family:'DM Mono',monospace;font-size:18px;color:#2C2A28">3 / 14</span>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:15px 22px 13px;display:flex;flex-direction:column;gap:12px;background:#FBF7F0;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+              <div style="display:flex;align-items:center;gap:13px">
+                <div style="width:44px;height:44px;border-radius:14px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:50%;background:#FFF6F4"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:19px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Deep cut</span>
+                  <span style="font-size:13px;color:oklch(0.5 0.01 60)">Forearm · bleeding · 8 waves</span>
+                </div>
+                <div style="display:flex;gap:5px">
+                  <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                  <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <div style="flex:1;height:54px;border-radius:18px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FFF9F2">Go there</div>
+                <div style="width:112px;height:54px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#2C2A28">Immunity</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto"></div>
+            </div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">BODY MAP — ABSTRACT, NODE-BASED</div>
+      </div>
+
+      <!-- 3a-2 case brief -->
+      <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+        <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+          <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+            <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+              <span>9:41</span>
+              <div style="display:flex;gap:5px;align-items:center">
+                <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+              </div>
+            </div>
+
+            <div style="flex:1;padding:14px 24px 0;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">FOREARM · CASE 04</span>
+                <h2 style="margin:0;font-size:33px;line-height:1.04;font-weight:800;letter-spacing:-0.028em;color:#2C2A28">Deep cut</h2>
+                <p style="margin:0;font-size:15px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.</p>
+              </div>
+
+              <div style="border-radius:20px;background:oklch(0.66 0.15 25 / 0.1);border:2px solid oklch(0.66 0.15 25);padding:15px;display:flex;align-items:center;gap:13px">
+                <div style="width:40px;height:40px;border-radius:13px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:6px;border-radius:3px;background:#FFF6F4"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:16px;font-weight:700;color:#2C2A28">Bleeding</span>
+                  <span style="font-size:13px;line-height:1.35;color:oklch(0.48 0.01 60)">You lose energy every second until you clot the vessel</span>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">COMING THROUGH</span>
+                <div style="border-radius:16px;background:oklch(0.95 0.008 70);padding:12px 15px;display:flex;align-items:center;gap:12px">
+                  <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:11px;height:11px;border-radius:50%;background:#FFF6F4"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:15px;font-weight:700;color:#2C2A28">Staph</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.01 60)">Fast, weak, endless</span>
+                  </div>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×64</span>
+                </div>
+                <div style="border-radius:16px;background:oklch(0.95 0.008 70);padding:12px 15px;display:flex;align-items:center;gap:12px">
+                  <div style="width:30px;height:30px;border-radius:9px;background:oklch(0.58 0.16 15);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:12px;border-radius:3px;background:#FFF6F4"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                    <span style="font-size:15px;font-weight:700;color:#2C2A28">Biofilm</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.01 60)">Armoured — antibodies only</span>
+                  </div>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×9</span>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">TAKE THREE</span>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;border-radius:15px;background:oklch(0.66 0.15 195 / 0.14);border:2px solid oklch(0.66 0.15 195);padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#F6FBFB"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Phago</span>
+                  </div>
+                  <div style="flex:1;border-radius:15px;background:oklch(0.7 0.14 145 / 0.14);border:2px solid oklch(0.7 0.14 145);padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:4px;border-radius:2px;background:#F4FAF6"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Anti&shy;body</span>
+                  </div>
+                  <div style="flex:1;border-radius:15px;background:oklch(0.45 0.14 320 / 0.14);border:2px solid oklch(0.45 0.14 320);padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.45 0.14 320);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:50%;border:3px solid oklch(0.96 0.02 320)"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Clot</span>
+                  </div>
+                  <div style="flex:1;border-radius:15px;background:oklch(0.95 0.008 70);padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0.5">
+                    <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:3px;background:#F8F5FC"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">T-cell</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-radius:18px;background:oklch(0.7 0.14 145 / 0.14);padding:14px;display:flex;align-items:center;gap:12px">
+                <div style="width:36px;height:36px;border-radius:11px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:13px;height:13px;border-radius:50%;border:3px solid #F4FAF6"></div></div>
+                <div style="font-size:13px;line-height:1.4;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Tetanus shield active.</strong> The first 20 Staph bounce off for free.</div>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:16px 24px 13px;display:flex;flex-direction:column;gap:8px">
+              <div style="height:58px;border-radius:19px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#FFF9F2">Get in there</div>
+              <div style="height:40px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.5 0.01 60)">Back to the body</div>
+            </div>
+            <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">CASE BRIEF — ILLNESS CHANGES THE RULES</div>
+      </div>
+
+      <!-- 3a-3 immunity / vaccines -->
+      <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+        <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+          <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+            <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+              <span>9:41</span>
+              <div style="display:flex;gap:5px;align-items:center">
+                <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+              </div>
+            </div>
+
+            <div style="flex:1;padding:14px 24px 0;display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">KEPT FOREVER · 3 OF 9</span>
+                <h2 style="margin:0;font-size:31px;line-height:1.05;font-weight:800;letter-spacing:-0.028em;color:#2C2A28">Immunity</h2>
+                <p style="margin:0;font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Beat a strain three times and you're immune to it in every run after this one.</p>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="border-radius:20px;background:oklch(0.7 0.14 145 / 0.12);border:2px solid oklch(0.7 0.14 145);padding:15px;display:flex;align-items:center;gap:13px">
+                  <div style="width:44px;height:44px;border-radius:14px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:50%;border:4px solid #F4FAF6"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:16px;font-weight:700;color:#2C2A28">Tetanus</span>
+                    <span style="font-size:12px;color:oklch(0.45 0.05 145)">Blocks the first 20 Staph in any wound</span>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                  </div>
+                </div>
+
+                <div style="border-radius:20px;background:oklch(0.7 0.14 145 / 0.12);border:2px solid oklch(0.7 0.14 145);padding:15px;display:flex;align-items:center;gap:13px">
+                  <div style="width:44px;height:44px;border-radius:14px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:6px;border-radius:3px;background:#F4FAF6"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:16px;font-weight:700;color:#2C2A28">Flu B</span>
+                    <span style="font-size:12px;color:oklch(0.45 0.05 145)">Flu can no longer multiply mid-wave</span>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                    <div style="width:9px;height:9px;background:oklch(0.7 0.14 145);transform:rotate(45deg)"></div>
+                  </div>
+                </div>
+
+                <div style="border-radius:20px;background:oklch(0.95 0.008 70);padding:15px;display:flex;align-items:center;gap:13px">
+                  <div style="width:44px;height:44px;border-radius:14px;background:oklch(0.58 0.16 15);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:5px;background:#FFF6F4"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+                    <span style="font-size:16px;font-weight:700;color:#2C2A28">Biofilm</span>
+                    <div style="height:7px;border-radius:4px;background:oklch(0.9 0.01 70);overflow:hidden"><div style="width:66%;height:100%;background:oklch(0.58 0.16 15);border-radius:4px"></div></div>
+                  </div>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.5 0.01 60)">2/3</span>
+                </div>
+
+                <div style="border-radius:20px;background:oklch(0.95 0.008 70);padding:15px;display:flex;align-items:center;gap:13px;opacity:0.55">
+                  <div style="width:44px;height:44px;border-radius:14px;background:oklch(0.88 0.012 70);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:13px;height:16px;border-radius:4px;border:3px solid oklch(0.6 0.01 70)"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:16px;font-weight:700;color:#2C2A28">Norovirus</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.01 60)">Survive a stomach case to begin</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-radius:20px;border:2px dashed oklch(0.85 0.02 70);padding:15px;display:flex;flex-direction:column;gap:11px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">BOOSTER · COSTS A DAY</span>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:38px;height:38px;border-radius:12px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border-radius:4px;background:#F8F5FC"></div></div>
+                  <div style="flex:1;font-size:13px;line-height:1.4;color:oklch(0.42 0.01 60);text-wrap:pretty">Skip tomorrow's case to lock in <strong style="font-weight:700;color:#2C2A28">Biofilm</strong> now. The infection spreads while you rest.</div>
+                </div>
+                <div style="height:44px;border-radius:14px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#F8F5FC">Take the booster</div>
+              </div>
+            </div>
+
+            <div style="flex:none;padding:16px 24px 13px">
+              <div style="height:56px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FBF7F0">Back to the body</div>
+            </div>
+            <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">IMMUNITY — PERMANENT PROGRESSION</div>
+      </div>
+
+      <!-- case type reference -->
+      <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:16px;padding-top:8px">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">CASE TYPES — EACH CHANGES A RULE</div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="border-radius:18px;background:oklch(0.97 0.006 70);padding:15px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+              <span style="font-size:16px;font-weight:700;color:#2C2A28">Wound</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60)">Bleeds energy until clotted. Endless weak bacteria; the clock is the enemy.</span>
+          </div>
+          <div style="border-radius:18px;background:oklch(0.97 0.006 70);padding:15px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+              <span style="font-size:16px;font-weight:700;color:#2C2A28">Virus</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60)">Splits in two if it survives ten seconds. Kill fast or drown.</span>
+          </div>
+          <div style="border-radius:18px;background:oklch(0.97 0.006 70);padding:15px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.78 0.13 80)"></div>
+              <span style="font-size:16px;font-weight:700;color:#2C2A28">Poisoning</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60)">Attacks your cells, not the tissue. Defenders die; the region doesn't.</span>
+          </div>
+          <div style="border-radius:18px;background:oklch(0.97 0.006 70);padding:15px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.45 0.14 320)"></div>
+              <span style="font-size:16px;font-weight:700;color:#2C2A28">Allergy</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60)">Nothing is actually invading. Over-defend and you damage the tissue yourself.</span>
+          </div>
+          <div style="border-radius:18px;background:oklch(0.97 0.006 70);padding:15px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.62 0.15 300)"></div>
+              <span style="font-size:16px;font-weight:700;color:#2C2A28">Chronic</span>
+            </div>
+            <span style="font-size:14px;line-height:1.45;color:oklch(0.48 0.01 60)">Never fully clears. Hold it to a low level across many days instead of winning.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:{{ paper }};padding:72px 80px 96px;display:flex;flex-direction:column;gap:44px;font-family:'Outfit',sans-serif;border-bottom:3px solid oklch(0.86 0.012 70)">
+
+  <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
+    <div style="font-size:13px;font-family:'DM Mono',monospace;letter-spacing:0.14em;text-transform:uppercase;color:#fff;background:#2C2A28;padding:7px 12px;border-radius:6px">Turn 2</div>
+    <h1 style="margin:0;font-size:38px;font-weight:700;letter-spacing:-0.02em;color:#2C2A28">Three whole games</h1>
+    <p style="margin:0;font-size:16px;line-height:1.5;color:oklch(0.5 0.01 60);max-width:660px;text-wrap:pretty">Each direction taken to a full loop — three screens: the moment of play, the thing you do between play, and the way you lose. <a href="#2a">2a</a> is Bloodstream alone, <a href="#2b">2b</a> is Lymph Lines alone, <a href="#2c">2c</a> is the hybrid where routing feeds the fight.</p>
+  </div>
+
+  <div style="display:flex;gap:72px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- ══════════ 2a ══════════ -->
+    <div id="2a" style="display:flex;flex-direction:column;gap:24px;width:1258px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.66 0.15 25);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">2a</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:26px;font-weight:700;color:#2C2A28;letter-spacing:-0.015em">Bloodstream — the whole game</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:820px;text-wrap:pretty">A day cycle. Each morning something new is wrong somewhere in the body; you pick one problem, hold its waves, then sleep and the body heals a little. Classic, legible, easiest to learn. Risk: the meta layer is just a level list.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:34px">
+
+        <!-- 2a-1 mid-wave -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="padding:6px 18px 12px;display:flex;flex-direction:column;gap:11px;flex:none">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="flex:1;display:flex;align-items:baseline;gap:9px">
+                    <span style="font-size:21px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Wave 3</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.55 0.01 60)">12 left</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:7px 12px 7px 9px;border-radius:999px">
+                    <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:15px;color:oklch(0.42 0.06 80)">85</span>
+                  </div>
+                  <div style="width:36px;height:36px;border-radius:12px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;gap:3px">
+                    <div style="width:4px;height:13px;border-radius:1px;background:#2C2A28"></div>
+                    <div style="width:4px;height:13px;border-radius:1px;background:#2C2A28"></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+                  <span style="margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;color:oklch(0.58 0.01 60)">TISSUE 3/5</span>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative;background:oklch(0.95 0.012 40);overflow:hidden">
+                <svg viewBox="0 0 374 480" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M-20 70 C 80 70 90 160 180 160 C 270 160 280 300 200 330 C 130 356 60 400 60 500" stroke="oklch(0.87 0.05 20)" stroke-width="34" fill="none" stroke-linecap="round"/>
+                  <path d="M180 160 C 260 160 300 90 400 100" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+                  <path d="M-20 70 C 80 70 90 160 180 160 C 270 160 280 300 200 330 C 130 356 60 400 60 500" stroke="oklch(0.93 0.03 20)" stroke-width="22" fill="none" stroke-linecap="round"/>
+                  <path d="M180 160 C 260 160 300 90 400 100" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+                  <circle cx="120" cy="112" r="58" fill="oklch(0.66 0.15 195 / 0.14)"/>
+                  <circle cx="120" cy="112" r="21" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                  <circle cx="120" cy="112" r="6" fill="#FBF7F0"/>
+                  <line x1="120" y1="112" x2="88" y2="88" stroke="oklch(0.66 0.15 195)" stroke-width="5" stroke-linecap="round"/>
+
+                  <circle cx="252" cy="248" r="46" fill="oklch(0.62 0.15 300 / 0.14)"/>
+                  <circle cx="252" cy="248" r="21" fill="oklch(0.62 0.15 300)" stroke="#FBF7F0" stroke-width="4"/>
+                  <rect x="246" y="242" width="12" height="12" rx="3" fill="#FBF7F0"/>
+                  <circle cx="228" cy="222" r="5" fill="oklch(0.62 0.15 300)"/>
+                  <circle cx="240" cy="234" r="4" fill="oklch(0.62 0.15 300)"/>
+
+                  <circle cx="96" cy="386" r="21" fill="oklch(0.7 0.14 145)" stroke="#FBF7F0" stroke-width="4"/>
+                  <rect x="86" y="382" width="20" height="7" rx="3.5" fill="#FBF7F0"/>
+
+                  <circle cx="88" cy="88" r="16" fill="oklch(0.78 0.13 80 / 0.5)"/>
+                  <circle cx="60" cy="82" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="60" cy="82" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="152" cy="150" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="152" cy="150" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="216" cy="196" r="13" fill="oklch(0.58 0.16 15)"/>
+                  <rect x="210" y="190" width="12" height="12" rx="2" fill="oklch(0.38 0.1 15)"/>
+                  <rect x="200" y="176" width="32" height="5" rx="2.5" fill="oklch(0.9 0.01 70)"/>
+                  <rect x="200" y="176" width="21" height="5" rx="2.5" fill="oklch(0.58 0.16 15)"/>
+                  <circle cx="207" cy="318" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="207" cy="318" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="122" cy="366" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="122" cy="366" r="3" fill="oklch(0.42 0.1 25)"/>
+                </svg>
+
+                <div style="position:absolute;top:14px;right:14px;background:#FBF7F0;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px -4px oklch(0.3 0.02 60 / 0.2)">
+                  <div style="width:13px;height:13px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×9</span>
+                  <div style="width:13px;height:13px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×3</span>
+                </div>
+
+                <div style="position:absolute;left:14px;top:14px;background:oklch(0.66 0.15 25);border-radius:11px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+                  <div style="width:9px;height:9px;border-radius:50%;background:#FFF9F2;animation:pulse 1.2s ease-in-out infinite"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#FFF9F2">BREACH AT JUNCTION 2</span>
+                </div>
+              </div>
+
+              <div style="flex:none;background:#FBF7F0;padding:14px 16px 10px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+                <div style="display:flex;gap:10px;align-items:stretch">
+                  <div style="flex:1;border-radius:18px;background:oklch(0.45 0.14 320);padding:12px 14px;display:flex;align-items:center;gap:11px">
+                    <div style="width:34px;height:34px;border-radius:50%;background:oklch(0.96 0.02 320);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border-radius:50%;border:4px solid oklch(0.45 0.14 320)"></div></div>
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <span style="font-size:15px;font-weight:700;color:oklch(0.97 0.01 320)">Fever</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;color:oklch(0.85 0.05 320)">1 USE</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;border-radius:18px;background:oklch(0.93 0.008 70);padding:12px 14px;display:flex;align-items:center;gap:11px;opacity:0.5">
+                    <div style="width:34px;height:34px;border-radius:50%;background:oklch(0.86 0.01 70);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:5px;background:oklch(0.66 0.02 70)"></div></div>
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <span style="font-size:15px;font-weight:700;color:#2C2A28">Clot</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;color:oklch(0.58 0.01 60)">0:08</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div style="flex:1;height:54px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;gap:10px">
+                    <div style="width:36px;height:36px;border-radius:11px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:12px;border-radius:50%;background:#FBF7F0"></div></div>
+                    <span style="font-size:15px;font-weight:600;color:#2C2A28">Reinforce</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.42 0.06 80)">40</span>
+                  </div>
+                  <div style="width:54px;height:54px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:15px;color:#FBF7F0">3×</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">MID-WAVE — ABILITIES ONLY</div>
+        </div>
+
+        <!-- 2a-2 day cycle home -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="padding:14px 22px 16px;display:flex;flex-direction:column;gap:14px;flex:none">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">DAY 4 · MORNING</div>
+                  <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:6px 11px 6px 8px;border-radius:999px">
+                    <div style="width:13px;height:13px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.42 0.06 80)">520</span>
+                  </div>
+                </div>
+                <h2 style="margin:0;font-size:31px;font-weight:800;letter-spacing:-0.025em;line-height:1.06;color:#2C2A28">Two things<br>need you today.</h2>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline">
+                    <span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Overall immunity</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">62%</span>
+                  </div>
+                  <div style="height:9px;border-radius:5px;background:oklch(0.9 0.01 70);overflow:hidden"><div style="width:62%;height:100%;background:oklch(0.66 0.15 195);border-radius:5px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;padding:0 22px;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+                <div style="border-radius:22px;background:oklch(0.66 0.15 25 / 0.1);border:2px solid oklch(0.66 0.15 25);padding:17px;display:flex;flex-direction:column;gap:13px">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:15px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:17px;height:17px;border-radius:50%;background:#FFF9F2"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                      <div style="font-size:18px;font-weight:700;color:#2C2A28">Left forearm</div>
+                      <div style="font-size:13px;color:oklch(0.5 0.01 60)">Splinter · spreading fast</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                      <span style="font-family:'DM Mono',monospace;font-size:16px;color:oklch(0.5 0.14 25)">8</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">WAVES</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <div style="flex:1;height:46px;border-radius:14px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#FFF9F2">Defend</div>
+                    <div style="width:100px;height:46px;border-radius:14px;background:oklch(0.98 0.005 40);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:oklch(0.5 0.01 60)">Ignore</div>
+                  </div>
+                </div>
+
+                <div style="border-radius:22px;background:oklch(0.95 0.008 70);padding:17px;display:flex;align-items:center;gap:14px">
+                  <div style="width:48px;height:48px;border-radius:15px;background:oklch(0.78 0.13 80);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:6px;background:#FFFCF4"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:18px;font-weight:700;color:#2C2A28">Stomach</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Bad shellfish · 4 waves</div>
+                  </div>
+                  <div style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.5 0.01 60);border:1.5px solid oklch(0.85 0.02 70);padding:6px 10px;border-radius:9px">LATER</div>
+                </div>
+
+                <div style="border-radius:22px;background:oklch(0.95 0.008 70);padding:13px 17px;display:flex;align-items:center;gap:14px;opacity:0.6">
+                  <div style="width:40px;height:40px;border-radius:13px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:6px;border-radius:3px;background:#F6FBF7"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:17px;font-weight:700;color:#2C2A28">Throat</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Healing on its own</div>
+                  </div>
+                </div>
+
+                <div style="border-radius:22px;border:2px dashed oklch(0.85 0.02 70);padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">SPEND ENERGY WHILE YOU CAN</div>
+                  <div style="display:flex;gap:9px">
+                    <div style="flex:1;border-radius:14px;background:oklch(0.62 0.15 300 / 0.12);padding:12px;display:flex;flex-direction:column;gap:7px">
+                      <div style="width:28px;height:28px;border-radius:9px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:3px;background:#F8F5FC"></div></div>
+                      <span style="font-size:13px;font-weight:600;color:#2C2A28">T-cell +1</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">180</span>
+                    </div>
+                    <div style="flex:1;border-radius:14px;background:oklch(0.7 0.14 145 / 0.12);padding:12px;display:flex;flex-direction:column;gap:7px">
+                      <div style="width:28px;height:28px;border-radius:9px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center"><div style="width:13px;height:5px;border-radius:3px;background:#F4FAF6"></div></div>
+                      <span style="font-size:13px;font-weight:600;color:#2C2A28">Reach +1</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">240</span>
+                    </div>
+                    <div style="flex:1;border-radius:14px;background:oklch(0.95 0.008 70);padding:12px;display:flex;flex-direction:column;gap:7px">
+                      <div style="width:28px;height:28px;border-radius:9px;background:oklch(0.86 0.01 70);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:12px;border-radius:50%;background:oklch(0.66 0.02 70)"></div></div>
+                      <span style="font-size:13px;font-weight:600;color:#2C2A28">Rest</span>
+                      <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">80</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:16px 22px 14px">
+                <div style="height:56px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;gap:10px">
+                  <div style="width:16px;height:16px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                  <span style="font-size:17px;font-weight:700;color:#FBF7F0">Sleep · end day 4</span>
+                </div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">MORNING — PICK A PROBLEM</div>
+        </div>
+
+        <!-- 2a-3 loss -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:oklch(0.62 0.16 25);display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.97 0.02 25);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.97 0.02 25)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.97 0.02 25);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.97 0.02 25);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px;padding:0 30px">
+                <div style="display:flex;flex-direction:column;gap:12px">
+                  <div style="width:64px;height:64px;border-radius:20px;background:oklch(0.97 0.02 25);display:flex;align-items:center;justify-content:center"><div style="width:24px;height:24px;border-radius:7px;background:oklch(0.5 0.16 25)"></div></div>
+                  <h2 style="margin:0;font-size:46px;line-height:1;font-weight:800;letter-spacing:-0.035em;color:oklch(0.99 0.01 25)">It got<br>into the<br>blood.</h2>
+                  <p style="margin:0;font-size:16px;line-height:1.5;color:oklch(0.9 0.05 25);max-width:280px;text-wrap:pretty">The forearm fell at wave 6. Sepsis ends the run — but you keep everything you learned.</p>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:1px;border-radius:20px;overflow:hidden">
+                  <div style="background:oklch(0.56 0.15 25);padding:15px 18px;display:flex;align-items:baseline;justify-content:space-between">
+                    <span style="font-size:14px;font-weight:600;color:oklch(0.94 0.04 25)">Days survived</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:oklch(0.99 0.01 25)">4</span>
+                  </div>
+                  <div style="background:oklch(0.56 0.15 25);padding:15px 18px;display:flex;align-items:baseline;justify-content:space-between">
+                    <span style="font-size:14px;font-weight:600;color:oklch(0.94 0.04 25)">Pathogens cleared</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:oklch(0.99 0.01 25)">318</span>
+                  </div>
+                  <div style="background:oklch(0.56 0.15 25);padding:15px 18px;display:flex;align-items:baseline;justify-content:space-between">
+                    <span style="font-size:14px;font-weight:600;color:oklch(0.94 0.04 25)">Best day</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:20px;color:oklch(0.99 0.01 25)">Day 3</span>
+                  </div>
+                </div>
+
+                <div style="border-radius:20px;background:oklch(0.56 0.15 25);padding:18px;display:flex;align-items:center;gap:14px">
+                  <div style="width:46px;height:46px;border-radius:14px;background:oklch(0.78 0.13 80);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.4 0.08 80)"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:16px;font-weight:700;color:oklch(0.99 0.01 25)">Memory cells earned</div>
+                    <div style="font-size:13px;color:oklch(0.9 0.05 25)">Start your next body with 3 T-cells</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:0 30px 16px;display:flex;flex-direction:column;gap:10px">
+                <div style="height:58px;border-radius:19px;background:oklch(0.99 0.01 25);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:oklch(0.5 0.16 25)">New body</div>
+                <div style="height:46px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.9 0.05 25)">See the run</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:oklch(0.99 0.01 25);opacity:0.8;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">RUN OVER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 2b ══════════ -->
+    <div id="2b" style="display:flex;flex-direction:column;gap:24px;width:1258px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.62 0.15 300);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">2b</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:26px;font-weight:700;color:#2C2A28;letter-spacing:-0.015em">Lymph Lines — the whole game</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:820px;text-wrap:pretty">One continuous night. Infections appear at nodes; you keep drawing lines so cells reach them in time, and lines get congested as the body ages. No waves, no build phase — one escalating pressure curve, like Mini Motorways. Highest ceiling, hardest to teach.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:34px">
+
+        <!-- 2b-1 network under load -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.92 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.92 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.92 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.92 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:10px 22px 4px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.66 0.02 260)">NIGHT 6</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:22px;color:oklch(0.96 0.01 260)">04:38</span>
+                </div>
+                <div style="display:flex;gap:14px;align-items:center">
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.66 0.02 260)">LINES</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.96 0.01 260)">7/9</span>
+                  </div>
+                  <div style="width:38px;height:38px;border-radius:12px;background:oklch(0.3 0.015 260);display:flex;align-items:center;justify-content:center;gap:3px">
+                    <div style="width:4px;height:13px;border-radius:1px;background:oklch(0.92 0.01 260)"></div>
+                    <div style="width:4px;height:13px;border-radius:1px;background:oklch(0.92 0.01 260)"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative">
+                <svg viewBox="0 0 374 580" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M64 92 L64 210 L170 286" stroke="oklch(0.66 0.15 195)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M170 286 L286 286 L286 400" stroke="oklch(0.7 0.14 145)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M64 210 L150 132 L272 132" stroke="oklch(0.62 0.15 300)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M170 286 L96 366 L96 470" stroke="oklch(0.62 0.15 300)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M286 400 L200 480 L96 470" stroke="oklch(0.66 0.15 195)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M96 470 L96 540" stroke="oklch(0.66 0.15 25)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="14 10"/>
+
+                  <circle cx="272" cy="132" r="27" fill="#2A2E38" stroke="oklch(0.66 0.15 25)" stroke-width="4"/>
+                  <circle cx="272" cy="132" r="10" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="96" cy="540" r="30" fill="#2A2E38" stroke="oklch(0.58 0.16 15)" stroke-width="5"/>
+                  <rect x="86" y="530" width="20" height="20" rx="5" fill="oklch(0.58 0.16 15)"/>
+
+                  <circle cx="64" cy="92" r="30" fill="oklch(0.66 0.15 195)"/>
+                  <circle cx="64" cy="92" r="11" fill="#20232B"/>
+                  <circle cx="286" cy="400" r="30" fill="oklch(0.7 0.14 145)"/>
+                  <rect x="276" y="394" width="20" height="7" rx="3.5" fill="#20232B"/>
+                  <circle cx="150" cy="132" r="22" fill="oklch(0.62 0.15 300)"/>
+                  <circle cx="150" cy="132" r="8" fill="#20232B"/>
+                  <circle cx="170" cy="286" r="36" fill="#F2F4F8"/>
+                  <circle cx="170" cy="286" r="36" fill="none" stroke="oklch(0.66 0.15 25)" stroke-width="5"/>
+                  <circle cx="170" cy="286" r="13" fill="#20232B"/>
+                  <circle cx="64" cy="210" r="16" fill="#F2F4F8"/>
+                  <circle cx="96" cy="470" r="26" fill="#F2F4F8"/>
+                  <circle cx="96" cy="470" r="9" fill="#20232B"/>
+                  <circle cx="200" cy="480" r="16" fill="#F2F4F8"/>
+
+                  <circle cx="64" cy="150" r="7" fill="oklch(0.94 0.01 260)"/>
+                  <circle cx="228" cy="286" r="7" fill="oklch(0.94 0.01 260)"/>
+                  <circle cx="96" cy="418" r="7" fill="oklch(0.94 0.01 260)"/>
+                  <circle cx="214" cy="132" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="286" cy="342" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="140" cy="510" r="10" fill="oklch(0.58 0.16 15)"/>
+                </svg>
+
+                <div style="position:absolute;top:56px;left:104px;padding:6px 10px;border-radius:9px;background:oklch(0.66 0.15 25);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#FFF6F4">CONGESTED</div>
+                <div style="position:absolute;bottom:44px;right:22px;padding:8px 12px;border-radius:11px;background:oklch(0.28 0.015 260);display:flex;flex-direction:column;gap:4px">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.66 0.02 260)">NEW NODE</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:16px;color:oklch(0.78 0.13 80)">0:44</span>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:12px 20px 12px;display:flex;flex-direction:column;gap:12px;background:oklch(0.24 0.012 260)">
+                <div style="font-size:14px;font-weight:500;color:oklch(0.82 0.01 260)">The spleen line is backing up — split it.</div>
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+                  <div style="display:flex;gap:10px">
+                    <div style="width:58px;height:58px;border-radius:18px;background:oklch(0.66 0.15 195);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:15px;height:15px;border-radius:50%;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#20232B">×3</span>
+                    </div>
+                    <div style="width:58px;height:58px;border-radius:18px;background:oklch(0.62 0.15 300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:15px;height:15px;border-radius:5px;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#20232B">×1</span>
+                    </div>
+                    <div style="width:58px;height:58px;border-radius:18px;background:oklch(0.7 0.14 145);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:17px;height:6px;border-radius:3px;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#20232B">×2</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                    <div style="width:58px;height:58px;border-radius:18px;background:oklch(0.45 0.14 320);display:flex;align-items:center;justify-content:center"><div style="width:18px;height:18px;border-radius:50%;border:5px solid oklch(0.96 0.02 320)"></div></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:oklch(0.66 0.02 260)">FEVER</span>
+                  </div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:oklch(0.9 0.01 260);opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">NIGHT 6 — UNDER LOAD</div>
+        </div>
+
+        <!-- 2b-2 morning draft -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#F4F5F8;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#20232B;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#20232B"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #20232B;padding:1.5px"><div style="width:70%;height:100%;background:#20232B;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;display:flex;flex-direction:column;gap:24px;padding:22px 26px 0">
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.52 0.01 260)">NIGHT 6 SURVIVED</span>
+                  <h2 style="margin:0;font-size:38px;line-height:1.03;font-weight:800;letter-spacing:-0.03em;color:#20232B">You slept<br>through it.</h2>
+                </div>
+
+                <div style="display:flex;gap:9px">
+                  <div style="flex:1;border-radius:18px;background:oklch(0.91 0.008 260);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:23px;color:#20232B">6h</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 260)">Held</span>
+                  </div>
+                  <div style="flex:1;border-radius:18px;background:oklch(0.91 0.008 260);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:23px;color:#20232B">9</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 260)">Lines</span>
+                  </div>
+                  <div style="flex:1;border-radius:18px;background:oklch(0.66 0.15 25 / 0.14);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:23px;color:oklch(0.5 0.15 25)">2</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.1 25)">Nodes lost</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:13px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.52 0.01 260)">TAKE ONE INTO NIGHT 7</span>
+
+                  <div style="border-radius:20px;background:#FFFFFF;border:2.5px solid oklch(0.62 0.15 300);padding:16px;display:flex;align-items:center;gap:14px">
+                    <div style="width:50px;height:50px;border-radius:16px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:6px;background:#F8F5FC"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font-size:17px;font-weight:700;color:#20232B">Second T-cell</div>
+                      <div style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 260)">One more targeted cell to route</div>
+                    </div>
+                  </div>
+
+                  <div style="border-radius:20px;background:#FFFFFF;padding:16px;display:flex;align-items:center;gap:14px">
+                    <div style="width:50px;height:50px;border-radius:16px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:22px;height:8px;border-radius:4px;background:#F6FBFB"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font-size:17px;font-weight:700;color:#20232B">Wider lines</div>
+                      <div style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 260)">Every line carries 2 cells at once</div>
+                    </div>
+                  </div>
+
+                  <div style="border-radius:20px;background:#FFFFFF;padding:16px;display:flex;align-items:center;gap:14px">
+                    <div style="width:50px;height:50px;border-radius:16px;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:50%;background:#F4FAF6"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font-size:17px;font-weight:700;color:#20232B">Regrow a node</div>
+                      <div style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 260)">Bring back one lost lymph node</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="border-radius:18px;background:oklch(0.91 0.008 260);padding:15px;display:flex;align-items:center;gap:12px">
+                  <div style="width:38px;height:38px;border-radius:12px;background:oklch(0.58 0.16 15);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border-radius:4px;background:#FFF6F4"></div></div>
+                  <div style="font-size:13px;line-height:1.45;color:oklch(0.4 0.01 260);text-wrap:pretty"><strong style="font-weight:700;color:#20232B">Night 7 brings a resistant strain.</strong> T-cells that have seen it will still work.</div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:20px 26px 16px">
+                <div style="height:58px;border-radius:19px;background:#20232B;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#F4F5F8">Begin night 7</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#20232B;opacity:0.85;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">MORNING — DRAFT ONE</div>
+        </div>
+
+        <!-- 2b-3 loss -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.8 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.8 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.8 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.8 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative;opacity:0.5">
+                <svg viewBox="0 0 374 420" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M64 72 L64 190 L170 266" stroke="oklch(0.4 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M170 266 L286 266 L286 380" stroke="oklch(0.4 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M64 190 L150 112 L272 112" stroke="oklch(0.4 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="64" cy="72" r="28" fill="#2A2E38" stroke="oklch(0.58 0.16 15)" stroke-width="4"/>
+                  <circle cx="150" cy="112" r="20" fill="#2A2E38" stroke="oklch(0.58 0.16 15)" stroke-width="4"/>
+                  <circle cx="272" cy="112" r="24" fill="oklch(0.58 0.16 15)"/>
+                  <circle cx="170" cy="266" r="32" fill="oklch(0.58 0.16 15)"/>
+                  <circle cx="286" cy="380" r="26" fill="#2A2E38" stroke="oklch(0.58 0.16 15)" stroke-width="4"/>
+                </svg>
+              </div>
+
+              <div style="position:absolute;left:0;right:0;bottom:0;background:#F4F5F8;border-radius:32px 32px 38px 38px;padding:26px 26px 16px;display:flex;flex-direction:column;gap:22px">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.52 0.01 260)">06:02 · NIGHT 7</span>
+                  <h2 style="margin:0;font-size:40px;line-height:1.02;font-weight:800;letter-spacing:-0.03em;color:#20232B">You woke up<br>sick.</h2>
+                  <p style="margin:0;font-size:15px;line-height:1.5;color:oklch(0.45 0.01 260);text-wrap:pretty">Four nodes went dark in the last hour. The network couldn't reach the throat in time.</p>
+                </div>
+
+                <div style="display:flex;gap:9px">
+                  <div style="flex:1;border-radius:18px;background:oklch(0.91 0.008 260);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:22px;color:#20232B">7</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 260)">Nights</span>
+                  </div>
+                  <div style="flex:1;border-radius:18px;background:oklch(0.91 0.008 260);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:22px;color:#20232B">41</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 260)">Lines laid</span>
+                  </div>
+                  <div style="flex:1;border-radius:18px;background:oklch(0.78 0.13 80 / 0.22);padding:14px;display:flex;flex-direction:column;gap:4px">
+                    <span style="font-family:'DM Mono',monospace;font-size:22px;color:oklch(0.45 0.08 80)">BEST</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.45 0.06 80)">+2 nights</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="height:58px;border-radius:19px;background:#20232B;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#F4F5F8">Try again</div>
+                  <div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.48 0.01 260)">Replay the night</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:#20232B;opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">RUN OVER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 2c ══════════ -->
+    <div id="2c" style="display:flex;flex-direction:column;gap:24px;width:1258px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:#2C2A28;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">2c</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:26px;font-weight:700;color:#2C2A28;letter-spacing:-0.015em">Hybrid — the network is the map</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:820px;text-wrap:pretty">Dark = night, planning, no clock. Light = the fight, in the body, timed. Your lymph routing decides which cells are even available in the vessel level, and the fight decides which nodes survive. Two screens, one decision.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:34px">
+
+        <!-- 2c-1 home with breakout -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.92 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.92 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.92 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.92 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:10px 22px 6px;display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.66 0.02 260)">THE BODY · DAY 4</span>
+                  <span style="font-size:19px;font-weight:700;letter-spacing:-0.01em;color:oklch(0.96 0.01 260)">Lymph network</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;background:oklch(0.3 0.015 260);padding:7px 12px 7px 9px;border-radius:999px">
+                  <div style="width:13px;height:13px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                  <span style="font-family:'DM Mono',monospace;font-size:14px;color:oklch(0.94 0.01 260)">520</span>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative">
+                <svg viewBox="0 0 374 520" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M76 88 L76 208 L182 284" stroke="oklch(0.66 0.15 195)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M182 284 L292 284 L292 396" stroke="oklch(0.7 0.14 145)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M76 208 L158 130 L276 130" stroke="oklch(0.62 0.15 300)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M182 284 L104 364 L104 462" stroke="oklch(0.42 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+
+                  <circle cx="276" cy="130" r="30" fill="#2A2E38" stroke="oklch(0.66 0.15 25)" stroke-width="4"/>
+                  <circle cx="276" cy="130" r="12" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="76" cy="88" r="30" fill="oklch(0.66 0.15 195)"/>
+                  <circle cx="76" cy="88" r="11" fill="#20232B"/>
+                  <circle cx="292" cy="396" r="30" fill="oklch(0.7 0.14 145)"/>
+                  <rect x="282" y="390" width="20" height="7" rx="3.5" fill="#20232B"/>
+                  <circle cx="158" cy="130" r="22" fill="oklch(0.62 0.15 300)"/>
+                  <circle cx="158" cy="130" r="8" fill="#20232B"/>
+                  <circle cx="182" cy="284" r="34" fill="#F2F4F8"/>
+                  <circle cx="182" cy="284" r="34" fill="none" stroke="oklch(0.78 0.13 80)" stroke-width="4"/>
+                  <circle cx="182" cy="284" r="13" fill="#20232B"/>
+                  <circle cx="76" cy="208" r="16" fill="#F2F4F8"/>
+                  <circle cx="104" cy="462" r="22" fill="#2A2E38" stroke="oklch(0.42 0.03 260)" stroke-width="4"/>
+                </svg>
+
+                <div style="position:absolute;top:96px;right:16px;width:112px;height:112px;border-radius:50%;background:oklch(0.66 0.15 25 / 0.16);animation:pulse 1.6s ease-in-out infinite"></div>
+                <div style="position:absolute;top:200px;right:16px;padding:9px 13px;border-radius:12px;background:oklch(0.66 0.15 25);display:flex;flex-direction:column;gap:3px">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#FFF6F4">BREAKOUT</span>
+                  <span style="font-size:14px;font-weight:700;color:#FFF6F4">Left forearm</span>
+                </div>
+                <div style="position:absolute;left:22px;bottom:96px;padding:8px 12px;border-radius:11px;background:oklch(0.28 0.015 260);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;color:oklch(0.7 0.02 260)">2 LINES REACH IT</div>
+              </div>
+
+              <div style="flex:none;padding:14px 20px 12px;display:flex;flex-direction:column;gap:13px;background:oklch(0.24 0.012 260)">
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.66 0.02 260)">WILL ARRIVE IN TIME</span>
+                  <div style="display:flex;gap:9px">
+                    <div style="width:54px;height:54px;border-radius:17px;background:oklch(0.66 0.15 195);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:14px;height:14px;border-radius:50%;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:10px;color:#20232B">×3</span>
+                    </div>
+                    <div style="width:54px;height:54px;border-radius:17px;background:oklch(0.62 0.15 300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:14px;height:14px;border-radius:4px;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:10px;color:#20232B">×1</span>
+                    </div>
+                    <div style="width:54px;height:54px;border-radius:17px;border:2px dashed oklch(0.44 0.02 260);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+                      <div style="width:15px;height:5px;border-radius:3px;background:oklch(0.5 0.02 260)"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.04em;color:oklch(0.58 0.02 260)">NO LINE</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;height:56px;border-radius:18px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#FFF6F4">Go there</div>
+                  <div style="width:118px;height:56px;border-radius:18px;background:oklch(0.32 0.015 260);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.9 0.01 260)">Reroute</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:oklch(0.9 0.01 260);opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">HOME — ROUTING DECIDES YOUR HAND</div>
+        </div>
+
+        <!-- 2c-2 fight with limited dock -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="padding:6px 18px 12px;display:flex;flex-direction:column;gap:11px;flex:none">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">FROM THE NETWORK · WAVE 2/5</span>
+                    <span style="font-size:19px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Left forearm</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:7px 12px 7px 9px;border-radius:999px">
+                    <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:15px;color:oklch(0.42 0.06 80)">120</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+                  <span style="margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;color:oklch(0.58 0.01 60)">TISSUE 4/5</span>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative;background:oklch(0.95 0.012 40);overflow:hidden">
+                <svg viewBox="0 0 374 450" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M-20 60 C 80 60 90 150 180 150 C 270 150 280 290 200 320 C 130 346 60 390 60 480" stroke="oklch(0.87 0.05 20)" stroke-width="34" fill="none" stroke-linecap="round"/>
+                  <path d="M-20 60 C 80 60 90 150 180 150 C 270 150 280 290 200 320 C 130 346 60 390 60 480" stroke="oklch(0.93 0.03 20)" stroke-width="22" fill="none" stroke-linecap="round"/>
+                  <path d="M180 150 C 260 150 300 80 400 90" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+                  <path d="M180 150 C 260 150 300 80 400 90" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+                  <circle cx="118" cy="104" r="56" fill="oklch(0.66 0.15 195 / 0.12)"/>
+                  <circle cx="118" cy="104" r="56" fill="none" stroke="oklch(0.66 0.15 195 / 0.35)" stroke-width="1.5" stroke-dasharray="4 5"/>
+                  <circle cx="118" cy="104" r="20" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                  <circle cx="118" cy="104" r="6" fill="#FBF7F0"/>
+
+                  <circle cx="248" cy="240" r="20" fill="oklch(0.62 0.15 300)" stroke="#FBF7F0" stroke-width="4"/>
+                  <rect x="242" y="234" width="12" height="12" rx="3" fill="#FBF7F0"/>
+
+                  <circle cx="92" cy="376" r="21" fill="none" stroke="oklch(0.72 0.03 60)" stroke-width="3" stroke-dasharray="6 6"/>
+                  <circle cx="300" cy="108" r="21" fill="none" stroke="oklch(0.72 0.03 60)" stroke-width="3" stroke-dasharray="6 6"/>
+
+                  <circle cx="56" cy="74" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="56" cy="74" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="146" cy="138" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="146" cy="138" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="228" cy="188" r="13" fill="oklch(0.58 0.16 15)"/>
+                  <rect x="222" y="182" width="12" height="12" rx="2" fill="oklch(0.38 0.1 15)"/>
+                </svg>
+
+                <div style="position:absolute;top:14px;left:14px;right:14px;background:oklch(0.62 0.15 300);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px">
+                  <div style="width:32px;height:32px;border-radius:10px;background:oklch(0.96 0.02 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:13px;height:13px;border-radius:4px;background:oklch(0.62 0.15 300)"></div></div>
+                  <div style="flex:1;font-size:13px;line-height:1.35;color:oklch(0.98 0.01 300)">Your T-cell arrived by lymph line — it has seen this strain before.</div>
+                </div>
+
+                <div style="position:absolute;left:14px;bottom:14px;background:oklch(0.98 0.005 70 / 0.94);border-radius:10px;padding:7px 11px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;color:oklch(0.5 0.01 60)">2 JUNCTIONS OPEN</div>
+              </div>
+
+              <div style="flex:none;background:#FBF7F0;padding:14px 16px 10px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">DEPLOYABLE HERE</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.66 0.15 25)">LIMITED BY ROUTING</span>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;border-radius:16px;background:oklch(0.66 0.15 195 / 0.12);border:2px solid oklch(0.66 0.15 195);padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Phago</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28">×3</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;background:oklch(0.95 0.008 70);padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:3px;background:#FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">T-cell</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28">×1</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;border:2px dashed oklch(0.85 0.02 70);padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.9 0.01 70);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:4px;border-radius:2px;background:oklch(0.7 0.02 70)"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:oklch(0.6 0.01 60)">Anti&shy;body</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;color:oklch(0.66 0.15 25)">NO LINE</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;border:2px dashed oklch(0.85 0.02 70);padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.9 0.01 70);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:50%;border:3px solid oklch(0.7 0.02 70)"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:oklch(0.6 0.01 60)">Fever</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;color:oklch(0.66 0.15 25)">NO LINE</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div style="flex:1;height:54px;border-radius:18px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;gap:9px">
+                    <div style="width:0;height:0;border-left:13px solid #FFF9F2;border-top:8px solid transparent;border-bottom:8px solid transparent"></div>
+                    <span style="font-size:17px;font-weight:700;color:#FFF9F2">Start wave 2</span>
+                  </div>
+                  <div style="width:54px;height:54px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:15px;color:#2C2A28">2×</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">FIGHT — HAND COMES FROM THE MAP</div>
+        </div>
+
+        <!-- 2c-3 consequence -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.92 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.92 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.92 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.92 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:18px 26px 10px;display:flex;flex-direction:column;gap:9px">
+                <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.66 0.02 260)">FOREARM HELD · 5 WAVES</span>
+                <h2 style="margin:0;font-size:33px;line-height:1.05;font-weight:800;letter-spacing:-0.03em;color:oklch(0.97 0.01 260)">The network<br>changed.</h2>
+              </div>
+
+              <div style="flex:1;position:relative">
+                <svg viewBox="0 0 374 400" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M76 62 L76 182 L182 258" stroke="oklch(0.66 0.15 195)" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M182 258 L292 258 L292 358" stroke="oklch(0.7 0.14 145)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M76 182 L158 104 L276 104" stroke="oklch(0.4 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 12"/>
+                  <circle cx="276" cy="104" r="26" fill="#2A2E38" stroke="oklch(0.42 0.03 260)" stroke-width="4"/>
+                  <circle cx="76" cy="62" r="30" fill="oklch(0.66 0.15 195)"/>
+                  <circle cx="76" cy="62" r="11" fill="#20232B"/>
+                  <circle cx="292" cy="358" r="28" fill="oklch(0.7 0.14 145)"/>
+                  <rect x="282" y="352" width="20" height="7" rx="3.5" fill="#20232B"/>
+                  <circle cx="158" cy="104" r="22" fill="#2A2E38" stroke="oklch(0.42 0.03 260)" stroke-width="4"/>
+                  <circle cx="182" cy="258" r="34" fill="#F2F4F8"/>
+                  <circle cx="182" cy="258" r="34" fill="none" stroke="oklch(0.66 0.15 195)" stroke-width="5"/>
+                  <circle cx="182" cy="258" r="13" fill="#20232B"/>
+                  <circle cx="76" cy="182" r="16" fill="#F2F4F8"/>
+                </svg>
+                <div style="position:absolute;top:66px;left:186px;padding:6px 10px;border-radius:9px;background:oklch(0.34 0.02 260);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;color:oklch(0.72 0.02 260)">NODE LOST</div>
+                <div style="position:absolute;top:150px;left:100px;padding:6px 10px;border-radius:9px;background:oklch(0.66 0.15 195);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#20232B">LINE WIDENED</div>
+              </div>
+
+              <div style="flex:none;padding:0 22px 14px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:1px;border-radius:20px;overflow:hidden">
+                  <div style="background:oklch(0.28 0.015 260);padding:14px 17px;display:flex;align-items:center;gap:12px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:6px;border-radius:3px;background:#20232B"></div></div>
+                    <span style="flex:1;font-size:14px;font-weight:500;color:oklch(0.94 0.01 260)">Forearm line now carries 2 cells</span>
+                  </div>
+                  <div style="background:oklch(0.28 0.015 260);padding:14px 17px;display:flex;align-items:center;gap:12px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:oklch(0.45 0.03 260);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.7 0.02 260)"></div></div>
+                    <span style="flex:1;font-size:14px;font-weight:500;color:oklch(0.82 0.01 260)">Armpit node burned out — reroute by dawn</span>
+                  </div>
+                  <div style="background:oklch(0.28 0.015 260);padding:14px 17px;display:flex;align-items:center;gap:12px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border-radius:4px;background:#20232B"></div></div>
+                    <span style="flex:1;font-size:14px;font-weight:500;color:oklch(0.94 0.01 260)">T-cell learned <strong style="font-weight:700">Staph</strong> — permanent</span>
+                  </div>
+                </div>
+
+                <div style="border-radius:18px;border:2px solid oklch(0.32 0.015 260);padding:15px;display:flex;align-items:center;gap:13px">
+                  <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+                    <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.66 0.02 260)">NEXT BREAKOUT</span>
+                    <span style="font-size:15px;font-weight:700;color:oklch(0.96 0.01 260)">Throat · in 1 day</span>
+                  </div>
+                  <div style="display:flex;gap:5px">
+                    <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                    <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+                    <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.45 0.14 320)"></div>
+                  </div>
+                </div>
+
+                <div style="height:56px;border-radius:18px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#20232B">Back to the network</div>
+                <div style="height:5px;width:120px;border-radius:3px;background:oklch(0.9 0.01 260);opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">AFTER — THE MAP PAYS THE BILL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:{{ paper }};padding:72px 80px 96px;display:flex;flex-direction:column;gap:44px;font-family:'Outfit',sans-serif">
+
+  <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
+    <div style="font-size:13px;font-family:'DM Mono',monospace;letter-spacing:0.14em;text-transform:uppercase;color:oklch(0.55 0.01 60);background:oklch(0.93 0.008 70);padding:7px 12px;border-radius:6px">Turn 1</div>
+    <h1 style="margin:0;font-size:38px;font-weight:700;letter-spacing:-0.02em;color:#2C2A28">Body Defense — three directions</h1>
+    <p style="margin:0;font-size:16px;line-height:1.5;color:oklch(0.5 0.01 60);max-width:640px;text-wrap:pretty">Static screens only. Same friendly system throughout: warm paper, flat geometry, one bold accent per role, numbers in mono. Each direction changes the <em>map</em> and the <em>information design</em>. Reference ids in chat: <a href="#1a">1a</a> <a href="#1b">1b</a> <a href="#1c">1c</a></p>
+  </div>
+
+  <div style="display:flex;gap:56px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- ══════════ 1a ══════════ -->
+    <div id="1a" style="display:flex;flex-direction:column;gap:22px;width:868px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.66 0.15 25);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">1a</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:24px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Bloodstream</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:600px;text-wrap:pretty">Pathogens flow along vessels. You garrison immune cells at junctions. HUD is a Mini&nbsp;Motorways-style bottom dock — everything you can do lives in one row of cards.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:32px">
+
+        <!-- phone: in-game -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column;position:relative">
+
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="padding:6px 18px 14px;display:flex;flex-direction:column;gap:12px;flex:none">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+                    <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">WAVE 3 / 8</div>
+                    <div style="font-size:19px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Left forearm</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:8px 13px 8px 10px;border-radius:999px">
+                    <div style="width:16px;height:16px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:oklch(0.42 0.06 80)">240</span>
+                  </div>
+                  <div style="width:38px;height:38px;border-radius:12px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;gap:3px">
+                    <div style="width:4px;height:14px;border-radius:1px;background:#2C2A28"></div>
+                    <div style="width:4px;height:14px;border-radius:1px;background:#2C2A28"></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+                  <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+                  <div style="margin-left:8px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;color:oklch(0.58 0.01 60)">TISSUE 4/5</div>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative;background:oklch(0.95 0.012 40);margin:0 0 0 0;overflow:hidden">
+                <svg viewBox="0 0 374 470" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M-20 70 C 80 70 90 160 180 160 C 270 160 280 300 200 330 C 130 356 60 400 60 500" stroke="oklch(0.87 0.05 20)" stroke-width="34" fill="none" stroke-linecap="round"/>
+                  <path d="M180 160 C 260 160 300 90 400 100" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+                  <path d="M-20 70 C 80 70 90 160 180 160 C 270 160 280 300 200 330 C 130 356 60 400 60 500" stroke="oklch(0.93 0.03 20)" stroke-width="22" fill="none" stroke-linecap="round"/>
+                  <path d="M180 160 C 260 160 300 90 400 100" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+
+                  <circle cx="120" cy="112" r="58" fill="oklch(0.66 0.15 195 / 0.1)"/>
+                  <circle cx="120" cy="112" r="58" fill="none" stroke="oklch(0.66 0.15 195 / 0.35)" stroke-width="1.5" stroke-dasharray="4 5"/>
+                  <circle cx="120" cy="112" r="19" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                  <circle cx="120" cy="112" r="6" fill="#FBF7F0"/>
+
+                  <circle cx="252" cy="248" r="46" fill="oklch(0.62 0.15 300 / 0.1)"/>
+                  <circle cx="252" cy="248" r="46" fill="none" stroke="oklch(0.62 0.15 300 / 0.35)" stroke-width="1.5" stroke-dasharray="4 5"/>
+                  <circle cx="252" cy="248" r="19" fill="oklch(0.62 0.15 300)" stroke="#FBF7F0" stroke-width="4"/>
+                  <rect x="246" y="242" width="12" height="12" rx="3" fill="#FBF7F0"/>
+
+                  <circle cx="96" cy="386" r="19" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+                  <circle cx="96" cy="386" r="6" fill="#FBF7F0"/>
+
+                  <circle cx="300" cy="120" r="15" fill="none" stroke="oklch(0.72 0.03 60)" stroke-width="2.5" stroke-dasharray="5 5"/>
+
+                  <circle cx="60" cy="82" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="60" cy="82" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="146" cy="146" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="146" cy="146" r="3" fill="oklch(0.42 0.1 25)"/>
+                  <circle cx="232" cy="196" r="13" fill="oklch(0.58 0.16 15)"/>
+                  <rect x="226" y="190" width="12" height="12" rx="2" fill="oklch(0.38 0.1 15)"/>
+                  <circle cx="215" cy="322" r="9" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="215" cy="322" r="3" fill="oklch(0.42 0.1 25)"/>
+                </svg>
+
+                <div style="position:absolute;top:14px;right:14px;background:#FBF7F0;border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:0 4px 12px -4px oklch(0.3 0.02 60 / 0.2)">
+                  <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.58 0.01 60)">INCOMING</div>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×12</span>
+                    <div style="width:14px;height:14px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">×3</span>
+                  </div>
+                </div>
+
+                <div style="position:absolute;left:14px;bottom:14px;background:oklch(0.98 0.005 70 / 0.92);border-radius:10px;padding:7px 11px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;color:oklch(0.5 0.01 60)">TAP A JUNCTION TO BUILD</div>
+              </div>
+
+              <div style="flex:none;background:#FBF7F0;padding:14px 16px 10px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3)">
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;border-radius:16px;background:oklch(0.66 0.15 195 / 0.12);border:2px solid oklch(0.66 0.15 195);padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:7px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Phago</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">40</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;background:oklch(0.95 0.008 70);border:2px solid transparent;padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:7px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:3px;background:#FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">T-cell</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">75</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;background:oklch(0.95 0.008 70);border:2px solid transparent;padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:7px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:4px;border-radius:2px;background:#FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Anti&shy;body</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">110</span>
+                  </div>
+                  <div style="flex:1;border-radius:16px;background:oklch(0.95 0.008 70);border:2px solid transparent;padding:11px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:0.45">
+                    <div style="width:30px;height:30px;border-radius:50%;background:oklch(0.6 0.02 60);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;border:3px solid #FBF7F0"></div></div>
+                    <span style="font-size:11px;font-weight:600;color:#2C2A28">Fever</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;color:oklch(0.58 0.01 60)">LOCK</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div style="flex:1;height:54px;border-radius:18px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;gap:9px">
+                    <div style="width:0;height:0;border-left:13px solid #FFF9F2;border-top:8px solid transparent;border-bottom:8px solid transparent"></div>
+                    <span style="font-size:17px;font-weight:700;color:#FFF9F2;letter-spacing:0.01em">Start wave 3</span>
+                  </div>
+                  <div style="width:54px;height:54px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#2C2A28">2×</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:2px auto 0"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">IN-GAME — BUILD PHASE</div>
+        </div>
+
+        <!-- phone: level select -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#FBF7F0;display:flex;flex-direction:column">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="padding:16px 22px 18px;display:flex;flex-direction:column;gap:6px;flex:none">
+                <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">DAY 4 · IMMUNITY 62%</div>
+                <h2 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-0.02em;color:#2C2A28">Where's the trouble?</h2>
+              </div>
+
+              <div style="flex:1;padding:0 22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;background:oklch(0.66 0.15 25 / 0.1);border:2px solid oklch(0.66 0.15 25);padding:18px;display:flex;align-items:center;gap:15px">
+                  <div style="width:52px;height:52px;border-radius:16px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:50%;background:#FFF9F2"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:18px;font-weight:700;color:#2C2A28">Left forearm</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Splinter wound · 8 waves</div>
+                  </div>
+                  <div style="font-family:'DM Mono',monospace;font-size:13px;color:#FFF9F2;background:oklch(0.66 0.15 25);padding:7px 12px;border-radius:9px">PLAY</div>
+                </div>
+
+                <div style="border-radius:22px;background:oklch(0.95 0.008 70);padding:18px;display:flex;align-items:center;gap:15px">
+                  <div style="width:52px;height:52px;border-radius:16px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:20px;height:20px;border-radius:6px;background:#FBF7F0"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:18px;font-weight:700;color:#2C2A28">Throat</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Cleared · 3 waves</div>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <div style="width:11px;height:11px;background:oklch(0.78 0.13 80);transform:rotate(45deg)"></div>
+                    <div style="width:11px;height:11px;background:oklch(0.78 0.13 80);transform:rotate(45deg)"></div>
+                    <div style="width:11px;height:11px;background:oklch(0.88 0.02 70);transform:rotate(45deg)"></div>
+                  </div>
+                </div>
+
+                <div style="border-radius:22px;background:oklch(0.95 0.008 70);padding:18px;display:flex;align-items:center;gap:15px">
+                  <div style="width:52px;height:52px;border-radius:16px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:50%;border:5px solid #FBF7F0"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:18px;font-weight:700;color:#2C2A28">Sinuses</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Cleared · 5 waves</div>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <div style="width:11px;height:11px;background:oklch(0.78 0.13 80);transform:rotate(45deg)"></div>
+                    <div style="width:11px;height:11px;background:oklch(0.78 0.13 80);transform:rotate(45deg)"></div>
+                    <div style="width:11px;height:11px;background:oklch(0.78 0.13 80);transform:rotate(45deg)"></div>
+                  </div>
+                </div>
+
+                <div style="border-radius:22px;background:oklch(0.95 0.008 70);padding:18px;display:flex;align-items:center;gap:15px;opacity:0.5">
+                  <div style="width:52px;height:52px;border-radius:16px;background:oklch(0.86 0.01 70);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:20px;border-radius:4px;border:3px solid oklch(0.6 0.01 70)"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:18px;font-weight:700;color:#2C2A28">Lungs</div>
+                    <div style="font-size:13px;color:oklch(0.5 0.01 60)">Clear the forearm first</div>
+                  </div>
+                </div>
+
+                <div style="margin-top:6px;border-radius:22px;border:2px dashed oklch(0.85 0.02 70);padding:20px;display:flex;flex-direction:column;gap:8px">
+                  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">DAILY BRIEF</div>
+                  <div style="font-size:15px;line-height:1.45;color:oklch(0.42 0.01 60);text-wrap:pretty">A splinter went in yesterday. Bacteria are using the vessel as a highway. Hold five waves and the tissue closes on its own.</div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:0 22px 16px;display:flex;gap:10px">
+                <div style="flex:1;height:56px;border-radius:18px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#2C2A28">Cells</div>
+                <div style="flex:1;height:56px;border-radius:18px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#FBF7F0">Body map</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">LEVEL SELECT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 1b ══════════ -->
+    <div id="1b" style="display:flex;flex-direction:column;gap:22px;width:868px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.66 0.15 195);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">1b</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:24px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Tissue Grid</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:600px;text-wrap:pretty">Open grid of cells; infection picks its own route, so you build the maze. HUD is edge-only — one ring gauge, a radial build menu at the tapped cell, nothing floating over the board.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:32px">
+
+        <!-- phone: grid game -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:oklch(0.97 0.008 200);display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:8px 20px 16px;display:flex;align-items:center;gap:16px">
+                <div style="width:76px;height:76px;flex:none;position:relative">
+                  <svg viewBox="0 0 76 76" style="width:76px;height:76px;transform:rotate(-90deg)">
+                    <circle cx="38" cy="38" r="32" fill="none" stroke="oklch(0.91 0.01 200)" stroke-width="8"/>
+                    <circle cx="38" cy="38" r="32" fill="none" stroke="oklch(0.66 0.15 195)" stroke-width="8" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="52"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                    <span style="font-family:'DM Mono',monospace;font-size:19px;font-weight:500;color:#2C2A28">74</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;color:oklch(0.58 0.01 200)">HP</span>
+                  </div>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between">
+                    <span style="font-size:20px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Wave 5</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.5 0.01 200)">0:14 left</span>
+                  </div>
+                  <div style="height:6px;border-radius:3px;background:oklch(0.91 0.01 200);overflow:hidden"><div style="width:64%;height:100%;background:oklch(0.66 0.15 25);border-radius:3px"></div></div>
+                  <div style="display:flex;gap:14px;align-items:center">
+                    <div style="display:flex;align-items:center;gap:5px"><div style="width:13px;height:13px;border-radius:50%;background:oklch(0.78 0.13 80)"></div><span style="font-family:'DM Mono',monospace;font-size:14px;color:#2C2A28">310</span></div>
+                    <div style="display:flex;align-items:center;gap:5px"><div style="width:13px;height:13px;border-radius:50%;background:oklch(0.66 0.15 25)"></div><span style="font-family:'DM Mono',monospace;font-size:14px;color:#2C2A28">9 left</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:1;padding:0 14px;display:flex;align-items:center;justify-content:center;position:relative">
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:100%">
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25);display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:5px;background:oklch(0.66 0.15 195)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25);display:flex;align-items:center;justify-content:center"><div style="width:18px;height:18px;border-radius:5px;background:oklch(0.58 0.16 15)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.7 0.14 145)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:5px;background:oklch(0.66 0.15 195)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.62 0.15 300)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25);display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:5px;background:oklch(0.66 0.15 195)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25);display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25)"></div></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200);outline:3px solid oklch(0.66 0.15 195);outline-offset:2px"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:#2C2A28;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.7 0.14 145)"></div></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.86 0.05 25)"></div>
+
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.93 0.012 200)"></div>
+                  <div style="aspect-ratio:1;border-radius:9px;background:oklch(0.72 0.14 145);display:flex;align-items:center;justify-content:center"><div style="width:16px;height:5px;border-radius:3px;background:oklch(0.97 0.01 145)"></div></div>
+                </div>
+
+                <div style="position:absolute;left:14px;bottom:118px;width:150px;height:150px;border-radius:50%;background:oklch(0.99 0.004 200 / 0.96);box-shadow:0 10px 30px -10px oklch(0.3 0.02 200 / 0.35);display:flex;align-items:center;justify-content:center">
+                  <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                    <div style="width:12px;height:12px;border-radius:50%;background:#F6FBFB"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#F6FBFB">40</span>
+                  </div>
+                  <div style="position:absolute;bottom:22px;left:14px;width:44px;height:44px;border-radius:50%;background:oklch(0.62 0.15 300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                    <div style="width:12px;height:12px;border-radius:4px;background:#F8F5FC"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#F8F5FC">75</span>
+                  </div>
+                  <div style="position:absolute;bottom:22px;right:14px;width:44px;height:44px;border-radius:50%;background:oklch(0.7 0.14 145);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                    <div style="width:13px;height:5px;border-radius:3px;background:#F4FAF6"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#F4FAF6">110</span>
+                  </div>
+                  <div style="width:34px;height:34px;border-radius:50%;background:oklch(0.93 0.012 200);display:flex;align-items:center;justify-content:center">
+                    <div style="width:14px;height:2.5px;background:oklch(0.5 0.01 200);transform:rotate(45deg);position:absolute"></div>
+                    <div style="width:14px;height:2.5px;background:oklch(0.5 0.01 200);transform:rotate(-45deg);position:absolute"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:16px 20px 12px;display:flex;align-items:center;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                  <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.58 0.01 200)">NEXT WAVE</div>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <div style="width:15px;height:15px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                    <div style="width:15px;height:15px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                    <div style="width:16px;height:16px;border-radius:4px;background:oklch(0.58 0.16 15)"></div>
+                    <div style="width:15px;height:15px;border-radius:50%;background:oklch(0.66 0.15 25)"></div>
+                    <div style="width:18px;height:18px;border-radius:5px;background:oklch(0.45 0.14 320)"></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.5 0.01 200);margin-left:2px">+7</span>
+                  </div>
+                </div>
+                <div style="height:52px;padding:0 22px;border-radius:17px;background:#2C2A28;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:oklch(0.97 0.008 200)">Hold</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">IN-GAME — RADIAL BUILD MENU</div>
+        </div>
+
+        <!-- phone: wave clear -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:oklch(0.97 0.008 200);display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:#2C2A28;flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:#2C2A28"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid #2C2A28;padding:1.5px"><div style="width:70%;height:100%;background:#2C2A28;border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px;padding:0 28px">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.58 0.01 200)">WAVE 5 OF 8 HELD</div>
+                  <h2 style="margin:0;font-size:44px;line-height:1.02;font-weight:800;letter-spacing:-0.03em;color:#2C2A28">Swelling<br>going down.</h2>
+                </div>
+
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;border-radius:20px;background:oklch(0.93 0.012 200);padding:16px;display:flex;flex-direction:column;gap:5px">
+                    <span style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:#2C2A28">31</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 200)">Cleared</span>
+                  </div>
+                  <div style="flex:1;border-radius:20px;background:oklch(0.93 0.012 200);padding:16px;display:flex;flex-direction:column;gap:5px">
+                    <span style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:oklch(0.66 0.15 25)">2</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 200)">Got through</span>
+                  </div>
+                  <div style="flex:1;border-radius:20px;background:oklch(0.78 0.13 80 / 0.2);padding:16px;display:flex;flex-direction:column;gap:5px">
+                    <span style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:oklch(0.45 0.08 80)">+95</span>
+                    <span style="font-size:12px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span>
+                  </div>
+                </div>
+
+                <div style="border-radius:22px;border:2px solid oklch(0.9 0.012 200);padding:18px;display:flex;flex-direction:column;gap:14px">
+                  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 200)">UNLOCKED</div>
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:15px;background:oklch(0.45 0.14 320);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:50%;border:4px solid oklch(0.96 0.01 320)"></div></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+                      <div style="font-size:17px;font-weight:700;color:#2C2A28">Fever</div>
+                      <div style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 200)">Slows everything on the board for 6s. One use per wave.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline">
+                    <span style="font-size:14px;font-weight:600;color:oklch(0.42 0.01 200)">Tissue integrity</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:14px;color:#2C2A28">74 / 100</span>
+                  </div>
+                  <div style="height:10px;border-radius:5px;background:oklch(0.91 0.01 200);overflow:hidden"><div style="width:74%;height:100%;background:oklch(0.66 0.15 195);border-radius:5px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:0 28px 16px;display:flex;flex-direction:column;gap:10px">
+                <div style="height:58px;border-radius:19px;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#F6FBFB">Build for wave 6</div>
+                <div style="height:46px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.5 0.01 200)">Leave the body</div>
+              </div>
+              <div style="height:5px;width:120px;border-radius:3px;background:#2C2A28;opacity:0.85;margin:0 auto 8px"></div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">BETWEEN WAVES</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 1c ══════════ -->
+    <div id="1c" style="display:flex;flex-direction:column;gap:22px;width:868px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:#fff;background:oklch(0.62 0.15 300);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none">1c</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h2 style="margin:0;font-size:24px;font-weight:700;color:#2C2A28;letter-spacing:-0.01em">Lymph Lines</h2>
+          <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(0.5 0.01 60);max-width:600px;text-wrap:pretty">The closest thing to Mini Motorways: you draw lymph lines between nodes to move cells where they're needed. Calm, dark board, one line of text at a time, detail lives in a bottom sheet.</p>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:32px">
+
+        <!-- phone: network -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.92 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.92 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.92 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.92 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:none;padding:10px 22px 0;display:flex;align-items:center;justify-content:space-between;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.1em;color:oklch(0.68 0.02 260)">
+                <span>NIGHT 2 · 03:12</span>
+                <div style="display:flex;gap:16px;align-items:center">
+                  <div style="display:flex;align-items:center;gap:6px"><div style="width:11px;height:11px;border-radius:50%;background:oklch(0.78 0.13 80)"></div><span style="color:oklch(0.94 0.01 260)">6</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><div style="width:11px;height:11px;border-radius:3px;background:oklch(0.66 0.15 195)"></div><span style="color:oklch(0.94 0.01 260)">3</span></div>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative">
+                <svg viewBox="0 0 374 560" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M78 96 L78 250 L196 336" stroke="oklch(0.66 0.15 195)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M196 336 L300 336 L300 452" stroke="oklch(0.7 0.14 145)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M78 250 L160 170 L286 170" stroke="oklch(0.62 0.15 300)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M196 336 L110 424 L110 500" stroke="oklch(0.42 0.03 260)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 14"/>
+
+                  <circle cx="286" cy="170" r="26" fill="#2A2E38" stroke="oklch(0.66 0.15 25)" stroke-width="4"/>
+                  <circle cx="286" cy="170" r="10" fill="oklch(0.66 0.15 25)"/>
+                  <circle cx="110" cy="500" r="26" fill="#2A2E38" stroke="oklch(0.66 0.15 25)" stroke-width="4"/>
+                  <rect x="101" y="491" width="18" height="18" rx="4" fill="oklch(0.58 0.16 15)"/>
+
+                  <circle cx="78" cy="96" r="30" fill="oklch(0.66 0.15 195)"/>
+                  <circle cx="78" cy="96" r="11" fill="#20232B"/>
+                  <circle cx="300" cy="452" r="30" fill="oklch(0.7 0.14 145)"/>
+                  <rect x="290" y="446" width="20" height="7" rx="3.5" fill="#20232B"/>
+                  <circle cx="196" cy="336" r="34" fill="#F2F4F8"/>
+                  <circle cx="196" cy="336" r="34" fill="none" stroke="oklch(0.78 0.13 80)" stroke-width="4"/>
+                  <circle cx="196" cy="336" r="13" fill="#20232B"/>
+                  <circle cx="160" cy="170" r="22" fill="oklch(0.62 0.15 300)"/>
+                  <circle cx="160" cy="170" r="8" fill="#20232B"/>
+                  <circle cx="78" cy="250" r="16" fill="#F2F4F8"/>
+
+                  <circle cx="78" cy="180" r="7" fill="oklch(0.94 0.01 260)"/>
+                  <circle cx="245" cy="336" r="7" fill="oklch(0.94 0.01 260)"/>
+                  <circle cx="223" cy="170" r="9" fill="oklch(0.66 0.15 25)"/>
+                </svg>
+
+                <div style="position:absolute;top:16px;right:18px;padding:8px 12px;border-radius:11px;background:oklch(0.28 0.015 260);display:flex;flex-direction:column;gap:4px">
+                  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.66 0.02 260)">BREACH IN</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.78 0.13 80)">0:21</span>
+                </div>
+
+                <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:14px;padding:9px 16px;border-radius:999px;background:oklch(0.28 0.015 260);font-size:14px;font-weight:500;color:oklch(0.9 0.01 260);white-space:nowrap">Drag from a node to lay a line</div>
+              </div>
+
+              <div style="flex:none;padding:14px 20px 12px;display:flex;flex-direction:column;gap:14px;background:oklch(0.24 0.012 260)">
+                <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+                  <div style="display:flex;gap:12px">
+                    <div style="width:60px;height:60px;border-radius:19px;background:oklch(0.66 0.15 195);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+                      <div style="width:16px;height:16px;border-radius:50%;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#20232B">×2</span>
+                    </div>
+                    <div style="width:60px;height:60px;border-radius:19px;background:oklch(0.62 0.15 300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+                      <div style="width:16px;height:16px;border-radius:5px;background:#20232B"></div>
+                      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#20232B">×1</span>
+                    </div>
+                    <div style="width:60px;height:60px;border-radius:19px;border:2px dashed oklch(0.42 0.02 260);display:flex;align-items:center;justify-content:center">
+                      <div style="width:16px;height:2.5px;background:oklch(0.55 0.02 260);position:absolute"></div>
+                      <div style="width:2.5px;height:16px;background:oklch(0.55 0.02 260);position:absolute"></div>
+                    </div>
+                  </div>
+                  <div style="width:60px;height:60px;border-radius:19px;background:oklch(0.34 0.02 260);display:flex;align-items:center;justify-content:center;gap:4px">
+                    <div style="width:5px;height:18px;border-radius:2px;background:oklch(0.9 0.01 260)"></div>
+                    <div style="width:5px;height:18px;border-radius:2px;background:oklch(0.9 0.01 260)"></div>
+                  </div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:oklch(0.9 0.01 260);opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">IN-GAME — ROUTING</div>
+        </div>
+
+        <!-- phone: cell sheet -->
+        <div style="width:390px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#23211F;border-radius:46px;padding:8px;box-shadow:0 24px 48px -18px oklch(0.3 0.02 60 / 0.35)">
+            <div style="width:374px;height:812px;border-radius:38px;overflow:hidden;background:#20232B;display:flex;flex-direction:column;position:relative">
+              <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.72 0.01 260);flex:none">
+                <span>9:41</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <div style="width:16px;height:8px;border-radius:2px;background:oklch(0.72 0.01 260)"></div>
+                  <div style="width:22px;height:10px;border-radius:3px;border:1.5px solid oklch(0.72 0.01 260);padding:1.5px"><div style="width:70%;height:100%;background:oklch(0.72 0.01 260);border-radius:1px"></div></div>
+                </div>
+              </div>
+
+              <div style="flex:1;position:relative;opacity:0.35">
+                <svg viewBox="0 0 374 480" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M78 96 L78 250 L196 336" stroke="oklch(0.66 0.15 195)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M78 250 L160 170 L286 170" stroke="oklch(0.62 0.15 300)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="78" cy="96" r="30" fill="oklch(0.66 0.15 195)"/>
+                  <circle cx="160" cy="170" r="22" fill="oklch(0.62 0.15 300)"/>
+                  <circle cx="196" cy="336" r="34" fill="#F2F4F8"/>
+                  <circle cx="286" cy="170" r="26" fill="#2A2E38" stroke="oklch(0.66 0.15 25)" stroke-width="4"/>
+                </svg>
+              </div>
+
+              <div style="position:absolute;left:0;right:0;bottom:0;background:#F4F5F8;border-radius:30px 30px 38px 38px;padding:14px 24px 16px;display:flex;flex-direction:column;gap:20px">
+                <div style="height:5px;width:44px;border-radius:3px;background:oklch(0.82 0.01 260);margin:0 auto"></div>
+
+                <div style="display:flex;align-items:center;gap:15px">
+                  <div style="width:64px;height:64px;border-radius:20px;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:22px;height:22px;border-radius:7px;background:#F4F5F8"></div></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                    <div style="font-size:23px;font-weight:700;letter-spacing:-0.01em;color:#20232B">T-cell</div>
+                    <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.08em;color:oklch(0.52 0.01 260)">TIER 2 · TARGETED</div>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <div style="width:10px;height:10px;background:oklch(0.62 0.15 300);transform:rotate(45deg)"></div>
+                    <div style="width:10px;height:10px;background:oklch(0.62 0.15 300);transform:rotate(45deg)"></div>
+                    <div style="width:10px;height:10px;background:oklch(0.86 0.01 260);transform:rotate(45deg)"></div>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:11px">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:74px;font-size:13px;font-weight:600;color:oklch(0.48 0.01 260)">Damage</span>
+                    <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.89 0.008 260);overflow:hidden"><div style="width:72%;height:100%;background:#20232B;border-radius:4px"></div></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#20232B;width:34px;text-align:right">18</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:74px;font-size:13px;font-weight:600;color:oklch(0.48 0.01 260)">Reach</span>
+                    <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.89 0.008 260);overflow:hidden"><div style="width:40%;height:100%;background:#20232B;border-radius:4px"></div></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#20232B;width:34px;text-align:right">2.0</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:74px;font-size:13px;font-weight:600;color:oklch(0.48 0.01 260)">Speed</span>
+                    <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.89 0.008 260);overflow:hidden"><div style="width:55%;height:100%;background:#20232B;border-radius:4px"></div></div>
+                    <span style="font-family:'DM Mono',monospace;font-size:13px;color:#20232B;width:34px;text-align:right">1.4</span>
+                  </div>
+                </div>
+
+                <div style="border-radius:18px;background:oklch(0.93 0.006 260);padding:16px;font-size:14px;line-height:1.5;color:oklch(0.4 0.01 260);text-wrap:pretty">Only hits what it has seen before. Give it one wave of exposure and it never misses that pathogen again.</div>
+
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;height:56px;border-radius:18px;background:oklch(0.62 0.15 300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                    <span style="font-size:16px;font-weight:700;color:#F8F5FC">Upgrade</span>
+                    <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.92 0.03 300)">120 ENERGY</span>
+                  </div>
+                  <div style="width:110px;height:56px;border-radius:18px;background:oklch(0.89 0.008 260);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:oklch(0.42 0.01 260)">Recall</div>
+                </div>
+                <div style="height:5px;width:120px;border-radius:3px;background:#20232B;opacity:0.85;margin:0 auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.58 0.01 60);text-align:center">CELL DETAIL SHEET</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:26px;flex-wrap:wrap;padding-top:18px;border-top:2px solid oklch(0.9 0.01 70)">
+    <div style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">SHARED LANGUAGE</div>
+      <div style="font-size:15px;line-height:1.55;color:oklch(0.45 0.01 60);text-wrap:pretty">Outfit for words, DM Mono for every number. Flat shapes, no gradients, no outlines except focus. Radius 9 for board tiles, 18 for controls, 30+ for sheets.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">ROLE COLOURS</div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:oklch(0.66 0.15 25)"></div><span style="font-size:14px;font-weight:600;color:#2C2A28">Threat</span></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:oklch(0.66 0.15 195)"></div><span style="font-size:14px;font-weight:600;color:#2C2A28">Frontline</span></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:oklch(0.62 0.15 300)"></div><span style="font-size:14px;font-weight:600;color:#2C2A28">Targeted</span></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:oklch(0.7 0.14 145)"></div><span style="font-size:14px;font-weight:600;color:#2C2A28">Support</span></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:8px;background:oklch(0.78 0.13 80)"></div><span style="font-size:14px;font-weight:600;color:#2C2A28">Energy</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;paper&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F4EFE6&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#F4EFE6&quot;,&quot;#F1F0EC&quot;,&quot;#EDEFF2&quot;,&quot;#FFFFFF&quot;],&quot;section&quot;:&quot;Canvas&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      paper: this.props.paper ?? '#F4EFE6',
+      showNotes: this.props.showNotes ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

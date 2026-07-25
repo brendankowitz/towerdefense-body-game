@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; font-family:'Outfit',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:oklch(0.62 0.15 300); text-decoration:none; border-bottom:1.5px solid oklch(0.62 0.15 300 / 0.35); }
+  a:hover { color:oklch(0.52 0.16 300); border-bottom-color:oklch(0.52 0.16 300 / 0.7); }
+</style>
+</helmet>
+
+<div style="background:#F4EFE6;padding:64px 72px 96px;display:flex;flex-direction:column;gap:64px;width:1560px;box-sizing:border-box">
+
+  <div style="display:flex;flex-direction:column;gap:14px;max-width:820px">
+    <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.16em;color:oklch(0.55 0.01 60)">BODY DEFENSE · ASSET & SYSTEM SHEET · V1</div>
+    <h1 style="margin:0;font-size:52px;font-weight:800;letter-spacing:-0.035em;line-height:1;color:#2C2A28">Everything the levels are built from</h1>
+    <p style="margin:0;font-size:17px;line-height:1.55;color:oklch(0.48 0.01 60);text-wrap:pretty">Reference for the 3a direction. Numbers here match the playable prototype exactly — if you change one, change it in both places. Shapes are flat, filled, and never outlined except to show a range or an empty slot.</p>
+  </div>
+
+  <!-- ══ PALETTE ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">01</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Colour is role, never decoration</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+      <div style="border-radius:20px;background:#FBF7F0;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:64px;border-radius:14px;background:oklch(0.66 0.15 25)"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:16px;font-weight:700;color:#2C2A28">Threat</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">oklch(.66 .15 25)</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);margin-top:4px">Pathogens, the region under attack, the button that starts a wave.</span>
+        </div>
+      </div>
+      <div style="border-radius:20px;background:#FBF7F0;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:64px;border-radius:14px;background:oklch(0.66 0.15 195)"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:16px;font-weight:700;color:#2C2A28">Frontline</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">oklch(.66 .15 195)</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);margin-top:4px">Phagocytes, tissue pips, regions you already hold.</span>
+        </div>
+      </div>
+      <div style="border-radius:20px;background:#FBF7F0;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:64px;border-radius:14px;background:oklch(0.7 0.14 145)"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:16px;font-weight:700;color:#2C2A28">Support</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">oklch(.7 .14 145)</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);margin-top:4px">Antibodies, tags, permanent immunity, anything already won.</span>
+        </div>
+      </div>
+      <div style="border-radius:20px;background:#FBF7F0;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:64px;border-radius:14px;background:oklch(0.45 0.14 320)"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:16px;font-weight:700;color:#2C2A28">Control</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">oklch(.45 .14 320)</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);margin-top:4px">Clots and anything that changes time rather than health.</span>
+        </div>
+      </div>
+      <div style="border-radius:20px;background:#FBF7F0;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:64px;border-radius:14px;background:oklch(0.78 0.13 80)"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:16px;font-weight:700;color:#2C2A28">Energy</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">oklch(.78 .13 80)</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);margin-top:4px">Currency, the heart, and nothing else. Never a button fill.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px;border-radius:20px;background:#FBF7F0;padding:18px;display:flex;align-items:center;gap:16px">
+        <div style="display:flex;gap:8px">
+          <div style="width:52px;height:52px;border-radius:13px;background:#F4EFE6;border:1.5px solid oklch(0.87 0.012 70)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:#FBF7F0;border:1.5px solid oklch(0.87 0.012 70)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:oklch(0.95 0.012 40)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:#2C2A28"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:15px;font-weight:700;color:#2C2A28">Neutrals</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.5 0.01 60);text-wrap:pretty">Desk paper · screen paper · tissue field · ink. Only two backgrounds ever appear in one screen.</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:280px;border-radius:20px;background:#20232B;padding:18px;display:flex;align-items:center;gap:16px">
+        <div style="display:flex;gap:8px">
+          <div style="width:52px;height:52px;border-radius:13px;background:#20232B;border:1.5px solid oklch(0.4 0.02 260)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:oklch(0.24 0.012 260)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:oklch(0.34 0.02 260)"></div>
+          <div style="width:52px;height:52px;border-radius:13px;background:#F2F4F8"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:15px;font-weight:700;color:oklch(0.96 0.01 260)">Night set — reserved</span>
+          <span style="font-size:13px;line-height:1.4;color:oklch(0.72 0.02 260);text-wrap:pretty">Only for the Lymph Lines direction. Not used anywhere in 3a; kept here so nobody reinvents it.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TYPE + SHAPE ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">02</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Type, shape, spacing</h2>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:420px;border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">OUTFIT — WORDS</span>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">36/800/-3%</span>
+            <span style="font-size:36px;font-weight:800;letter-spacing:-0.03em;color:#2C2A28">Swelling going down.</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">19/700</span>
+            <span style="font-size:19px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Deep cut</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">15/400</span>
+            <span style="font-size:15px;line-height:1.45;color:oklch(0.48 0.01 60)">Kitchen knife, two hours ago.</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">12/600</span>
+            <span style="font-size:12px;font-weight:600;color:oklch(0.5 0.01 60)">Got through</span>
+          </div>
+        </div>
+        <div style="height:1.5px;background:oklch(0.9 0.01 70)"></div>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">DM MONO — EVERY NUMBER, EVERY LABEL</span>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">22/500</span>
+            <span style="font-family:'DM Mono',monospace;font-size:22px;color:#2C2A28">04:38 · 520 · 3/14</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.6 0.01 60);width:96px;flex:none">11/.13em</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">TISSUE 4/5 · COMING THROUGH</span>
+          </div>
+        </div>
+        <div style="border-radius:14px;background:oklch(0.95 0.008 70);padding:14px;font-size:13px;line-height:1.45;color:oklch(0.45 0.01 60);text-wrap:pretty">Rule: if it's a quantity, a timer, or an all-caps section label, it's mono. Everything a human would say out loud is Outfit. Nothing on a game screen is below 11px, and nothing tappable is under 44px.</div>
+      </div>
+
+      <div style="flex:1;min-width:420px;border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">RADIUS LADDER</span>
+        <div style="display:flex;gap:12px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+            <div style="width:78px;height:60px;border-radius:9px;background:oklch(0.93 0.012 60)"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">9 · tile</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+            <div style="width:78px;height:60px;border-radius:14px;background:oklch(0.93 0.012 60)"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">14 · chip</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+            <div style="width:78px;height:60px;border-radius:18px;background:oklch(0.93 0.012 60)"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">18 · control</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+            <div style="width:78px;height:60px;border-radius:22px;background:oklch(0.93 0.012 60)"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">22 · card</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+            <div style="width:78px;height:60px;border-radius:30px 30px 9px 9px;background:oklch(0.93 0.012 60)"></div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:oklch(0.55 0.01 60)">30 · sheet</span>
+          </div>
+        </div>
+        <div style="height:1.5px;background:oklch(0.9 0.01 70)"></div>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">UNIT SILHOUETTES — READ AT 16PX</span>
+        <div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+            <div style="width:44px;height:44px;border-radius:50%;background:#2C2A28"></div>
+            <span style="font-size:13px;font-weight:600;color:#2C2A28">Circle</span>
+            <span style="font-size:12px;color:oklch(0.55 0.01 60);text-align:center;max-width:96px;line-height:1.35">Alive and soft — cells, bacteria, viruses</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+            <div style="width:44px;height:44px;border-radius:6px;background:#2C2A28"></div>
+            <span style="font-size:13px;font-weight:600;color:#2C2A28">Square</span>
+            <span style="font-size:12px;color:oklch(0.55 0.01 60);text-align:center;max-width:96px;line-height:1.35">Armoured or structural — biofilm, blocks</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+            <div style="width:36px;height:36px;border-radius:5px;background:#2C2A28;transform:rotate(45deg);margin:4px"></div>
+            <span style="font-size:13px;font-weight:600;color:#2C2A28">Tilted square</span>
+            <span style="font-size:12px;color:oklch(0.55 0.01 60);text-align:center;max-width:96px;line-height:1.35">Chemical, not alive — toxins</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+            <div style="width:44px;height:44px;border-radius:50%;border:6px solid #2C2A28;box-sizing:border-box"></div>
+            <span style="font-size:13px;font-weight:600;color:#2C2A28">Ring</span>
+            <span style="font-size:12px;color:oklch(0.55 0.01 60);text-align:center;max-width:96px;line-height:1.35">An effect, not a body — tags, ranges, clots</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+            <div style="width:34px;height:34px;background:#2C2A28;transform:rotate(45deg);margin:5px"></div>
+            <span style="font-size:13px;font-weight:600;color:#2C2A28">Small diamond</span>
+            <span style="font-size:12px;color:oklch(0.55 0.01 60);text-align:center;max-width:96px;line-height:1.35">Earned progress only — stars, immunity tiers. Never on the board.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DEFENDERS ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">03</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Defenders — six different verbs</h2>
+      <span style="font-size:15px;color:oklch(0.5 0.01 60)">None of them is "a gun". Each neutralizes the way the real cell does.</span>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;border-radius:18px;background:#FBF7F0;padding:16px 20px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">UNLOCK ORDER</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:14px;font-weight:600;color:#2C2A28;background:oklch(0.93 0.012 60);padding:6px 12px;border-radius:9px">From the start · Engulf, Block, Tag, Execute</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60)">→</span>
+        <span style="font-size:14px;font-weight:600;color:#2C2A28;background:oklch(0.62 0.16 350 / 0.16);padding:6px 12px;border-radius:9px">1 case cleared · Burst</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60)">→</span>
+        <span style="font-size:14px;font-weight:600;color:#2C2A28;background:oklch(0.5 0.1 210 / 0.16);padding:6px 12px;border-radius:9px">2 cases cleared · Learn</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:19px;height:19px;border-radius:50%;background:#FBF7F0"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Phagocyte</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">ENGULF · 40</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="120" cy="72" r="52" fill="oklch(0.66 0.15 195)" opacity="0.1"/>
+          <line x1="120" y1="72" x2="163" y2="47" stroke="oklch(0.66 0.15 195)" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+          <circle cx="163" cy="47" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="120" cy="72" r="20" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="120" cy="72" r="9" fill="#FBF7F0"/>
+          <circle cx="228" cy="80" r="8" fill="oklch(0.66 0.15 25)" opacity="0.5"/>
+          <circle cx="256" cy="88" r="8" fill="oklch(0.66 0.15 25)" opacity="0.5"/>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Grabs <strong style="font-weight:700;color:#2C2A28">one</strong> pathogen, freezes it in place, and digests it. While it's busy the rest of the queue walks straight past — a tether is drawn to whatever it's holding.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">40</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">56</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Digest</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">15 / sec</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Between meals</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">0.7s</span></div>
+          <div style="background:oklch(0.66 0.15 195 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.42 0.06 195)">Tires after</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.4 0.08 195)">4 → rest 3.4s</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Armour cuts the digest to a quarter, and a resting phagocyte is dead weight. Never enough on its own.</div>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:24px;height:8px;border-radius:4px;background:#FBF7F0"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Antibody</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">TAG · 95</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="150" cy="76" r="62" fill="oklch(0.7 0.14 145)" opacity="0.1"/>
+          <line x1="150" y1="76" x2="104" y2="58" stroke="oklch(0.7 0.14 145)" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+          <line x1="150" y1="76" x2="196" y2="56" stroke="oklch(0.7 0.14 145)" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+          <line x1="150" y1="76" x2="212" y2="82" stroke="oklch(0.7 0.14 145)" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+          <circle cx="104" cy="58" r="14" fill="none" stroke="oklch(0.7 0.14 145)" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="104" cy="58" r="8" fill="oklch(0.66 0.15 25)"/>
+          <rect x="184" y="44" width="24" height="24" rx="4" fill="oklch(0.58 0.16 15)"/>
+          <rect x="180" y="40" width="32" height="32" rx="7" fill="none" stroke="oklch(0.7 0.14 145)" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="212" cy="82" r="14" fill="none" stroke="oklch(0.7 0.14 145)" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="212" cy="82" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="150" cy="76" r="20" fill="oklch(0.7 0.14 145)" stroke="#FBF7F0" stroke-width="4"/>
+          <rect x="142" y="73" width="16" height="6" rx="3" fill="#FBF7F0"/>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Kills almost nothing. It <strong style="font-weight:700;color:#2C2A28">marks</strong> everything in a wide radius: tagged pathogens lose their armour entirely, burn slowly, and pay half again as much energy when they finally die.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">95</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">94 — widest</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Pulse</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">1.5s · all in range</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Tag lasts</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">6s · 4 dmg/sec</span></div>
+          <div style="background:oklch(0.7 0.14 145 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.4 0.06 145)">Tagged bounty</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.4 0.08 145)">+50% energy</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Alone it will lose the level slowly. It only pays off with something behind it to do the killing.</div>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.45 0.14 320);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:20px;height:20px;border-radius:50%;border:6px solid oklch(0.96 0.02 320)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Clot</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">BLOCK · 70</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="150" cy="66" r="46" fill="oklch(0.45 0.14 320)" opacity="0.13"/>
+          <circle cx="150" cy="66" r="46" fill="none" stroke="oklch(0.45 0.14 320)" stroke-width="2.5" stroke-dasharray="7 6" opacity="0.6"/>
+          <circle cx="118" cy="50" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="140" cy="46" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="164" cy="47" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="186" cy="53" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="150" cy="66" r="20" fill="oklch(0.45 0.14 320)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="150" cy="66" r="8" fill="none" stroke="#FBF7F0" stroke-width="3.5"/>
+          <rect x="136" y="36" width="28" height="4" rx="2" fill="oklch(0.9 0.01 70)"/>
+          <rect x="136" y="36" width="17" height="4" rx="2" fill="oklch(0.45 0.14 320)"/>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Deals no damage at all. Everything inside its zone crawls at <strong style="font-weight:700;color:#2C2A28">28% speed</strong> — and grinds the clot away as it passes. It's the only thing that stops a wound bleeding energy.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">70</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">62</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Damage</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">none</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Wears down</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">13 / sec per body</span></div>
+          <div style="background:oklch(0.45 0.14 320 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.4 0.1 320)">Also</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.4 0.12 320)">stops bleeding</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Temporary by design — a big wave dissolves it. It buys seconds, it doesn't win.</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.55 0.16 265);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:18px;height:18px;border-radius:4px;background:#FBF7F0;transform:rotate(45deg)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Killer cell</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">EXECUTE · 130</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="140" cy="76" r="70" fill="oklch(0.55 0.16 265)" opacity="0.1"/>
+          <line x1="140" y1="76" x2="196" y2="52" stroke="oklch(0.55 0.16 265)" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="196" cy="52" r="12" fill="oklch(0.42 0.13 10)"/>
+          <rect x="184" y="28" width="24" height="4" rx="2" fill="oklch(0.9 0.01 70)"/>
+          <rect x="184" y="28" width="6" height="4" rx="2" fill="oklch(0.5 0.16 20)"/>
+          <circle cx="96" cy="56" r="8" fill="oklch(0.66 0.15 25)" opacity="0.45"/>
+          <circle cx="140" cy="76" r="20" fill="oklch(0.55 0.16 265)" stroke="#FBF7F0" stroke-width="4"/>
+          <rect x="134" y="70" width="12" height="12" rx="2" fill="#FBF7F0" transform="rotate(45 140 76)"/>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Ignores the queue and hits whatever is <strong style="font-weight:700;color:#2C2A28">closest to death</strong>. Anything already below 35% health it finishes outright, armour or not.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">130</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">78</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Hit</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">58 every 2.4s</span></div>
+          <div style="background:oklch(0.55 0.16 265 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.42 0.1 265)">Executes under</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.42 0.12 265)">35% HP</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Terrible against swarms — one target every 2.4 seconds, no matter how many walk past.</div>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.62 0.16 350);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:20px;height:20px;border-radius:50%;border:6px solid #FBF7F0;box-sizing:border-box"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Mast cell</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">BURST · 150 · 1 CASE</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="150" cy="60" r="52" fill="oklch(0.62 0.16 350)" opacity="0.22"/>
+          <circle cx="118" cy="48" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="146" cy="44" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="176" cy="47" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="146" cy="44" r="14" fill="none" stroke="oklch(0.7 0.14 145)" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="150" cy="60" r="20" fill="oklch(0.62 0.16 350)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="150" cy="53" r="3.4" fill="#FBF7F0"/>
+          <circle cx="143" cy="65" r="3.4" fill="#FBF7F0"/>
+          <circle cx="157" cy="65" r="3.4" fill="#FBF7F0"/>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Fires no shots — it <strong style="font-weight:700;color:#2C2A28">releases</strong>, hitting everything in a tight radius at once. Damage doubles on anything an antibody has tagged.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">150</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">54 — tightest</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Pulse</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">11 to all · 1.1s</span></div>
+          <div style="background:oklch(0.62 0.16 350 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.45 0.1 350)">On tagged</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.45 0.12 350)">×2 damage</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Short reach and low per-hit damage. Useless on a lone tank, decisive on a swarm.</div>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:oklch(0.5 0.1 210);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:22px;height:22px;border-radius:50%;border:6px solid #FBF7F0;box-sizing:border-box"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Memory cell</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">LEARN · 175 · 2 CASES</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 300 140" style="width:100%;height:140px;border-radius:14px;background:oklch(0.95 0.012 40)">
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.87 0.05 20)" stroke-width="26" fill="none" stroke-linecap="round"/>
+          <path d="M-10 100 C 60 100 80 44 150 44 C 220 44 240 96 310 96" stroke="oklch(0.93 0.03 20)" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="140" cy="78" r="82" fill="oklch(0.5 0.1 210)" opacity="0.1"/>
+          <line x1="140" y1="78" x2="204" y2="50" stroke="oklch(0.5 0.1 210)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="204" cy="50" r="8" fill="oklch(0.66 0.15 25)"/>
+          <rect x="60" y="40" width="26" height="26" rx="5" fill="oklch(0.52 0.13 45)" transform="rotate(45 73 53)"/>
+          <circle cx="140" cy="78" r="20" fill="oklch(0.5 0.1 210)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="140" cy="78" r="8" fill="none" stroke="#FBF7F0" stroke-width="3"/>
+          <circle cx="140" cy="78" r="3" fill="#FBF7F0"/>
+          <text x="140" y="118" fill="oklch(0.5 0.1 210)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:13px">+28</text>
+        </svg>
+
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Arrives almost useless and gets <strong style="font-weight:700;color:#2C2A28">permanently stronger</strong> with every pathogen that dies near it. Its earned bonus is printed under the cell. Toxins cannot stun it.</p>
+
+        <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden">
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Cost</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">175</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Reach</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">82</span></div>
+          <div style="background:oklch(0.95 0.008 70);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.48 0.01 60)">Hit</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:#2C2A28">12 + learned · 1.3s</span></div>
+          <div style="background:oklch(0.5 0.1 210 / 0.14);padding:10px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:oklch(0.4 0.07 210)">Learns</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.4 0.09 210)">+2.5 / kill, cap 46</span></div>
+        </div>
+
+        <div style="border-radius:14px;background:oklch(0.66 0.15 25 / 0.1);padding:13px;font-size:13px;line-height:1.4;color:oklch(0.45 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Weakness.</strong> Expensive and weak for the first two waves. A bad panic buy, a great early investment.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:22px;background:#2C2A28;padding:26px 28px;display:flex;align-items:center;gap:30px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:5px;min-width:200px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.14em;color:oklch(0.7 0.01 60)">THE INTENDED COMBO</span>
+        <span style="font-size:21px;font-weight:700;letter-spacing:-0.015em;color:#FBF7F0">Block → Tag → everything else</span>
+      </div>
+      <div style="flex:1;min-width:420px;font-size:15px;line-height:1.55;color:oklch(0.82 0.01 60);text-wrap:pretty">A clot at the mouth stretches the time everything spends in range. An antibody behind it strips armour, starts the burn, and doubles what a mast cell does. Phagocytes cover each other's rest windows; a killer cell mops up whatever they wounded. Every defender is a multiplier on another one — none of them wins a case alone, and that's the lesson each case is teaching.</div>
+    </div>
+  </div>
+
+  <!-- ══ PATHOGENS ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">04</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Pathogens</h2>
+      <span style="font-size:15px;color:oklch(0.5 0.01 60)">Shape tells you how to kill it before the label does.</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:17px;height:17px;border-radius:50%;background:oklch(0.35 0.09 20)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Staph</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">BACTERIA · CIRCLE</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">26</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">50</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">6</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">The baseline. Individually trivial, arrives in numbers that overwhelm any single defender. Teaches throughput.</p>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:12px;background:oklch(0.58 0.16 15);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:16px;border-radius:4px;background:oklch(0.35 0.09 20)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Biofilm</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">ARMOURED · SQUARE</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">120</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">28</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">16</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <div style="border-radius:13px;background:oklch(0.7 0.14 145 / 0.14);padding:12px;font-size:13px;line-height:1.4;color:oklch(0.4 0.05 145)"><strong style="font-weight:700">Armour ×0.25</strong> until tagged. Untagged, a phagocyte needs 32 seconds to eat one.</div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">The reason antibodies exist. Slow enough to ignore, tough enough that ignoring it loses the wave.</p>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:oklch(0.62 0.15 300);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:17px;height:17px;border-radius:50%;background:oklch(0.3 0.1 300)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Flu virus</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">SPLITTER · CIRCLE</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">34</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">58</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">8</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <div style="border-radius:13px;background:oklch(0.62 0.15 300 / 0.14);padding:12px;font-size:13px;line-height:1.4;color:oklch(0.4 0.1 300)"><strong style="font-weight:700">Splits on death</strong> into two half-size copies, once. Killing it deep in the lane is a mistake.</div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Punishes killing things late. Flu B immunity removes the split entirely — the clearest reward in the game.</p>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:oklch(0.6 0.11 115);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:17px;height:17px;border-radius:50%;background:oklch(0.35 0.09 20)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Spore</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">FUNGAL · CIRCLE + HALO</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">60</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">34</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">12</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <div style="border-radius:13px;background:oklch(0.6 0.11 115 / 0.18);padding:12px;font-size:13px;line-height:1.4;color:oklch(0.4 0.07 115)"><strong style="font-weight:700">Regenerates 7/sec</strong> unless tagged. A thin outline means it's back at full health.</div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Punishes chip damage. Anything that can't out-damage the regen is just feeding it time.</p>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:10px;background:oklch(0.52 0.13 45);display:flex;align-items:center;justify-content:center;flex:none;transform:rotate(45deg)"><div style="width:15px;height:15px;border-radius:3px;background:oklch(0.35 0.09 20)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Toxin</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">CHEMICAL · TILTED SQUARE</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">44</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">40</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">14</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <div style="border-radius:13px;background:oklch(0.52 0.13 45 / 0.18);padding:12px;font-size:13px;line-height:1.4;color:oklch(0.4 0.09 45)"><strong style="font-weight:700">Stuns for 1.6s</strong> any defender it walks within 40 of. Clots and memory cells are unaffected.</div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Attacks your board rather than your tissue. Rewards spacing defenders back from the vessel.</p>
+      </div>
+
+      <div style="border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:oklch(0.42 0.13 10);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 3px #FBF7F0, 0 0 0 5px oklch(0.42 0.13 10)"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.25 0.07 20)"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Resistant</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:oklch(0.55 0.01 60)">MRSA · DOUBLE RING</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">150</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">HP</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.95 0.008 70);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:#2C2A28">36</span><span style="font-size:11px;font-weight:600;color:oklch(0.55 0.01 60)">Speed</span></div>
+          <div style="flex:1;border-radius:13px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;display:flex;flex-direction:column;gap:2px"><span style="font-family:'DM Mono',monospace;font-size:17px;color:oklch(0.45 0.08 80)">24</span><span style="font-size:11px;font-weight:600;color:oklch(0.45 0.06 80)">Energy</span></div>
+        </div>
+        <div style="border-radius:13px;background:oklch(0.42 0.13 10 / 0.16);padding:12px;font-size:13px;line-height:1.4;color:oklch(0.38 0.11 10)"><strong style="font-weight:700">Cannot be tagged.</strong> Permanent ×0.6 armour — no antibody, no mast bonus, no shortcut.</div>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">The wall that invalidates the standard opener. Engulf it, execute it, or block it long enough to do both.</p>
+      </div>
+    </div>
+
+    <div style="border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">WHAT ANSWERS WHAT</span>
+      <div style="display:grid;grid-template-columns:130px repeat(6,1fr);gap:6px;align-items:center">
+        <span></span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.66 0.15 195);text-align:center">Engulf</span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.45 0.14 320);text-align:center">Block</span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.7 0.14 145);text-align:center">Tag</span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.55 0.16 265);text-align:center">Execute</span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.62 0.16 350);text-align:center">Burst</span>
+        <span style="font-size:12px;font-weight:700;color:oklch(0.5 0.1 210);text-align:center">Learn</span>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Staph</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">weak</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">best</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Biofilm</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">weak</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">required</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">if tagged</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Flu virus</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">feeds it</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">best</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Spore</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">feeds it</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">required</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">if tagged</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Toxin</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">stunned</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">immune</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">stunned</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">stunned</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">stunned</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">immune</div>
+
+        <span style="font-size:13px;font-weight:600;color:#2C2A28">Resistant</span>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.35 0.07 145)">good</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">nothing</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.7 0.14 145 / 0.45);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:oklch(0.3 0.07 145)">best</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.66 0.15 25 / 0.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.45 0.1 25)">weak</div>
+        <div style="height:34px;border-radius:9px;background:oklch(0.93 0.012 60);display:flex;align-items:center;justify-content:center;font-size:12px;color:oklch(0.55 0.01 60)">ok</div>
+      </div>
+      <span style="font-size:13px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">No row is all green and no column is all green — every case forces at least two different verbs on the board.</span>
+    </div>
+  </div>
+
+  <!-- ══ CASE TYPES ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">05</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Case types</h2>
+      <span style="font-size:15px;color:oklch(0.5 0.01 60)">A case changes a rule. It never just adds more enemies.</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:12px;border-top:5px solid oklch(0.66 0.15 25)">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:19px;font-weight:700;color:#2C2A28">Wound</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.09em;color:oklch(0.55 0.01 60)">SHIPPED</span>
+        </div>
+        <div style="border-radius:12px;background:oklch(0.66 0.15 25 / 0.12);padding:11px;font-size:13px;line-height:1.4;color:oklch(0.42 0.08 25);font-weight:600">Bleeds 2 energy/sec until a clot is down</div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Endless weak bacteria. The clock is the real enemy — you're buying your own economy back.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:12px;border-top:5px solid oklch(0.62 0.15 300)">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:19px;font-weight:700;color:#2C2A28">Virus</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.09em;color:oklch(0.55 0.01 60)">SHIPPED</span>
+        </div>
+        <div style="border-radius:12px;background:oklch(0.62 0.15 300 / 0.12);padding:11px;font-size:13px;line-height:1.4;color:oklch(0.4 0.1 300);font-weight:600">Every kill splits into two</div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Forces you to kill early and in bulk. Rewards stacking defenders at the entrance, not the exit.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:12px;border-top:5px solid oklch(0.78 0.13 80)">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:19px;font-weight:700;color:#2C2A28">Poisoning</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.09em;color:oklch(0.55 0.01 60)">SHIPPED</span>
+        </div>
+        <div style="border-radius:12px;background:oklch(0.78 0.13 80 / 0.18);padding:11px;font-size:13px;line-height:1.4;color:oklch(0.42 0.07 80);font-weight:600">Toxins kill your cells, not the tissue</div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Defenders take damage and die. Antibodies survive it far better — reach beats proximity.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:12px;border-top:5px solid oklch(0.45 0.14 320);opacity:0.75">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:19px;font-weight:700;color:#2C2A28">Allergy</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.09em;color:oklch(0.55 0.01 60)">DESIGNED, NOT BUILT</span>
+        </div>
+        <div style="border-radius:12px;background:oklch(0.45 0.14 320 / 0.12);padding:11px;font-size:13px;line-height:1.4;color:oklch(0.4 0.1 320);font-weight:600">Nothing is really invading — overreacting damages you</div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">Inverts the whole game. Probably too clever for the first hour; hold it for later in the run.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:12px;border-top:5px solid oklch(0.58 0.16 15);opacity:0.75">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-size:19px;font-weight:700;color:#2C2A28">Chronic</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.09em;color:oklch(0.55 0.01 60)">DESIGNED, NOT BUILT</span>
+        </div>
+        <div style="border-radius:12px;background:oklch(0.58 0.16 15 / 0.12);padding:11px;font-size:13px;line-height:1.4;color:oklch(0.42 0.1 15);font-weight:600">Never fully clears — hold it low across days</div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.48 0.01 60);text-wrap:pretty">The only case with no win screen. Occupies a region permanently and taxes the run.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOARD + MAP ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">06</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Two boards</h2>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:520px;border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">The vessel — where you fight</span>
+          <span style="font-size:14px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">One stroked path, two widths: 34 casing, 22 lumen. Five build spots per case, always off the path, never overlapping ranges by more than half.</span>
+        </div>
+        <svg viewBox="0 0 620 300" style="width:100%;border-radius:16px;background:oklch(0.95 0.012 40)">
+          <path d="M-20 60 C 120 60 140 150 280 150 C 420 150 440 250 640 250" stroke="oklch(0.87 0.05 20)" stroke-width="34" fill="none" stroke-linecap="round"/>
+          <path d="M-20 60 C 120 60 140 150 280 150 C 420 150 440 250 640 250" stroke="oklch(0.93 0.03 20)" stroke-width="22" fill="none" stroke-linecap="round"/>
+          <circle cx="120" cy="112" r="62" fill="oklch(0.45 0.14 320)" opacity="0.13"/>
+          <circle cx="120" cy="112" r="62" fill="none" stroke="oklch(0.45 0.14 320)" stroke-width="2.5" stroke-dasharray="7 6" opacity="0.6"/>
+          <circle cx="120" cy="112" r="20" fill="oklch(0.45 0.14 320)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="120" cy="112" r="8" fill="none" stroke="#FBF7F0" stroke-width="3.5"/>
+          <circle cx="300" cy="86" r="94" fill="oklch(0.7 0.14 145)" opacity="0.1"/>
+          <circle cx="300" cy="86" r="20" fill="oklch(0.7 0.14 145)" stroke="#FBF7F0" stroke-width="4"/>
+          <rect x="292" y="83" width="16" height="6" rx="3" fill="#FBF7F0"/>
+          <circle cx="416" cy="206" r="56" fill="oklch(0.66 0.15 195)" opacity="0.1"/>
+          <circle cx="416" cy="206" r="20" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="416" cy="206" r="9" fill="#FBF7F0"/>
+          <line x1="416" y1="206" x2="452" y2="188" stroke="oklch(0.66 0.15 195)" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+          <circle cx="452" cy="188" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="520" cy="238" r="24" fill="oklch(0.98 0.005 70)" opacity="0.5" stroke="oklch(0.72 0.03 60)" stroke-width="3" stroke-dasharray="6 6"/>
+          <rect x="513" y="236.5" width="14" height="3" rx="1.5" fill="oklch(0.6 0.02 60)"/>
+          <rect x="518.5" y="231" width="3" height="14" rx="1.5" fill="oklch(0.6 0.02 60)"/>
+          <circle cx="196" cy="128" r="12" fill="none" stroke="oklch(0.7 0.14 145)" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="196" cy="128" r="8" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="196" cy="128" r="3" fill="oklch(0.35 0.09 20)"/>
+          <rect x="234" y="132" width="24" height="24" rx="4" fill="oklch(0.58 0.16 15)"/>
+          <rect x="242" y="140" width="8" height="8" rx="2" fill="oklch(0.35 0.09 20)"/>
+          <text x="120" y="200" fill="oklch(0.5 0.01 60)" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.06em" text-anchor="middle">CLOT ZONE 62</text>
+          <text x="300" y="196" fill="oklch(0.5 0.01 60)" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.06em" text-anchor="middle">TAG RADIUS 94</text>
+          <text x="416" y="278" fill="oklch(0.5 0.01 60)" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.06em" text-anchor="middle">ENGULF 56</text>
+          <text x="520" y="280" fill="oklch(0.5 0.01 60)" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.06em" text-anchor="middle">EMPTY SPOT</text>
+        </svg>
+      </div>
+
+      <div style="flex:1;min-width:380px;border-radius:24px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:20px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">The body — where you choose</span>
+          <span style="font-size:14px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">Fourteen nodes, roughly human, deliberately not anatomical. Node radius encodes importance, not organ size. The heart is the run.</span>
+        </div>
+        <svg viewBox="0 0 374 470" style="width:100%;height:400px;border-radius:16px;background:oklch(0.955 0.01 45)">
+          <path d="M187 56 L187 108 L187 176 M187 176 L128 148 M187 176 L246 148 M187 176 L187 254 L187 322 M187 176 L104 196 L64 252 M187 176 L270 196 L310 252 M187 322 L146 386 L146 452 M187 322 L228 386 L228 452" stroke="oklch(0.87 0.02 60)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M187 56 L187 108 L187 176" stroke="oklch(0.66 0.15 195)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M187 176 L104 196 L64 252" stroke="oklch(0.66 0.15 25)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <circle cx="64" cy="252" r="46" fill="oklch(0.66 0.15 25)" opacity="0.14"/>
+          <circle cx="187" cy="176" r="30" fill="oklch(0.78 0.13 80)" stroke="#FBF7F0" stroke-width="5"/>
+          <circle cx="187" cy="176" r="11" fill="#FBF7F0"/>
+          <circle cx="187" cy="56" r="24" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="187" cy="56" r="8" fill="#FBF7F0"/>
+          <circle cx="187" cy="108" r="19" fill="oklch(0.66 0.15 195)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="187" cy="108" r="7" fill="#FBF7F0"/>
+          <circle cx="128" cy="148" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="246" cy="148" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="187" cy="254" r="23" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="187" cy="322" r="19" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="104" cy="196" r="15" fill="oklch(0.86 0.05 25)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="64" cy="252" r="26" fill="oklch(0.66 0.15 25)" stroke="#FBF7F0" stroke-width="5"/>
+          <circle cx="64" cy="252" r="9" fill="#FBF7F0"/>
+          <circle cx="270" cy="196" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="310" cy="252" r="22" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="146" cy="386" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="228" cy="386" r="15" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="146" cy="452" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <circle cx="228" cy="452" r="21" fill="oklch(0.9 0.014 60)" stroke="#FBF7F0" stroke-width="4"/>
+          <text x="221" y="180" fill="oklch(0.3 0.02 60)" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em">HEART · CORE</text>
+          <text x="96" y="256" fill="oklch(0.3 0.02 60)" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em">FOREARM</text>
+          <text x="215" y="60" fill="oklch(0.3 0.02 60)" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em">SINUS</text>
+          <text x="211" y="112" fill="oklch(0.3 0.02 60)" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em">THROAT</text>
+        </svg>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.66 0.15 25)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Under attack</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.66 0.15 195)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Held</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.9 0.014 60)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Not reached</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:oklch(0.78 0.13 80)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Core</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HUD ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">07</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">HUD parts</h2>
+      <span style="font-size:15px;color:oklch(0.5 0.01 60)">Everything tappable lives in the bottom third. The board is never covered.</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">ENERGY PILL</span>
+        <div style="display:flex;align-items:center;gap:6px;background:oklch(0.78 0.13 80 / 0.16);padding:8px 14px 8px 10px;border-radius:999px;align-self:flex-start">
+          <div style="width:15px;height:15px;border-radius:50%;background:oklch(0.78 0.13 80)"></div>
+          <span style="font-family:'DM Mono',monospace;font-size:16px;color:oklch(0.42 0.06 80)">240</span>
+        </div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">Always top-right. Turns red only when a purchase is unaffordable — never flashes.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">TISSUE PIPS</span>
+        <div style="display:flex;gap:4px;align-items:center">
+          <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+          <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+          <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.66 0.15 195)"></div>
+          <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+          <div style="flex:1;height:8px;border-radius:4px;background:oklch(0.9 0.01 70)"></div>
+        </div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">Five discrete lives, never a percentage. A leak greys exactly one pip so the cost is countable.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">DOCK CARD · SELECTED</span>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:16px;background:oklch(0.66 0.15 195 / 0.14);border:2px solid oklch(0.66 0.15 195);padding:9px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.66 0.15 195);display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#FBF7F0"></div></div>
+            <span style="font-size:11px;font-weight:600;color:#2C2A28">Engulf</span>
+            <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.42 0.06 80)">40</span>
+          </div>
+          <div style="flex:1;border-radius:16px;background:oklch(0.95 0.008 70);border:2px solid transparent;padding:9px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="width:28px;height:28px;border-radius:50%;background:oklch(0.7 0.14 145);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:4px;border-radius:2px;background:#FBF7F0"></div></div>
+            <span style="font-size:11px;font-weight:600;color:#2C2A28">Tag</span>
+            <span style="font-family:'DM Mono',monospace;font-size:12px;color:oklch(0.66 0.15 25)">95</span>
+          </div>
+        </div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">Selection is a 2px ring plus a 14% tint. Unaffordable shows a red price, never a disabled card.</span>
+      </div>
+
+      <div style="border-radius:22px;background:#FBF7F0;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">PRIMARY / SECONDARY</span>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;height:48px;border-radius:16px;background:oklch(0.66 0.15 25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#FFF9F2">Start wave</div>
+          <div style="width:48px;height:48px;border-radius:16px;background:oklch(0.93 0.008 70);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:14px;color:#2C2A28">2×</div>
+        </div>
+        <span style="font-size:13px;line-height:1.45;color:oklch(0.5 0.01 60);text-wrap:pretty">One red action per screen, ever. Everything else is paper-grey or ink. Minimum height 48, 54 in-game.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PROGRESSION ══ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:baseline;gap:14px;border-bottom:2px solid oklch(0.87 0.012 70);padding-bottom:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.14em;color:oklch(0.58 0.01 60)">08</span>
+      <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.015em;color:#2C2A28">Progression — one new idea at a time</h2>
+      <span style="font-size:15px;color:oklch(0.5 0.01 60)">Cases are the unlock unit. Clear one, get one.</span>
+    </div>
+
+    <div style="border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:grid;grid-template-columns:150px repeat(5,1fr);gap:10px;align-items:stretch">
+
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:10px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:oklch(0.58 0.01 60)">CASE</span>
+        </div>
+        <div style="border-radius:14px 14px 0 0;background:oklch(0.66 0.15 25 / 0.12);padding:14px 14px 12px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.5 0.1 25)">CASE 1 · 5 WAVES</span>
+          <span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Deep cut</span>
+          <span style="font-size:12px;color:oklch(0.5 0.01 60)">Forearm · bleeding</span>
+        </div>
+        <div style="border-radius:14px 14px 0 0;background:oklch(0.62 0.15 300 / 0.12);padding:14px 14px 12px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.42 0.1 300)">CASE 2 · 5 WAVES</span>
+          <span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Flu</span>
+          <span style="font-size:12px;color:oklch(0.5 0.01 60)">Throat · multiplying</span>
+        </div>
+        <div style="border-radius:14px 14px 0 0;background:oklch(0.78 0.13 80 / 0.16);padding:14px 14px 12px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.42 0.07 80)">CASE 3 · 5 WAVES</span>
+          <span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Food poisoning</span>
+          <span style="font-size:12px;color:oklch(0.5 0.01 60)">Stomach · toxic</span>
+        </div>
+        <div style="border-radius:14px 14px 0 0;background:oklch(0.62 0.16 350 / 0.12);padding:14px 14px 12px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.45 0.1 350)">CASE 4 · PLANNED</span>
+          <span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Measles</span>
+          <span style="font-size:12px;color:oklch(0.5 0.01 60)">Whole body · amnesia</span>
+        </div>
+        <div style="border-radius:14px 14px 0 0;background:oklch(0.5 0.1 210 / 0.12);padding:14px 14px 12px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:oklch(0.4 0.08 210)">CASE 5 · PLANNED</span>
+          <span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:#2C2A28">Strain Vesper</span>
+          <span style="font-size:12px;color:oklch(0.5 0.01 60)">Lungs · invented</span>
+        </div>
+
+        <div style="display:flex;align-items:center;padding:0 2px"><span style="font-size:13px;font-weight:700;color:#2C2A28">New pathogen</span></div>
+        <div style="background:oklch(0.97 0.006 70);padding:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.66 0.15 25);flex:none"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Staph · w1</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:4px;background:oklch(0.58 0.16 15);flex:none"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Biofilm · w3</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.42 0.13 10);flex:none;box-shadow:0 0 0 1.5px #FBF7F0,0 0 0 3px oklch(0.42 0.13 10)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Resistant · w4</span></div>
+        </div>
+        <div style="background:oklch(0.97 0.006 70);padding:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.62 0.15 300);flex:none"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Flu virus · w1</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:oklch(0.6 0.11 115);flex:none"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Spore · w2</span></div>
+        </div>
+        <div style="background:oklch(0.97 0.006 70);padding:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:3px;background:oklch(0.52 0.13 45);flex:none;transform:rotate(45deg)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Toxin · w1</span></div>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.55 0.01 60)">No new species after this — the roster is closed at six.</span>
+        </div>
+        <div style="background:oklch(0.97 0.006 70);padding:14px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#2C2A28">None</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.55 0.01 60)">Old enemies, new rule: it attacks your <em>immunity</em>, not your tissue.</span>
+        </div>
+        <div style="background:oklch(0.97 0.006 70);padding:14px;display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:#2C2A28">All six, mutating</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.55 0.01 60)">Speeds climb every wave. The exam, not a new lesson.</span>
+        </div>
+
+        <div style="display:flex;align-items:center;padding:0 2px"><span style="font-size:13px;font-weight:700;color:#2C2A28">Dock at entry</span></div>
+        <div style="background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.66 0.15 195);padding:5px 9px;border-radius:8px">Engulf</span>
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.45 0.14 320);padding:5px 9px;border-radius:8px">Block</span>
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.7 0.14 145);padding:5px 9px;border-radius:8px">Tag</span>
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.55 0.16 265);padding:5px 9px;border-radius:8px">Execute</span>
+        </div>
+        <div style="background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+          <span style="font-size:11px;font-weight:600;color:oklch(0.5 0.01 60);background:oklch(0.9 0.01 70);padding:5px 9px;border-radius:8px">first four</span>
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.62 0.16 350);padding:5px 9px;border-radius:8px">+ Burst</span>
+        </div>
+        <div style="background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+          <span style="font-size:11px;font-weight:600;color:oklch(0.5 0.01 60);background:oklch(0.9 0.01 70);padding:5px 9px;border-radius:8px">first five</span>
+          <span style="font-size:11px;font-weight:700;color:#FBF7F0;background:oklch(0.5 0.1 210);padding:5px 9px;border-radius:8px">+ Learn</span>
+        </div>
+        <div style="background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+          <span style="font-size:11px;font-weight:600;color:oklch(0.5 0.01 60);background:oklch(0.9 0.01 70);padding:5px 9px;border-radius:8px">all six</span>
+        </div>
+        <div style="background:oklch(0.95 0.008 70);padding:14px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+          <span style="font-size:11px;font-weight:600;color:oklch(0.5 0.01 60);background:oklch(0.9 0.01 70);padding:5px 9px;border-radius:8px">all six</span>
+        </div>
+
+        <div style="display:flex;align-items:center;padding:0 2px"><span style="font-size:13px;font-weight:700;color:#2C2A28">Reward on clear</span></div>
+        <div style="background:oklch(0.62 0.16 350 / 0.14);padding:14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:14px;font-weight:700;color:#2C2A28">Mast cell · Burst</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.45 0.06 350)">Plus 1/3 toward the tetanus vaccine</span>
+        </div>
+        <div style="background:oklch(0.5 0.1 210 / 0.14);padding:14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:14px;font-weight:700;color:#2C2A28">Memory cell · Learn</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.4 0.07 210)">Plus 1/3 toward Flu B</span>
+        </div>
+        <div style="background:oklch(0.78 0.13 80 / 0.16);padding:14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:14px;font-weight:700;color:#2C2A28">MMR becomes available</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.42 0.07 80)">Costs a day you don't fight — never currency</span>
+        </div>
+        <div style="background:oklch(0.7 0.14 145 / 0.14);padding:14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:14px;font-weight:700;color:#2C2A28">Immunity survives</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.38 0.06 145)">If MMR was taken, nothing is wiped</span>
+        </div>
+        <div style="background:oklch(0.93 0.012 60);padding:14px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:14px;font-weight:700;color:#2C2A28">Run complete</span>
+          <span style="font-size:12px;line-height:1.35;color:oklch(0.5 0.01 60)">Memory cells carry into the next body</span>
+        </div>
+
+        <div style="display:flex;align-items:center;padding:0 2px"><span style="font-size:13px;font-weight:700;color:#2C2A28">What it teaches</span></div>
+        <div style="border-radius:0 0 14px 14px;background:#2C2A28;padding:14px;display:flex;align-items:center"><span style="font-size:13px;line-height:1.45;color:oklch(0.85 0.01 60);text-wrap:pretty">One cell can't hold a lane. Armour needs a tag. Some things can't be tagged at all.</span></div>
+        <div style="border-radius:0 0 14px 14px;background:#2C2A28;padding:14px;display:flex;align-items:center"><span style="font-size:13px;line-height:1.45;color:oklch(0.85 0.01 60);text-wrap:pretty">Kill early, kill in bulk. Chip damage loses to anything that heals.</span></div>
+        <div style="border-radius:0 0 14px 14px;background:#2C2A28;padding:14px;display:flex;align-items:center"><span style="font-size:13px;line-height:1.45;color:oklch(0.85 0.01 60);text-wrap:pretty">Your board is a target too. Position back from the vessel, not on it.</span></div>
+        <div style="border-radius:0 0 14px 14px;background:#2C2A28;padding:14px;display:flex;align-items:center"><span style="font-size:13px;line-height:1.45;color:oklch(0.85 0.01 60);text-wrap:pretty">Immunity is a resource that can be taken away — and prevented from being taken.</span></div>
+        <div style="border-radius:0 0 14px 14px;background:#2C2A28;padding:14px;display:flex;align-items:center"><span style="font-size:13px;line-height:1.45;color:oklch(0.85 0.01 60);text-wrap:pretty">Nothing new. Everything at once, and no vaccine to lean on.</span></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:420px;border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">THE FIVE PACING RULES</span>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px"><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60);flex:none">01</span><span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Never a new enemy and a new defender in the same wave.</strong> The player must be able to attribute what changed.</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60);flex:none">02</span><span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">A new enemy arrives while its answer is already in the dock.</strong> Biofilm shows up on wave 3 and Tag has been sitting there since wave 1 — the discovery is the player's, not a tutorial's.</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60);flex:none">03</span><span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Every new enemy invalidates the current best strategy.</strong> If a pathogen doesn't force the board to change shape, it's just a bigger number and it gets cut.</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60);flex:none">04</span><span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Rewards are deterministic.</strong> Clear case 1, get Burst. No random drops, no chests, no paid shortcuts.</span></div>
+          <div style="display:flex;gap:12px"><span style="font-family:'DM Mono',monospace;font-size:13px;color:oklch(0.6 0.01 60);flex:none">05</span><span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Waves 1—2 of every case are winnable with what you already know.</strong> The ramp lives in waves 3—5, so a short session is never a wasted session.</span></div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:340px;border-radius:22px;background:#FBF7F0;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">TWO CURVES, DELIBERATELY OFFSET</span>
+        <svg viewBox="0 0 420 200" style="width:100%;border-radius:14px;background:oklch(0.97 0.006 70)">
+          <line x1="40" y1="170" x2="400" y2="170" stroke="oklch(0.87 0.012 70)" stroke-width="2"/>
+          <line x1="40" y1="20" x2="40" y2="170" stroke="oklch(0.87 0.012 70)" stroke-width="2"/>
+          <polyline points="40,150 112,150 112,120 184,120 184,90 256,90 256,60 328,60 328,36 400,36" stroke="oklch(0.66 0.15 25)" stroke-width="4" fill="none" stroke-linejoin="round"/>
+          <polyline points="40,132 112,132 112,102 184,102 184,72 256,72 256,72 328,72 400,72" stroke="oklch(0.66 0.15 195)" stroke-width="4" fill="none" stroke-linejoin="round" stroke-dasharray="8 6"/>
+          <circle cx="112" cy="120" r="5" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="112" cy="102" r="5" fill="oklch(0.66 0.15 195)"/>
+          <circle cx="184" cy="90" r="5" fill="oklch(0.66 0.15 25)"/>
+          <circle cx="184" cy="72" r="5" fill="oklch(0.66 0.15 195)"/>
+          <circle cx="328" cy="36" r="5" fill="oklch(0.66 0.15 25)"/>
+          <text x="76" y="188" fill="oklch(0.55 0.01 60)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:11px">C1</text>
+          <text x="148" y="188" fill="oklch(0.55 0.01 60)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:11px">C2</text>
+          <text x="220" y="188" fill="oklch(0.55 0.01 60)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:11px">C3</text>
+          <text x="292" y="188" fill="oklch(0.55 0.01 60)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:11px">C4</text>
+          <text x="364" y="188" fill="oklch(0.55 0.01 60)" text-anchor="middle" style="font-family:'DM Mono',monospace;font-size:11px">C5</text>
+          <text x="30" y="26" fill="oklch(0.55 0.01 60)" text-anchor="end" style="font-family:'DM Mono',monospace;font-size:11px">hard</text>
+        </svg>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:4px;border-radius:2px;background:oklch(0.66 0.15 25)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Threat</span></div>
+          <div style="display:flex;align-items:center;gap:9px"><div style="width:20px;height:4px;border-radius:2px;background:oklch(0.66 0.15 195)"></div><span style="font-size:13px;font-weight:600;color:#2C2A28">Your tools</span></div>
+        </div>
+        <span style="font-size:14px;line-height:1.5;color:oklch(0.45 0.01 60);text-wrap:pretty">Tools step up <em>after</em> the threat does, so each case starts slightly uncomfortable and ends comfortable. The tool curve flattens at case 3 — the last two cases are won with mastery, not new toys.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RULES ══ -->
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:340px;border-radius:24px;background:#FBF7F0;padding:26px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">COPY RULES</span>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Headlines are physical, not clinical.</strong> "It got into the blood." not "Defeat".</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Real names, honest behaviour.</strong> If we call it a T-cell it has to behave a bit like one.</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Never scold the player.</strong> A lost region states what happened and offers the next move.</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">No exclamation marks. No emoji.</strong> The body is calm even when it's losing.</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:340px;border-radius:24px;background:#FBF7F0;padding:26px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.58 0.01 60)">MOTION RULES</span>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Sheets rise 14px over 250ms.</strong> Nothing slides sideways, nothing bounces.</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Only threats pulse.</strong> A pulsing ring always means "here, now" — never decoration.</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">Kills are instant.</strong> No death animation; the energy number ticking up is the feedback.</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.42 0.01 60);text-wrap:pretty"><strong style="font-weight:700;color:#2C2A28">The sim pauses when unseen.</strong> Backgrounding the game never costs a wave.</span>
+      </div>
+    </div>
+    <div style="flex:1;min-width:340px;border-radius:24px;background:#2C2A28;padding:26px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.13em;color:oklch(0.7 0.01 60)">OPEN QUESTIONS</span>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.82 0.01 60);text-wrap:pretty">Is Allergy too clever for the first hour, or is it the thing people tell their friends about?</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.82 0.01 60);text-wrap:pretty">Should a lost region stay lost for the whole run, or heal after two days?</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.82 0.01 60);text-wrap:pretty">Six defenders is a full dock on a phone. Is a seventh a replacement rather than an addition?</span>
+        <span style="font-size:15px;line-height:1.5;color:oklch(0.82 0.01 60);text-wrap:pretty">Does the heart ever get attacked directly, or is it only ever the thing you're protecting?</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>
