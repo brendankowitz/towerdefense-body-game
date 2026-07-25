@@ -16,6 +16,28 @@
 
 Every task's requirements implicitly include this section.
 
+**Writing tests that can actually fail**
+
+Learned by mutation-testing Phase 3 as built. Each of these was a real defect in
+this plan's own snippets:
+
+- **A frame-rate independence test must use a rate that does not divide the fixed
+  step.** 60 and 120 both divide 1/60 exactly, so the accumulator aligns and the
+  test named for spec criterion 2 passed against a variable-`dt` loop. Use 144 Hz
+  or jittered frame times.
+- **Compare at an equal step count, not an equal wall-clock duration.** Floating
+  point lands an arbitrary cutoff a single step either side — 599 vs 600 — so a
+  duration-based assertion fails against a *correct* implementation.
+- **Bound any helper that drives the loop to a step count.** `advance()` is inert
+  once the wave ends, so an unbounded wait hangs the suite rather than failing it.
+  Throw with a diagnostic instead.
+- **No non-null assertions.** `strictTypeChecked` bans them. For optional content
+  fields use the established idiom: `?? 1` for a missing armour multiplier, `?? 0`
+  for a missing rate, with a guard assertion where the test depends on the value
+  being present. Narrow a nullable with an explicit `if (x === null) throw`.
+- **Before claiming a test proves something, reintroduce the defect and watch that
+  exact test fail.** Several tests here looked rigorous and could not fail.
+
 **Layering**
 - `src/game/` must not import from `render/`, `app/`, `progress/` or `theme/`, and must not reference React, Pixi, Ionic, Capacitor or any browser global. Enforced by an ESLint config block **and** by `tsconfig.game.json`, which compiles `src/game/` with `"lib": ["ES2022"]` (no DOM) and `"types": []`.
 - `src/render/` must not import from `app/`.
@@ -63,7 +85,7 @@ Read this before starting. The rule (spec §5.1): quirks that are *surprising bu
 | D3 | Bleed is `if (energy > 0) energy -= 2` (line 619), so energy can settle at −1; only the display clamps. | **Fix (spec §5.1).** Clamp at the source: `energy = Math.max(0, energy - BLEED_AMOUNT)`. A currency that goes negative is a bug wearing a display workaround. Test: energy at 1 bleeds to exactly 0. |
 | D4 | `cleared` is `cleared.concat([c.id])` — a repeat clear would duplicate. | **Fix (spec §5.1).** Ordered unique list; append only if absent. |
 | D5 | Result sheet always shows `+50`, including on case clear where +180 is banked (lines 571, 1101). | **Fix (spec §5.1).** Report what was actually awarded: `+WAVE_CLEAR_ENERGY` on a held wave, `+CASE_CLEAR_BANK` on a clear, `0` on a loss. |
-| D6 | `film` immunity is never incremented — the strain bump is a two-way `illness === 'virus' ? 'virus' : 'staph'` branch (line 569) — so Biofilm serum permanently shows 0/3. | **Fix (spec §5.1).** A visible goal the player cannot reach is a broken promise. Each case declares `credits: StrainKey` in its content entry; `clearCase` increments that strain. Seed assignment: forearm → `staph`, throat → `virus`, stomach → `film` (its waves are the biofilm-heavy ones). A structural test asserts every displayed strain vaccine is credited by at least one case (spec criterion 6). **Settled: the assignment was approved by the user (noting stomach is thematically the toxin case) and is implemented and tested in the committed Phase 2.** |
+| D6 | `film` immunity is never incremented — the strain bump is a two-way `illness === 'virus' ? 'virus' : 'staph'` branch (line 569) — so Biofilm serum permanently shows 0/3. | **Fix (spec §5.1).** A visible goal the player cannot reach is a broken promise. Each case declares `credits: StrainId` in its content entry; `clearCase` increments that strain. Seed assignment: forearm → `staph`, throat → `virus`, stomach → `film` (its waves are the biofilm-heavy ones). A structural test asserts every displayed strain vaccine is credited by at least one case (spec criterion 6). **Settled: the assignment was approved by the user (noting stomach is thematically the toxin case) and is implemented and tested in the committed Phase 2.** |
 | D7 | First run is day 4 / bank 520 / staph 1 (line 466); "Start a new body" is day 1 / 240 / zero (line 580). | **Ruled by the user:** day-4 was demo staging. One fresh profile — day 1, bank 240, no immunity — defined once (`FRESH_PROFILE` in `rules.ts` → `createFreshProfile()`), used by both first run and reset. Applied throughout. |
 | D8 | Poison damages every non-clot tower including memory cells (line 660), while toxin stun exempts clot **and** mem (line 655). | **Keep, on merit.** The asymmetry is coherent: stun resistance is the memory cell's stated perk ("Toxins cannot stun it"), while the poison case rule harms every living cell — only the inert clot is exempt. Full poison immunity would make Learn strictly dominant in the stomach case. |
 | D9 | The `held` list is built before movement but a grab lands mid-defender-pass, so a newly engulfed enemy is not frozen until the next step (lines 626–630, 687). | **Fix (spec §5.1).** Invisible at 60 Hz, indefensible at any other rate. A dedicated `acquireHolds` pass runs before movement: phagocytes grab first, movement then freezes what was grabbed, the defender pass only digests. Test: an enemy does not advance on the step it is engulfed. |
@@ -968,7 +990,7 @@ git commit -m "feat: Ionic shell with five routes, oklch palette and self-hosted
 - Port from: prototype lines 366–374 (CELLS, ORDER), 376–404 (CASES), 410–413 (LATER), 416–423 (VACCINES), 425–432 (KINDS), 434–450 (NODES), 452–455 (LINKS); asset sheet lines 206–451 (defenders), 453–625 (pathogens), 627–681 (case types), 828–982 (progression)
 
 **Interfaces:**
-- Produces: `DefenderKind`, `PathogenKind`, `CaseId`, `CaseRuleKind`, `StrainKey`, `BodyNodeId`, `PaletteToken`, `DEFENDERS`, `DEFENDER_ORDER`, `PATHOGENS`, `CASES`, `CASE_BY_ID`, `VACCINES`, `BODY_NODES`, `BODY_LINKS`, `LATER`, and the constants in `RULES`.
+- Produces: `DefenderKind`, `PathogenKind`, `CaseId`, `CaseRuleKind`, `StrainId`, `BodyNodeId`, `PaletteToken`, `DEFENDERS`, `DEFENDER_ORDER`, `PATHOGENS`, `CASES`, `CASE_BY_ID`, `VACCINES`, `BODY_NODES`, `BODY_LINKS`, `LATER`, and the constants in `RULES`.
 
 - [ ] **Step 1: Write `src/game/types.ts` — the shared vocabulary**
 
@@ -979,7 +1001,7 @@ export type DefenderKind = 'phago' | 'clot' | 'anti' | 'nk' | 'mast' | 'mem';
 export type PathogenKind = 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa';
 export type CaseId = 'forearm' | 'throat' | 'stomach';
 export type CaseRuleKind = 'wound' | 'virus' | 'poison';
-export type StrainKey = 'staph' | 'film' | 'virus';
+export type StrainId = 'staph' | 'film' | 'virus';
 export type Tier = 1 | 2 | 3;
 
 export type BodyNodeId =
@@ -1084,12 +1106,12 @@ export const PATHOGENS: { readonly [K in PathogenKind]: PathogenStats } = {
 
 Wave tables are ordered arrays because the shuffle's output depends on its input order (decision D14); the seed order below is the prototype's literal key order at lines 382, 391 and 400. Wave composition is tuning data — the panel edits it.
 
-`credits` is decision D6: the strain a clear counts toward. Every strain vaccine on the immunity screen must be reachable, so every `StrainKey` must appear as some case's `credits` — the invariants test enforces it. The stomach → `film` assignment makes Biofilm serum earnable and fits its biofilm-heavy waves.
+`credits` is decision D6: the strain a clear counts toward. Every strain vaccine on the immunity screen must be reachable, so every `StrainId` must appear as some case's `credits` — the invariants test enforces it. The stomach → `film` assignment makes Biofilm serum earnable and fits its biofilm-heavy waves.
 
 Adding a case is authoring one more entry here (plus its id in the `CaseId` union): no system code branches on a specific case id, only on `rule` and `credits`.
 
 ```ts
-import type { CaseId, CaseRuleKind, BodyNodeId, PathogenKind, Point, StrainKey } from '../types';
+import type { CaseId, CaseRuleKind, BodyNodeId, PathogenKind, Point, StrainId } from '../types';
 
 export interface WaveEntry {
   readonly kind: PathogenKind;
@@ -1103,7 +1125,7 @@ export interface CaseDefinition {
   readonly title: string;
   readonly rule: CaseRuleKind;
   /** The strain this case's clears count toward. Decision D6. */
-  readonly credits: StrainKey;
+  readonly credits: StrainId;
   readonly ruleLabel: string;
   readonly ruleSub: string;
   readonly story: string;
@@ -1175,14 +1197,14 @@ export function isCaseId(value: string): value is CaseId {
 `vaccines.ts` — prototype lines 415–423. Note the apostrophe in the MMR cost string is a typographic apostrophe (U+2019), as in the prototype:
 
 ```ts
-import type { StrainKey, Tier } from '../types';
+import type { StrainId, Tier } from '../types';
 
 export interface VaccineDefinition {
   readonly name: string;
   readonly tier: Tier;
   readonly effect: string;
   /** Earned by clearing this strain three times. Never purchasable. */
-  readonly strain?: StrainKey;
+  readonly strain?: StrainId;
   /** Becomes available once this many cases are cleared. */
   readonly gate?: number;
   readonly cost?: string;
@@ -1202,7 +1224,7 @@ export const VACCINES: readonly VaccineDefinition[] = [
  * heldCopy is what the brief shows once the strain's vaccine is earned (decision D23).
  */
 export const STRAIN_ROWS: readonly {
-  readonly key: StrainKey; readonly name: string; readonly effect: string; readonly heldCopy: string;
+  readonly key: StrainId; readonly name: string; readonly effect: string; readonly heldCopy: string;
 }[] = [
   { key: 'staph', name: 'Tetanus', effect: 'The first Staph of every wave bounces off', heldCopy: 'Tetanus vaccine held. The first Staph of every wave bounces off.' },
   { key: 'virus', name: 'Flu B', effect: 'Flu can no longer split when it dies', heldCopy: 'Flu B vaccine held. Nothing splits when it dies.' },
@@ -1285,7 +1307,7 @@ export const BOARD_HEIGHT = 430;
 export const STEP_SECONDS = 1 / 60;
 export const FAST_MULTIPLIER = 2;
 
-export const TISSUE_MAX = 5;
+export const TISSUE_PIPS = 5;
 export const IMMUNITY_MAX = 3;
 export const TOWER_MAX_HP = 100;
 export const BUILD_SPOT_RADIUS = 24;
@@ -1293,7 +1315,7 @@ export const BUILD_SPOT_RADIUS = 24;
 export const WAVE_CLEAR_ENERGY = 50;
 export const CASE_CLEAR_BANK = 180;
 
-export const FEVER_SECONDS = 5;
+export const FEVER_DURATION = 5;
 export const FEVER_SLOW = 0.4;
 
 export const SPAWN_FIRST_DELAY = 0.3;
@@ -1341,7 +1363,7 @@ import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
 import { STRAIN_ROWS, VACCINES } from './vaccines';
 import { BODY_LINKS, BODY_NODES } from './body';
-import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TISSUE_MAX } from './rules';
+import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TISSUE_PIPS } from './rules';
 
 describe('defender table coherence', () => {
   it('lists every defender in the dock order exactly once', () => {
@@ -1456,7 +1478,7 @@ describe('body graph coherence', () => {
 
 describe('run-level rule coherence', () => {
   it('keeps the run-level counters positive', () => {
-    expect(TISSUE_MAX).toBeGreaterThan(0);
+    expect(TISSUE_PIPS).toBeGreaterThan(0);
     expect(IMMUNITY_MAX).toBeGreaterThan(0);
   });
 });
@@ -1599,7 +1621,7 @@ export interface SimState {
   readonly rule: CaseRuleKind;
   readonly path: CompiledPath;
   /** Profile facts the simulation reads but never writes. */
-  readonly immunity: Readonly<Record<StrainKey, number>>;
+  readonly immunity: Readonly<Record<StrainId, number>>;
   readonly clearedCount: number;
 
   phase: Phase;
@@ -1750,13 +1772,13 @@ Run: `npx vitest run src/game/path.test.ts` — Expected: PASS, 9 tests.
 
 ```ts
 import { CASE_BY_ID } from './content/cases';
-import { TISSUE_MAX } from './content/rules';
+import { TISSUE_PIPS } from './content/rules';
 import { compilePath } from './path';
-import type { CaseId, SimState, StrainKey } from './types';
+import type { CaseId, SimState, StrainId } from './types';
 
 export interface SimInput {
   readonly caseId: CaseId;
-  readonly immunity: Readonly<Record<StrainKey, number>>;
+  readonly immunity: Readonly<Record<StrainId, number>>;
   readonly clearedCount: number;
   readonly totalKills: number;
 }
@@ -1776,7 +1798,7 @@ export function createSimState(input: SimInput): SimState {
     waveCount: definition.waves.length,
 
     energy: definition.startingEnergy,
-    tissue: TISSUE_MAX,
+    tissue: TISSUE_PIPS,
     selected: 'phago',
     fast: false,
 
@@ -1814,7 +1836,7 @@ export function distance(ax: number, ay: number, bx: number, by: number): number
 import { describe, expect, it } from 'vitest';
 import { createSimState, distance } from './state';
 import { CASE_BY_ID } from './content/cases';
-import { TISSUE_MAX } from './content/rules';
+import { TISSUE_PIPS } from './content/rules';
 
 const input = { caseId: 'forearm', immunity: { staph: 0, film: 0, virus: 0 }, clearedCount: 0, totalKills: 0 } as const;
 
@@ -1823,7 +1845,7 @@ describe('createSimState', () => {
     const state = createSimState(input);
     expect(state.phase).toBe('build');
     expect(state.energy).toBe(CASE_BY_ID.forearm.startingEnergy);
-    expect(state.tissue).toBe(TISSUE_MAX);
+    expect(state.tissue).toBe(TISSUE_PIPS);
     expect(state.waveCount).toBe(CASE_BY_ID.forearm.waves.length);
   });
 
@@ -1933,14 +1955,14 @@ import { createSimState } from '../state';
 import { CASE_BY_ID } from '../content/cases';
 import { PATHOGENS } from '../content/pathogens';
 import { SPAWN_FIRST_DELAY } from '../content/rules';
-import type { SimState, StrainKey } from '../types';
+import type { SimState, StrainId } from '../types';
 
 function waveSize(state: SimState): number {
   return CASE_BY_ID[state.caseId].waves[state.waveIndex]!
     .reduce((sum, entry) => sum + entry.count, 0);
 }
 
-function forearm(immunity: Partial<Record<StrainKey, number>> = {}) {
+function forearm(immunity: Partial<Record<StrainId, number>> = {}) {
   const state = createSimState({
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0, ...immunity },
@@ -2119,9 +2141,9 @@ import { armourMultiplier } from './targeting';
 import { PATHOGENS } from '../content/pathogens';
 import { IMMUNITY_MAX } from '../content/rules';
 import { createSimState } from '../state';
-import type { Enemy, PathogenKind, SimState, StrainKey } from '../types';
+import type { Enemy, PathogenKind, SimState, StrainId } from '../types';
 
-function stateWith(immunity: Partial<Record<StrainKey, number>> = {}): SimState {
+function stateWith(immunity: Partial<Record<StrainId, number>> = {}): SimState {
   return createSimState({
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0, ...immunity },
@@ -2291,7 +2313,7 @@ import { applyMovement } from './movement';
 import { createSimState } from '../state';
 import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
-import { FEVER_SLOW, SPLIT_SPEED_FACTOR, TISSUE_MAX, TOWER_MAX_HP } from '../content/rules';
+import { FEVER_SLOW, SPLIT_SPEED_FACTOR, TISSUE_PIPS, TOWER_MAX_HP } from '../content/rules';
 import type { PathogenKind, SimState } from '../types';
 
 function fresh(caseId: 'forearm' | 'throat' | 'stomach' = 'forearm'): SimState {
@@ -2356,7 +2378,7 @@ describe('applyMovement', () => {
   it('regenerates a spore that is not tagged, capped at full health', () => {
     const state = fresh('throat');
     const enemy = spawn(state, 'spore');
-    const regen = PATHOGENS.spore.regen!;
+    const regen = (PATHOGENS.spore.regen ?? 0);
     enemy.hp = enemy.maxHp - 2 * regen;
     applyMovement(state, 1, new Set(), new Set());
     expect(enemy.hp).toBeCloseTo(enemy.maxHp - regen, 6);
@@ -2399,7 +2421,7 @@ describe('applyMovement', () => {
     const dead = new Set<number>();
     applyMovement(state, 1, new Set(), dead);
     expect(dead.has(enemy.id)).toBe(true);
-    expect(state.tissue).toBe(TISSUE_MAX - 1);
+    expect(state.tissue).toBe(TISSUE_PIPS - 1);
     expect(state.waveLeaks).toBe(1);
   });
 });
@@ -2789,7 +2811,7 @@ Player intents as pure transitions over sim state. Ports prototype lines 528–5
 ```ts
 import { CASE_BY_ID } from './content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from './content/defenders';
-import { FEVER_SECONDS, SPAWN_FIRST_DELAY, TOWER_MAX_HP } from './content/rules';
+import { FEVER_DURATION, SPAWN_FIRST_DELAY, TOWER_MAX_HP } from './content/rules';
 import { buildQueue } from './systems/spawn';
 import type { DefenderKind, SimState, Tower } from './types';
 
@@ -2851,7 +2873,7 @@ export function startWave(state: SimState): void {
 /** Named triggerFever, not useFever: a `use` prefix would read as a React hook to eslint-plugin-react-hooks. */
 export function triggerFever(state: SimState): void {
   if (state.feverUsed || state.phase !== 'wave') return;
-  state.fever = FEVER_SECONDS;
+  state.fever = FEVER_DURATION;
   state.feverUsed = true;
 }
 
@@ -2870,7 +2892,7 @@ import { placeDefender, selectDefender, startWave, toggleSpeed, unlockedDefender
 import { createSimState } from './state';
 import { CASE_BY_ID } from './content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from './content/defenders';
-import { FEVER_SECONDS, SPAWN_FIRST_DELAY } from './content/rules';
+import { FEVER_DURATION, SPAWN_FIRST_DELAY } from './content/rules';
 import type { SimState } from './types';
 
 function fresh(clearedCount = 0): SimState {
@@ -2962,7 +2984,7 @@ describe('triggerFever', () => {
 
     startWave(state);
     triggerFever(state);
-    expect(state.fever).toBe(FEVER_SECONDS);
+    expect(state.fever).toBe(FEVER_DURATION);
     expect(state.feverUsed).toBe(true);
 
     state.fever = 0;
@@ -3880,11 +3902,11 @@ Fixture builders shared by every sim test from here on. This lives in `src/game/
 import { PATHOGENS } from './content/pathogens';
 import { TOWER_MAX_HP } from './content/rules';
 import { createSimState } from './state';
-import type { CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainKey, Tower } from './types';
+import type { CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainId, Tower } from './types';
 
 export function simFor(
   caseId: CaseId = 'forearm',
-  overrides: { immunity?: Partial<Record<StrainKey, number>>; clearedCount?: number } = {},
+  overrides: { immunity?: Partial<Record<StrainId, number>>; clearedCount?: number } = {},
 ): SimState {
   const state = createSimState({
     caseId,
@@ -3992,7 +4014,7 @@ describe('phagocyte — engulf', () => {
     const prey = addEnemy(state, 'film', { x: 10, y: 0 });
 
     tick(state, 1);
-    expect(prey.hp).toBeCloseTo(PATHOGENS.film.hp - DEFENDERS.phago.dps * PATHOGENS.film.armour!, 6);
+    expect(prey.hp).toBeCloseTo(PATHOGENS.film.hp - DEFENDERS.phago.dps * (PATHOGENS.film.armour ?? 1), 6);
   });
 
   it('digests a biofilm at the full rate once the serum is held — decision D22', () => {
@@ -4260,7 +4282,7 @@ describe('killer cell — execute', () => {
     const mrsa = addEnemy(state, 'mrsa', { x: 10, y: 0 });
 
     runDefenders(state, 1 / 60, new Set());
-    expect(mrsa.hp).toBeCloseTo(PATHOGENS.mrsa.hp - DEFENDERS.nk.dmg * PATHOGENS.mrsa.armour!, 6);
+    expect(mrsa.hp).toBeCloseTo(PATHOGENS.mrsa.hp - DEFENDERS.nk.dmg * (PATHOGENS.mrsa.armour ?? 1), 6);
   });
 
   it('starts its cooldown after a hit', () => {
@@ -4589,7 +4611,7 @@ describe('mast cell — burst', () => {
     const film = addEnemy(state, 'film', { x: 10, y: 0 });
 
     runDefenders(state, 1 / 60, new Set());
-    expect(film.hp).toBeCloseTo(film.maxHp - DEFENDERS.mast.dmg * PATHOGENS.film.armour!, 6);
+    expect(film.hp).toBeCloseTo(film.maxHp - DEFENDERS.mast.dmg * (PATHOGENS.film.armour ?? 1), 6);
   });
 
   it('starts its pulse cooldown and flashes after hitting', () => {
@@ -5200,7 +5222,7 @@ git commit -m "test(game): wound bleed, toxin stun and poison case rules"
 
 **Interfaces:**
 - Produces:
-  - `interface Profile { cleared: readonly CaseId[]; immunity: Readonly<Record<StrainKey, number>>; day: number; bank: number; kills: number }`
+  - `interface Profile { cleared: readonly CaseId[]; immunity: Readonly<Record<StrainId, number>>; day: number; bank: number; kills: number }`
   - `createFreshProfile(): Profile` — the only fresh-profile factory; first run and "Start a new body" both use it (decision D7)
   - `clearCase(profile: Profile, caseId: CaseId, totalKills: number): Profile`
   - `nextCaseId(profile: Profile): CaseId | null`
@@ -5361,11 +5383,11 @@ import { CASES, CASE_BY_ID } from './content/cases';
 import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import type { CaseId, StrainKey, Tier } from './types';
+import type { CaseId, StrainId, Tier } from './types';
 
 export interface Profile {
   readonly cleared: readonly CaseId[];
-  readonly immunity: Readonly<Record<StrainKey, number>>;
+  readonly immunity: Readonly<Record<StrainId, number>>;
   readonly day: number;
   readonly bank: number;
   readonly kills: number;
@@ -5399,7 +5421,7 @@ export function nextCaseId(profile: Profile): CaseId | null {
 }
 
 export interface StrainRow {
-  readonly key: StrainKey;
+  readonly key: StrainId;
   readonly name: string;
   readonly effect: string;
   readonly progress: string;
@@ -5578,10 +5600,10 @@ describe('wave flow', () => {
     startWave(state);
     // One queued spawn keeps the wave open while the fever timer runs down.
     state.queue = ['staph'];
-    state.spawnTimer = FEVER_SECONDS * 2;
+    state.spawnTimer = FEVER_DURATION * 2;
     triggerFever(state);
 
-    const halfSteps = Math.floor((FEVER_SECONDS / 2) * 60);
+    const halfSteps = Math.floor((FEVER_DURATION / 2) * 60);
     for (let i = 0; i < halfSteps; i += 1) step(state, 1 / 60);
     expect(state.fever).toBeGreaterThan(0);
     for (let i = 0; i < halfSteps + 60; i += 1) step(state, 1 / 60);
@@ -5610,7 +5632,7 @@ The file needs these imports and one helper at the top:
 ```ts
 import { advanceToNextWave, restartCase, startWave, triggerFever } from './commands';
 import { CASE_BY_ID } from './content/cases';
-import { FEVER_SECONDS, IMMUNITY_MAX, WAVE_CLEAR_ENERGY } from './content/rules';
+import { FEVER_DURATION, IMMUNITY_MAX, WAVE_CLEAR_ENERGY } from './content/rules';
 import type { SimState } from './types';
 
 function pointFor(state: SimState, index: number): [number, number] {
@@ -5921,12 +5943,12 @@ Run: `npx vitest run src/app/components/DefenderDock.test.tsx` — Expected: PAS
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TissuePips } from './TissuePips';
-import { TISSUE_MAX } from '@game/content/rules';
+import { TISSUE_PIPS } from '@game/content/rules';
 
 describe('TissuePips', () => {
   it('always shows every pip as a discrete life, never a percentage', () => {
     render(<TissuePips tissue={3} />);
-    expect(screen.getAllByTestId('pip')).toHaveLength(TISSUE_MAX);
+    expect(screen.getAllByTestId('pip')).toHaveLength(TISSUE_PIPS);
   });
 
   it('greys exactly one pip per leak so the cost is countable', () => {
@@ -5937,7 +5959,7 @@ describe('TissuePips', () => {
 
   it('labels the count for a screen reader', () => {
     render(<TissuePips tissue={4} />);
-    expect(screen.getByText(`TISSUE 4/${String(TISSUE_MAX)}`)).toBeInTheDocument();
+    expect(screen.getByText(`TISSUE 4/${String(TISSUE_PIPS)}`)).toBeInTheDocument();
   });
 
   it('shows nothing lit at zero rather than a negative count', () => {
@@ -5949,16 +5971,16 @@ describe('TissuePips', () => {
 ```
 
 ```tsx
-import { TISSUE_MAX } from '@game/content/rules';
+import { TISSUE_PIPS } from '@game/content/rules';
 
 export function TissuePips({ tissue }: { readonly tissue: number }) {
-  const remaining = Math.max(0, Math.min(TISSUE_MAX, tissue));
+  const remaining = Math.max(0, Math.min(TISSUE_PIPS, tissue));
   return (
     <div className="pips">
-      {Array.from({ length: TISSUE_MAX }, (_, index) => (
+      {Array.from({ length: TISSUE_PIPS }, (_, index) => (
         <span key={index} data-testid="pip" data-lit={String(index < remaining)} className="pip" />
       ))}
-      <span className="mono pips-label">{`TISSUE ${String(remaining)}/${String(TISSUE_MAX)}`}</span>
+      <span className="mono pips-label">{`TISSUE ${String(remaining)}/${String(TISSUE_PIPS)}`}</span>
     </div>
   );
 }
@@ -6863,8 +6885,8 @@ describe('parseProfile', () => {
 
   it('drops unknown extra keys rather than carrying them forward', () => {
     const parsed = parseProfile({ ...valid, sneaky: true });
-    expect(parsed).not.toBeNull();
-    expect(Object.keys(parsed!)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills']);
+    if (parsed === null) throw new Error('a profile with an unknown key should still parse');
+    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills']);
   });
 });
 ```
@@ -6877,9 +6899,9 @@ Hand-written rather than a schema library: one shape, thirty lines, no dependenc
 import { IMMUNITY_MAX } from '@game/content/rules';
 import { isCaseId } from '@game/content/cases';
 import type { Profile } from '@game/progression';
-import type { CaseId, StrainKey } from '@game/types';
+import type { CaseId, StrainId } from '@game/types';
 
-const STRAINS: readonly StrainKey[] = ['staph', 'film', 'virus'];
+const STRAINS: readonly StrainId[] = ['staph', 'film', 'virus'];
 
 function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
@@ -6899,7 +6921,7 @@ export function parseProfile(raw: unknown): Profile | null {
   const rawImmunity = record['immunity'];
   if (typeof rawImmunity !== 'object' || rawImmunity === null) return null;
   const immunityRecord = rawImmunity as Record<string, unknown>;
-  const immunity = {} as Record<StrainKey, number>;
+  const immunity = {} as Record<StrainId, number>;
   for (const strain of STRAINS) {
     const value = immunityRecord[strain];
     if (!isCount(value) || value > IMMUNITY_MAX) return null;
