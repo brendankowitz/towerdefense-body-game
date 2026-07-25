@@ -20,6 +20,10 @@ jobs:
       - run: npm run typecheck:game
       - run: npm run test
       - run: npm run build
+      # The dev tuning panel (spec §4.1) must be tree-shaken out of production. A case-sensitive
+      # match on one of its exports is enough — if this ever finds a hit, the import.meta.env.DEV
+      # guard stopped being statically analysable (the usual cause: reading it through a variable).
+      - run: "! grep -r applyDefenderTuning dist/"
       # Enabled in Phase 13, once there is a game to drive.
       # - run: npx playwright install --with-deps chromium
       # - run: npm run test:e2e
