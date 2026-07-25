@@ -48,6 +48,27 @@ this plan's own snippets:
   rather than fighting it. E2E is the one place combat coupling is allowed, and
   only where it restates a design invariant (pacing rule: waves 1–2 winnable with
   starter defenders).
+- **A fixture must stay valid under retune — the mirror image of balance
+  coupling.** Not "the test breaks when balance changes" but "the fixture becomes
+  invalid": seeding `tower.stun = 1.0` against a toxin stun of 1.6 fails a
+  *correct* implementation once stun is tuned below 1.0. Derive fixture values
+  from the stat they interact with (`PATHOGENS.toxin.stun / 2`, `stun * 2`,
+  `DEFENDERS.mem.cap`).
+- **Never place a tower and an enemy at the same literal coordinate in a test
+  that goes through `step` or `applyMovement`** — movement recomputes enemy x/y
+  from `positionAt(path, distance)` before anything else runs, invalidating the
+  setup every time. Use `addTowerOnPath` / distance-based `addEnemy` and, where
+  range matters, guard the actual post-step separation.
+- **`toHaveTextContent` substring-matches.** On a path, an id, or a short number
+  it is unfalsifiable — `'/'` matches every route, `'40'` matches `'140'`. Use an
+  anchored regex (`/^40$/`) or exact `textContent` comparison for short strings.
+- **Player-facing copy derives every number it quotes.** A blurb that hardcodes
+  "under 35%" lies after the first retune. Build the sentence from the stat and
+  test that the sentence tracks the stat.
+- **Do not run a snapshot-and-restore harness over a whole directory while
+  another agent may be editing it.** A retune harness snapshotting all of
+  `content/` raced a live edit to `defenders.ts`. Restore only the files you
+  changed.
 - **Before claiming a test proves something, reintroduce the defect and watch that
   exact test fail.** Several tests here looked rigorous and could not fail.
 
@@ -4044,6 +4065,7 @@ Fixture builders shared by every sim test from here on. This lives in `src/game/
 ```ts
 import { PATHOGENS } from './content/pathogens';
 import { TOWER_MAX_HP } from './content/rules';
+import { positionAt } from './path';
 import { createSimState } from './state';
 import type { CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainId, Tower } from './types';
 
@@ -4067,12 +4089,15 @@ export function addEnemy(
   opts: { x?: number; y?: number; hp?: number; tag?: number; distance?: number; generation?: 0 | 1 } = {},
 ): Enemy {
   const stats = PATHOGENS[kind];
+  // x/y default from the path position — movement recomputes them from distance
+  // anyway, so a literal x/y that disagrees with distance is a fixture lie.
+  const [pathX, pathY] = positionAt(state.path, opts.distance ?? 0);
   const enemy: Enemy = {
     id: state.nextEnemyId,
     kind,
     distance: opts.distance ?? 0,
-    x: opts.x ?? 0,
-    y: opts.y ?? 0,
+    x: opts.x ?? pathX,
+    y: opts.y ?? pathY,
     hp: opts.hp ?? stats.hp,
     maxHp: stats.hp,
     tag: opts.tag ?? 0,
@@ -4081,6 +4106,14 @@ export function addEnemy(
   state.nextEnemyId += 1;
   state.enemies.push(enemy);
   return enemy;
+}
+
+/** A tower placed ON the path at an arc length — for tests that go through step(). */
+export function addTowerOnPath<K extends DefenderKind>(
+  state: SimState, kind: K, spotIndex: number, distanceAlongPath: number,
+): Extract<Tower, { kind: K }> {
+  const [x, y] = positionAt(state.path, distanceAlongPath);
+  return addTower(state, kind, spotIndex, x, y);
 }
 
 /** Generic on kind, so tests get the narrowed tower type back and never cast. */
@@ -4415,8 +4448,8 @@ Then confirm the D9 fix end to end in `src/game/step.test.ts` — this is the te
 ```ts
   it('freezes an enemy on the very step it is engulfed — decision D9', () => {
     const state = simFor();
-    addTower(state, 'phago', 0, 86, 58);
-    const prey = addEnemy(state, 'staph', { x: 86, y: 40, distance: 60 });
+    addTowerOnPath(state, 'phago', 0, 60);
+    const prey = addEnemy(state, 'staph', { distance: 60 });
     const before = prey.distance;
 
     step(state, 1 / 60);
@@ -4604,11 +4637,13 @@ describe('step', () => {
   it('kills a held, tagged enemy through the full pipeline and pays the tagged bounty', () => {
     const state = simFor();
     state.queue = [];
-    // The phagocyte's grab pins the prey in place — no tuning moves it out of reach.
-    addTower(state, 'phago', 0, 86, 58);
-    addTower(state, 'anti', 1, 86, 58);
-    addTower(state, 'nk', 2, 86, 58);
-    const prey = addEnemy(state, 'staph', { x: 86, y: 58, distance: 60 });
+    // Towers sit ON the path at the prey's distance — movement recomputes enemy
+    // x/y from positionAt(distance), so literal coordinates would drift apart.
+    // The phagocyte's grab then pins the prey in place; no tuning moves it away.
+    addTowerOnPath(state, 'phago', 0, 60);
+    addTowerOnPath(state, 'anti', 1, 60);
+    addTowerOnPath(state, 'nk', 2, 60);
+    const prey = addEnemy(state, 'staph', { distance: 60 });
     state.energy = 0;
 
     const limit = 60 * 240;
@@ -4670,6 +4705,13 @@ git commit -m "feat(game): engulf, block, tag and execute with rewards and the d
 ---
 
 ## Phase 6 — Defenders: burst and learn; pathogen rules
+
+> **BUILT AND COMMITTED, together with Phase 7** (poison damages defenders Phase 6 introduces). 364 tests, verify green, **54 mutants / 54 killed**; the D8 mutation (exempting mem from poison) kills exactly the D8 test. As-built notes for both phases:
+>
+> - **Splitting is pathogen-gated, not case-gated** — a virus splits wherever it dies, suppressed only by maxed flu immunity (prototype + spec §5). This plan already said so; recorded here because a build brief once mis-stated it as case-scoped. Named test: `splits wherever a virus dies, not only in the virus case`.
+> - Fixtures that interact with tunables are derived from them (stun seeds from `PATHOGENS.toxin.stun`, learn seed from `DEFENDERS.mem.cap`) — see the fixture-validity rule in Global Constraints; the draft's literals would have failed a correct implementation after a retune.
+> - A third vacuous test (bleed interval) was found and fixed by the builder — see the corrected snippet in Phase 7.
+> - **Step 6 below (memory cell's `+N` label in `TowerLayer`) was NOT built** — the mechanics builder was fenced out of `src/render/`. It moves to Phase 9 (fight screen), which owns render work.
 
 **Files:**
 - Modify: `src/game/systems/damage.ts` — burst and learn
@@ -4761,11 +4803,12 @@ describe('memory cell — learn', () => {
   it('adds its earned bonus to every hit', () => {
     const state = simFor();
     const tower = addTower(state, 'mem', 0, 0, 0);
-    tower.xp = 20;
+    // Derived from the cap, not a literal — a literal seed can exceed a retuned cap.
+    tower.xp = DEFENDERS.mem.cap;
     const prey = addEnemy(state, 'film', { x: 10, y: 0, tag: 6 });
 
     runDefenders(state, 1 / 60, new Set());
-    expect(prey.hp).toBeCloseTo(prey.maxHp - (DEFENDERS.mem.dmg + 20), 6);
+    expect(prey.hp).toBeCloseTo(prey.maxHp - (DEFENDERS.mem.dmg + DEFENDERS.mem.cap), 6);
   });
 
   it('starts its cooldown after a hit', () => {
@@ -4978,7 +5021,9 @@ The prototype does not compute a position for a split child (line 769); it leave
 
 Run: `npx vitest run src/game/systems/deaths.test.ts` — Expected: PASS, 16 tests.
 
-- [ ] **Step 6: Add the memory cell's earned-bonus label to `TowerLayer`**
+- [ ] **Step 6 (MOVED TO PHASE 9): Add the memory cell's earned-bonus label to `TowerLayer`**
+
+Not built with Phase 6 — the mechanics builder was fenced out of `src/render/`. Execute this step in Phase 9, which owns the fight screen's render work. Kept here beside the mechanic it displays.
 
 The bonus is printed under the cell (prototype lines 863–866). One `Text` per memory cell, updated only when the rounded value changes.
 
@@ -5032,6 +5077,8 @@ git commit -m "feat(game): burst and learn defenders, virus splitting and memory
 
 ## Phase 7 — Case rules: wound bleed, tetanus shield, poison
 
+> **BUILT AND COMMITTED with Phase 6** — see the Phase 6 banner for the shared record (364 tests, 54/54 mutants). Snippets below are corrected to as-built: derived stun fixtures, the four-half-interval bleed test, the reachable poison-removal setup, and the strict-inequality poison ratio.
+
 **Why now:** the three case rules are the last simulation mechanics from spec §5. `hazards.ts` was written in Phase 3 because `movement.ts` calls it; this phase is the tests that prove it behaves, plus the one behaviour not yet covered — a defender that dies of poison.
 
 **Files:**
@@ -5051,23 +5098,30 @@ git commit -m "feat(game): burst and learn defenders, virus splitting and memory
 import { describe, expect, it } from 'vitest';
 import { applyPoison, applyToxinStun, applyWoundBleed } from './hazards';
 import { step } from '../step';
-import { addEnemy, addTower, simFor } from '../testing';
+import { distance } from '../state';
+import { addEnemy, addTower, addTowerOnPath, simFor } from '../testing';
 import { PATHOGENS } from '../content/pathogens';
 import {
-  BLEED_AMOUNT, POISON_DPS_ANTIBODY, POISON_DPS_OTHER, POISON_RADIUS, TOWER_MAX_HP,
-  TOXIN_STUN_RADIUS,
+  BLEED_AMOUNT, POISON_DPS_ANTIBODY, POISON_DPS_OTHER, POISON_RADIUS, STEP_SECONDS,
+  TOWER_MAX_HP, TOXIN_STUN_RADIUS,
 } from '../content/rules';
 
 describe('wound — bleeding', () => {
-  it('drains the bleed amount once a second while there is no clot', () => {
+  it('drains the bleed amount once per interval, and the interval timer resets', () => {
     const state = simFor('forearm');
     state.energy = 100;
 
+    // Four half-intervals, asserting after each: two half-intervals alone give an
+    // identical result whether or not the timer resets, so deleting the reset
+    // killed nothing until the third and fourth (found by mutation, as-built).
     applyWoundBleed(state, 0.5);
     expect(state.energy).toBe(100);
-
     applyWoundBleed(state, 0.5);
     expect(state.energy).toBe(100 - BLEED_AMOUNT);
+    applyWoundBleed(state, 0.5);
+    expect(state.energy).toBe(100 - BLEED_AMOUNT);
+    applyWoundBleed(state, 0.5);
+    expect(state.energy).toBe(100 - 2 * BLEED_AMOUNT);
   });
 
   it('stops the moment a clot is on the board', () => {
@@ -5179,7 +5233,8 @@ describe('toxin — stuns the cells it passes', () => {
   it('refreshes rather than stacks', () => {
     const state = simFor('stomach');
     const tower = addTower(state, 'phago', 0, 0, 0);
-    tower.stun = 1.0;
+    // Derived: a literal 1.0 fails a correct implementation once stun is tuned below it.
+    tower.stun = PATHOGENS.toxin.stun / 2;
     const toxin = addEnemy(state, 'toxin', { x: 10, y: 0 });
 
     applyToxinStun(state, toxin);
@@ -5189,11 +5244,12 @@ describe('toxin — stuns the cells it passes', () => {
   it('never shortens an existing stun', () => {
     const state = simFor('stomach');
     const tower = addTower(state, 'phago', 0, 0, 0);
-    tower.stun = 3;
+    const longer = PATHOGENS.toxin.stun * 2;
+    tower.stun = longer;
     const toxin = addEnemy(state, 'toxin', { x: 10, y: 0 });
 
     applyToxinStun(state, toxin);
-    expect(tower.stun).toBe(3);
+    expect(tower.stun).toBe(longer);
   });
 
   it('does nothing for a pathogen that does not stun', () => {
@@ -5272,23 +5328,33 @@ describe('poison — pathogens damage your defenders', () => {
   it('removes a defender from the board once poison finishes it', () => {
     const state = simFor('stomach');
     state.queue = [];
-    const tower = addTower(state, 'phago', 0, 46, 0);
-    tower.hp = 1;
-    addEnemy(state, 'staph', { x: 46, y: 0, distance: 20 });
+    // The draft placed tower and enemy at the same literal coordinate — but
+    // applyMovement recomputes enemy x/y from positionAt(path, distance) before
+    // poison runs, leaving them ~88 apart on the stomach path. Place the tower ON
+    // the path at the enemy's distance and give it exactly one step's worth of hp.
+    const tower = addTowerOnPath(state, 'phago', 0, 20);
+    tower.hp = POISON_DPS_OTHER * STEP_SECONDS;
+    const enemy = addEnemy(state, 'staph', { distance: 20 });
 
-    step(state, 1 / 60);
+    step(state, STEP_SECONDS);
+    // distance(), not Math.hypot — the lint ban applies to test files in src/game too.
+    expect(distance(tower.x, tower.y, enemy.x, enemy.y)).toBeLessThan(POISON_RADIUS);
     expect(state.towers).toHaveLength(0);
   });
 
-  it('wears an antibody down slower than a phagocyte, in the documented ratio', () => {
+  it('wears an antibody down strictly slower than a phagocyte', () => {
+    // The mechanic the case copy promises — not the arithmetic ratio, which would
+    // merely restate the implementation (as-built correction). The guard makes a
+    // degenerate retune (antibody rate >= phagocyte rate) fail loudly.
+    expect(POISON_DPS_ANTIBODY).toBeLessThan(POISON_DPS_OTHER);
+
     const state = simFor('stomach');
     const phago = addTower(state, 'phago', 0, 0, 0);
     const anti = addTower(state, 'anti', 1, 0, 0);
     const enemy = addEnemy(state, 'staph', { x: 10, y: 0 });
 
     applyPoison(state, enemy, 5);
-    const ratio = POISON_DPS_OTHER / POISON_DPS_ANTIBODY;
-    expect(TOWER_MAX_HP - phago.hp).toBeCloseTo(ratio * (TOWER_MAX_HP - anti.hp), 6);
+    expect(TOWER_MAX_HP - anti.hp).toBeLessThan(TOWER_MAX_HP - phago.hp);
   });
 });
 ```
@@ -5894,6 +5960,7 @@ git commit -m "feat(game): wave and case flow, credits-driven progression, bless
 - Create: `src/app/components/DefenderDock.test.tsx`, `TissuePips.test.tsx`, `ResultSheet.test.tsx`
 - Create: `src/app/fight.css`
 - Rewrite: `src/app/pages/FightPage.tsx`
+- Modify (moved from Phase 6 Step 6): `src/render/layers/TowerLayer.ts` — the memory cell's earned-bonus `+N` label; the mechanics phase was fenced out of `src/render/`, so this render work lands here
 - Port from: prototype markup lines 138–205 (fight screen), 321–355 (result sheet); logic lines 1068–1101 (HUD values and result copy); asset sheet lines 770–826 (HUD parts)
 
 **Interfaces:**
@@ -5948,8 +6015,10 @@ describe('DefenderDock', () => {
 
   it('shows LOCK instead of a price for a defender that is not unlocked', () => {
     render(<DefenderDock {...base} clearedCount={0} />);
-    expect(screen.getByTestId('dock-cost-mast')).toHaveTextContent('LOCK');
-    expect(screen.getByTestId('dock-cost-phago')).toHaveTextContent(String(DEFENDERS.phago.cost));
+    // Anchored: toHaveTextContent substring-matches, so '40' would pass against '140'.
+    expect(screen.getByTestId('dock-cost-mast')).toHaveTextContent(/^LOCK$/);
+    expect(screen.getByTestId('dock-cost-phago'))
+      .toHaveTextContent(new RegExp(`^${String(DEFENDERS.phago.cost)}$`));
   });
 
   it('marks an unaffordable price rather than disabling the card', () => {
@@ -7385,9 +7454,19 @@ git commit -m "feat(progress): versioned repository port with localStorage and P
 
 ## Phase 12 — Map, Brief, Immunity and Season screens
 
+> **Map + Brief BUILT AND COMMITTED** (29 tests, all hand-mutated), out of plan order — Immunity, Season and the profile app layer remain. As-built facts:
+>
+> - The body map is inline SVG as specified; only the hot node pulses, mutation-tested both directions.
+> - **These screens are the first consumers of `--safe-top`/`--safe-bottom`** — the safe-area chain from Phase 1's `viewport-fit=cover` through the CSS variables is now genuinely exercised, not just declared. The Capacitor phase deliberately did not invent a consumer.
+> - Profile data enters through one named seam: `src/app/placeholderProfile.ts`. **The remaining work of this phase MUST delete it** — see the step below.
+> - A fourth vacuous test was found by its author: navigation assertions using `toHaveTextContent('/')` substring-match every route. Now exact `textContent` comparison; the rule is in Global Constraints.
+> - **Brief copy now derives every number it quotes.** Five defender blurbs hardcoded tunables (execute threshold, tag bonus, digest streak, two unlock requirements) and would have lied to the player after any balance pass. Tests assert the sentence tracks the stat: retuning execute to 0.25 keeps the suite green and moves the copy; hardcoding the old string fails. The Phase 2 `DEFENDER_BLURBS` listing is superseded by this — blurbs are built from `DEFENDERS`, not literal strings.
+
 **Why now:** the persistence port is real (39e9556) and the fight screen is real, so these four screens have live data to render and somewhere to navigate to.
 
 **First: build the profile app layer moved here from Phase 11.** The persistence commit stopped at the port boundary, so `ProfileProvider.tsx`, `SaveErrorBanner.tsx` and the `main.tsx` wiring (Phase 11 Steps 7–8, kept there beside the port they wrap) execute at the start of THIS phase — the screens are their first consumer.
+
+**Then: delete the placeholder seam.** With `useProfile` real, remove `src/app/placeholderProfile.ts` and swap its two one-line reads — `PLACEHOLDER_PROFILE` → `useProfile().profile` and `placeholderNextCaseId` → `nextCaseId`. Verify with `git grep -i placeholder src/` returning nothing; a placeholder that survives to release ships a fake profile.
 
 **Files:**
 - Create (moved from Phase 11): `src/app/state/ProfileProvider.tsx`, `src/app/components/SaveErrorBanner.tsx`; Modify: `src/main.tsx` — wrap `App` in `ProfileProvider`
@@ -7840,6 +7919,7 @@ Copy from prototype lines 275–317 and 1095–1097.
 ```tsx
 import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
+import { IMMUNITY_MAX } from '@game/content/rules';
 import { strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
 import { useProfile } from '@app/state/ProfileProvider';
@@ -7862,7 +7942,8 @@ export function ImmunityPage() {
               </span>
               <h2 className="screen-heading">Immunity</h2>
               <p className="screen-lede">
-                Clear a strain three times and it&apos;s blocked in every run after this one.
+                {/* Derived, not "three times" — copy must track the stat it quotes. */}
+                {`Clear a strain ${String(IMMUNITY_MAX)} times and it's blocked in every run after this one.`}
               </p>
             </div>
 
