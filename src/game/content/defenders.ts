@@ -1,4 +1,5 @@
 import type { DefenderKind, PaletteToken } from '../types';
+import { TAG_REWARD_MULTIPLIER } from './rules';
 
 interface DefenderBase {
   readonly cost: number;
@@ -33,11 +34,51 @@ export const DEFENDER_ORDER: readonly DefenderKind[] = ['phago', 'clot', 'anti',
  * wording deliberately: load-proportional wear (spec §5.1) is kept and stated here rather than
  * left as an emergent surprise.
  */
+const COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'] as const;
+
+function countWord(value: number): string {
+  return COUNT_WORDS[value] ?? String(value);
+}
+
+function percent(fraction: number): string {
+  return `${String(Math.round(fraction * 100))}%`;
+}
+
+function unlockSentence(unlock: number): string {
+  if (unlock <= 0) return '';
+  const cases = unlock === 1 ? 'case' : 'cases';
+  return ` Clear ${countWord(unlock)} ${cases} to unlock.`;
+}
+
+/**
+ * Brief-screen copy, prototype lines 1074–1081. Every number here is interpolated from the
+ * stat it describes: content values are tunable, and copy that quotes a stale one lies to the
+ * player. The clot entry departs from the prototype's wording deliberately — load-proportional
+ * wear (spec §5.1) is stated rather than left as an emergent surprise.
+ */
 export const DEFENDER_BLURBS: { readonly [K in DefenderKind]: { readonly name: string; readonly text: string } } = {
-  phago: { name: 'Phagocyte · engulf', text: 'Digests one at a time, then tires — four and it rests.' },
-  clot: { name: 'Clot · block', text: 'Everything crawls through, and every body inside wears it down — a crowd destroys it fast. Stops bleeding.' },
-  anti: { name: 'Antibody · tag', text: 'Kills little. Marked: no armour, slow burn, +50% energy.' },
-  nk: { name: 'Killer cell · execute', text: 'Slow, heavy hit on the most wounded thing. Finishes anything under 35%.' },
-  mast: { name: 'Mast cell · burst', text: 'Hits everything close at once — double damage on tagged. Clear one case to unlock.' },
-  mem: { name: 'Memory cell · learn', text: 'Weak, then permanently stronger with every kill nearby. Immune to toxin. Clear two cases.' },
+  phago: {
+    name: 'Phagocyte · engulf',
+    text: `Digests one at a time, then tires — ${countWord(DEFENDERS.phago.streak)} and it rests.`,
+  },
+  clot: {
+    name: 'Clot · block',
+    text: 'Everything crawls through, and every body inside wears it down — a crowd destroys it fast. Stops bleeding.',
+  },
+  anti: {
+    name: 'Antibody · tag',
+    text: `Kills little. Marked: no armour, slow burn, +${percent(TAG_REWARD_MULTIPLIER - 1)} energy.`,
+  },
+  nk: {
+    name: 'Killer cell · execute',
+    text: `Slow, heavy hit on the most wounded thing. Finishes anything under ${percent(DEFENDERS.nk.execute)}.`,
+  },
+  mast: {
+    name: 'Mast cell · burst',
+    text: `Hits everything close at once — double damage on tagged.${unlockSentence(DEFENDERS.mast.unlock)}`,
+  },
+  mem: {
+    name: 'Memory cell · learn',
+    text: `Weak, then permanently stronger with every kill nearby. Immune to toxin.${unlockSentence(DEFENDERS.mem.unlock)}`,
+  },
 };

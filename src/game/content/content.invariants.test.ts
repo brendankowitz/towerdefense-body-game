@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DEFENDERS, DEFENDER_ORDER } from './defenders';
+import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from './defenders';
 import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
 import { STRAIN_ROWS, VACCINES } from './vaccines';
 import { BODY_LINKS, BODY_NODES } from './body';
-import { BOARD_HEIGHT, BOARD_WIDTH } from './rules';
+import { BOARD_HEIGHT, BOARD_WIDTH, TAG_REWARD_MULTIPLIER } from './rules';
 
 // Structural invariants only — never gameplay values. A balance pass must be able to change
 // every number in content/ without turning this suite red (spec §4, §9).
@@ -183,5 +183,37 @@ describe('numeric sanity', () => {
 
   it('gives every case plausible starting energy', () => {
     for (const c of CASES) check(`CASES.${c.id}`, { cost: c.startingEnergy });
+  });
+});
+
+// Copy that quotes a tunable must derive it. These assert the sentence tracks the stat, so a
+// retune cannot leave the brief telling the player a number the simulation no longer uses.
+describe('brief copy stays true to the stats it describes', () => {
+  it('quotes the execute threshold as a percentage of the real value', () => {
+    const shown = `${String(Math.round(DEFENDERS.nk.execute * 100))}%`;
+    expect(DEFENDER_BLURBS.nk.text).toContain(shown);
+  });
+
+  it('quotes the tag bonus as a percentage of the real multiplier', () => {
+    const shown = `${String(Math.round((TAG_REWARD_MULTIPLIER - 1) * 100))}%`;
+    expect(DEFENDER_BLURBS.anti.text).toContain(shown);
+  });
+
+  it('names the real unlock requirement, or stays silent when there is none', () => {
+    for (const [kind, stats] of Object.entries(DEFENDERS)) {
+      const text = DEFENDER_BLURBS[stats.kind].text;
+      if (stats.unlock === 0) {
+        expect(text, `${kind} is available from the start`).not.toContain('to unlock');
+      } else {
+        expect(text, `${kind} unlocks after ${String(stats.unlock)}`).toContain('to unlock');
+      }
+    }
+  });
+
+  it('never scolds, exclaims, or uses an emoji — spec copy rules', () => {
+    for (const blurb of Object.values(DEFENDER_BLURBS)) {
+      expect(blurb.text).not.toContain('!');
+      expect(blurb.text).not.toMatch(/\p{Extended_Pictographic}/u);
+    }
   });
 });
