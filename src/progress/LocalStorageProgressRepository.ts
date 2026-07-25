@@ -1,6 +1,7 @@
 import { parseProfile } from './parseProfile';
+import type { Profile } from '@game/progression';
 import {
-  STORAGE_KEY, STORAGE_VERSION, encode, type LoadResult, type Profile, type ProgressRepository,
+  STORAGE_KEY, STORAGE_VERSION, encode, type LoadResult, type ProgressRepository,
 } from './ProgressRepository';
 
 /**

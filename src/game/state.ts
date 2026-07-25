@@ -1,7 +1,10 @@
 import { CASE_BY_ID } from './content/cases';
 import { TISSUE_PIPS } from './content/rules';
 import { compilePath } from './path';
-import type { CaseId, SimState, StrainId } from './types';
+import type { CaseId, DefenderKind, SimState, StrainId } from './types';
+
+/** What the dock offers before the player has chosen anything — on a new case and on a new wave. */
+export const DEFAULT_SELECTION: DefenderKind = 'phago';
 
 export interface SimInput {
   readonly caseId: CaseId;
@@ -26,7 +29,7 @@ export function createSimState(input: SimInput): SimState {
 
     energy: definition.startingEnergy,
     tissue: TISSUE_PIPS,
-    selected: 'phago',
+    selected: DEFAULT_SELECTION,
     fast: false,
 
     fever: 0,

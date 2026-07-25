@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FRESH_PROFILE } from '@game/content/rules';
-import type { Profile } from './ProgressRepository';
+import { createFreshProfile } from '@game/progression';
 
 const store = new Map<string, string>();
 let failNextSet = false;
@@ -30,17 +29,6 @@ vi.mock('@capacitor/preferences', () => ({
 const { PreferencesProgressRepository } = await import('./PreferencesProgressRepository');
 const { STORAGE_KEY } = await import('./ProgressRepository');
 
-/** See LocalStorageProgressRepository.test.ts for why this is a local stand-in for createFreshProfile(). */
-function testFreshProfile(): Profile {
-  return {
-    cleared: [],
-    immunity: { staph: 0, film: 0, virus: 0 },
-    day: FRESH_PROFILE.day,
-    bank: FRESH_PROFILE.bank,
-    kills: 0,
-  };
-}
-
 describe('PreferencesProgressRepository', () => {
   beforeEach(() => {
     store.clear();
@@ -55,7 +43,8 @@ describe('PreferencesProgressRepository', () => {
 
   it('round-trips a saved profile', async () => {
     const repository = new PreferencesProgressRepository();
-    const profile = { ...testFreshProfile(), day: testFreshProfile().day + 5, bank: testFreshProfile().bank + 660 };
+    const fresh = createFreshProfile();
+    const profile = { ...fresh, day: fresh.day + 5, bank: fresh.bank + 660 };
 
     await repository.save(profile);
     const result = await repository.load();
@@ -75,7 +64,7 @@ describe('PreferencesProgressRepository', () => {
   });
 
   it('falls back to fresh and reports an outdated version', async () => {
-    store.set(STORAGE_KEY, JSON.stringify({ version: 99, profile: testFreshProfile() }));
+    store.set(STORAGE_KEY, JSON.stringify({ version: 99, profile: createFreshProfile() }));
     const result = await new PreferencesProgressRepository().load();
     expect(result).toEqual({ status: 'fresh', reason: 'outdated' });
   });
@@ -89,16 +78,16 @@ describe('PreferencesProgressRepository', () => {
   it('surfaces a failed write rather than swallowing it', async () => {
     const repository = new PreferencesProgressRepository();
     failNextSet = true;
-    await expect(repository.save(testFreshProfile())).rejects.toThrow(/could not be saved/i);
+    await expect(repository.save(createFreshProfile())).rejects.toThrow(/could not be saved/i);
   });
 
   it('never leaves a half-written record after a failed write', async () => {
     const repository = new PreferencesProgressRepository();
-    await repository.save(testFreshProfile());
+    await repository.save(createFreshProfile());
     const before = store.get(STORAGE_KEY);
 
     failNextSet = true;
-    await expect(repository.save({ ...testFreshProfile(), day: testFreshProfile().day + 8 })).rejects.toThrow();
+    await expect(repository.save({ ...createFreshProfile(), day: createFreshProfile().day + 8 })).rejects.toThrow();
 
     expect(store.get(STORAGE_KEY)).toBe(before);
   });

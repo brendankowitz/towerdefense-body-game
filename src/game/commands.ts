@@ -1,6 +1,7 @@
 import { CASE_BY_ID } from './content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from './content/defenders';
 import { FEVER_DURATION, SPAWN_FIRST_DELAY, TOWER_MAX_HP } from './content/rules';
+import { DEFAULT_SELECTION, createSimState } from './state';
 import { buildQueue } from './systems/spawn';
 import type { DefenderKind, SimState, Tower } from './types';
 
@@ -58,6 +59,29 @@ export function startWave(state: SimState): void {
   state.waveKills = 0;
   state.waveLeaks = 0;
   state.result = null;
+}
+
+/**
+ * "Next wave" from the result sheet. Only a held wave has a next one — a finished case is over,
+ * and a running wave has not been held yet. Unspent energy carries over untouched.
+ */
+export function advanceToNextWave(state: SimState): void {
+  if (state.phase !== 'built') return;
+
+  state.waveIndex += 1;
+  state.phase = 'build';
+  state.result = null;
+  state.selected = DEFAULT_SELECTION;
+}
+
+/** "Try this case again" — a fresh board, keeping nothing but what the profile already holds. */
+export function restartCase(state: SimState): SimState {
+  return createSimState({
+    caseId: state.caseId,
+    immunity: state.immunity,
+    clearedCount: state.clearedCount,
+    totalKills: state.totalKills,
+  });
 }
 
 /** Named triggerFever, not useFever: a `use` prefix reads as a React hook to eslint. */

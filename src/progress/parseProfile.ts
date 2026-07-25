@@ -1,7 +1,7 @@
 import { CASES } from '@game/content/cases';
 import { IMMUNITY_MAX } from '@game/content/rules';
 import type { CaseId, StrainId } from '@game/types';
-import type { Profile } from './ProgressRepository';
+import type { Profile } from '@game/progression';
 
 const CASE_IDS: ReadonlySet<string> = new Set(CASES.map((entry) => entry.id));
 const STRAINS: readonly StrainId[] = ['staph', 'film', 'virus'];

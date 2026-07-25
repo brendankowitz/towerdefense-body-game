@@ -1,23 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStorageProgressRepository } from './LocalStorageProgressRepository';
-import { STORAGE_KEY, encode, type Profile } from './ProgressRepository';
-import { FRESH_PROFILE } from '@game/content/rules';
-
-/**
- * `src/game/progression.ts` (and its `createFreshProfile()`) is being built concurrently and
- * did not exist when this suite was written. This mirrors the described factory shape, derived
- * from the shared `FRESH_PROFILE` content constant rather than a hardcoded day/bank — see the
- * report for this phase for the follow-up once `createFreshProfile()` lands.
- */
-function testFreshProfile(): Profile {
-  return {
-    cleared: [],
-    immunity: { staph: 0, film: 0, virus: 0 },
-    day: FRESH_PROFILE.day,
-    bank: FRESH_PROFILE.bank,
-    kills: 0,
-  };
-}
+import { STORAGE_KEY, encode } from './ProgressRepository';
+import { createFreshProfile } from '@game/progression';
 
 describe('LocalStorageProgressRepository', () => {
   beforeEach(() => { localStorage.clear(); });
@@ -32,7 +16,8 @@ describe('LocalStorageProgressRepository', () => {
 
   it('round-trips a saved profile', async () => {
     const repository = new LocalStorageProgressRepository();
-    const profile = { ...testFreshProfile(), day: testFreshProfile().day + 5, bank: testFreshProfile().bank + 660 };
+    const fresh = createFreshProfile();
+    const profile = { ...fresh, day: fresh.day + 5, bank: fresh.bank + 660 };
 
     await repository.save(profile);
     const result = await repository.load();
@@ -60,7 +45,7 @@ describe('LocalStorageProgressRepository', () => {
   });
 
   it('falls back to fresh and reports an outdated version', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 99, profile: testFreshProfile() }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 99, profile: createFreshProfile() }));
     const result = await new LocalStorageProgressRepository().load();
     expect(result).toEqual({ status: 'fresh', reason: 'outdated' });
   });
@@ -77,18 +62,18 @@ describe('LocalStorageProgressRepository', () => {
       throw new DOMException('QuotaExceededError');
     });
 
-    await expect(repository.save(testFreshProfile())).rejects.toThrow(/could not be saved/i);
+    await expect(repository.save(createFreshProfile())).rejects.toThrow(/could not be saved/i);
   });
 
   it('never leaves a half-written record after a failed write', async () => {
     const repository = new LocalStorageProgressRepository();
-    await repository.save(testFreshProfile());
+    await repository.save(createFreshProfile());
     const before = localStorage.getItem(STORAGE_KEY);
 
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('nope'); });
-    await expect(repository.save({ ...testFreshProfile(), day: testFreshProfile().day + 8 })).rejects.toThrow();
+    await expect(repository.save({ ...createFreshProfile(), day: createFreshProfile().day + 8 })).rejects.toThrow();
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
-    expect(before).toBe(encode(testFreshProfile()));
+    expect(before).toBe(encode(createFreshProfile()));
   });
 });

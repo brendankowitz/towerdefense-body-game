@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden run > matches the blessed snapshot 1`] = `
+{
+  "forearm": "813d579f 860e5490 d75a5d21 071813ca ec777e1f 8b0b3aa6 d793301f 3573014a 7b698587 04b704a0 5f79ec07 214a977d 6774ffb9 994efabd e7ba2997",
+  "stomach": "01bb1249 752e0e77 e208aa6c 1933fdf5 bb001940 f32d65df 4e026c23 9a72f894 f568c245 13f01404 014ace2d f21177cd bdfc7db3 f7e2c916 6bed03b1",
+  "throat": "18a0f7c6 f9c248d5 fc53187c 3d7cec76 f70eb128 fdd8cf5e ac9db5f2 5b0a409a 7865da8f 9f6133d3 d48a6f44 d86e0d5e 628345f9 b015e482 5150c435",
+}
+`;

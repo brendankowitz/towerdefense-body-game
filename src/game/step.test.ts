@@ -31,6 +31,17 @@ function phagocyteOnPathAt(state: SimState, travelled: number): PhagocyteTower {
   return addTowerOnPath(state, 'phago', travelled);
 }
 
+/**
+ * Keeps the wave open without putting anything on the board: one entry left in the queue with
+ * its spawn held off indefinitely. Tests that read energy need this, because a wave that ends
+ * pays a clear bonus — run flow that `run.test.ts` owns and that would otherwise land in the
+ * middle of an economy assertion.
+ */
+function holdWaveOpen(state: SimState): void {
+  state.queue = ['staph'];
+  state.spawnTimer = Number.MAX_SAFE_INTEGER;
+}
+
 /** Bounded so a mechanic that never fires fails the suite instead of hanging it. */
 function advanceUntil(state: SimState, done: () => boolean, maxSteps = 3000): number {
   for (let taken = 0; taken < maxSteps; taken += 1) {
@@ -120,6 +131,7 @@ describe('step — the starting dock working together', () => {
     addTowerOnPath(state, 'nk', 100);
     const prey = spawnAt(state, 'staph', 100);
     state.energy = 0;
+    holdWaveOpen(state);
 
     advanceUntil(state, () => state.enemies.length === 0);
 
@@ -136,6 +148,7 @@ describe('step — the starting dock working together', () => {
   it('pays nothing and costs a pip when an enemy gets through', () => {
     const state = fighting();
     state.energy = 0;
+    holdWaveOpen(state);
     spawnAt(state, 'staph', state.path.total);
 
     step(state, STEP_SECONDS);
