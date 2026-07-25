@@ -1523,6 +1523,13 @@ git commit -m "feat(content): defender, pathogen, case, vaccine and body tables 
 
 ## Phase 3 — Simulation foundations: types, RNG, path, state, fixed-step loop, spawn and movement
 
+> **BUILT AND COMMITTED (a017e28).** 151 tests green, full verify clean. As-built deviations, all settled:
+>
+> - **`acquireHolds` landed here, not Phase 5** — D9 is untestable without it. The `runDefenders` stub as-built takes `(state, dt)`; Phase 5 adds the `dead` parameter when it implements the real dispatch.
+> - Identifier corrections applied plan-wide (6aca0e4): `StrainId` / `TISSUE_PIPS` / `FEVER_DURATION` are the real exports; snippets contain no non-null assertions (`strictTypeChecked` bans them) — `CompiledPath.segments` is the non-empty tuple `readonly [Segment, ...Segment[]]`, making the guard unnecessary rather than suppressed.
+> - **The frame-rate test in this phase's original listing was vacuous**: 120 Hz divides the 1/60 step exactly, so it stayed green with the prototype's variable-dt defect deliberately reintroduced. Criterion 2's own test could not fail. See the corrected Step 18 below. Equally a trap: comparing state after equal *wall-clock duration* fails against a **correct** loop (599 vs 600 steps at 144 Hz from float accumulation). The guarantee is **same step count ⇒ same state**.
+> - Criterion 5 confirmed as-built: retuning 20 content values across all four content modules left 140/140 tests green.
+
 **Why now:** the complete sim state types unblock both the renderer (Phase 4) and every system phase. Getting spawn and movement in first means an enemy can walk a path, which is the smallest end-to-end slice the renderer can draw.
 
 **Files:**
@@ -2467,7 +2474,7 @@ export function step(state: SimState, dt: number): void {
   acquireHolds(state, held, dead);
 
   applyMovement(state, dt, held, dead);
-  runDefenders(state, dt, dead);
+  runDefenders(state, dt); // Phase 5 threads `dead` through when the real dispatch lands.
 
   for (const tower of state.towers) {
     if (tower.kind === 'mast' && tower.flash > 0) tower.flash -= dt;
@@ -2500,17 +2507,28 @@ function endWave(state: SimState): void {
 }
 ```
 
-Create `src/game/systems/damage.ts` and `src/game/systems/deaths.ts` now as compiling no-ops so `step` type-checks; Phases 5–6 and 8 fill them in.
+Create `src/game/systems/damage.ts` now with a **real** `acquireHolds` — D9's same-step freeze is untestable without it, which is why it belongs to this phase as-built — plus a `runDefenders` stub; `deaths.ts` gets its removal-only stub. Phases 5–6 and 8 fill the stubs in.
 
 ```ts
 // src/game/systems/damage.ts
+import { DEFENDERS } from '../content/defenders';
+import { pickLeader } from './targeting';
 import type { SimState } from '../types';
 
-export function acquireHolds(_state: SimState, _held: Set<number>, _dead: Set<number>): void {
-  // Implemented in Phase 5 — phagocytes grab before movement (decision D9).
+/** Phagocyte grabs. Runs before movement so a grab freezes its prey this step (decision D9). */
+export function acquireHolds(state: SimState, held: Set<number>, dead: Set<number>): void {
+  for (const tower of state.towers) {
+    if (tower.kind !== 'phago') continue;
+    if (tower.stun > 0 || tower.rest > 0 || tower.holdingEnemyId !== null) continue;
+    const prey = pickLeader(state, tower, DEFENDERS.phago.range, dead, held);
+    if (prey !== null) {
+      tower.holdingEnemyId = prey.id;
+      held.add(prey.id);
+    }
+  }
 }
 
-export function runDefenders(_state: SimState, _dt: number, _dead: Set<number>): void {
+export function runDefenders(_state: SimState, _dt: number): void {
   // Implemented in Phases 5 and 6.
 }
 ```
@@ -2738,12 +2756,52 @@ function run(frameCount: number, frameSeconds: number): GameLoop {
   return loop;
 }
 
+/**
+ * Drive a loop until it reaches a step count, comparing runs at EQUAL STEPS.
+ * Equal wall-clock duration is a trap: at 144 Hz float accumulation yields 599
+ * steps where 60 Hz yields 600 — a correct loop fails a duration comparison.
+ * Bounded, and throws with a diagnostic rather than spinning: advance() is
+ * inert once the wave ends, so an unbounded wait would hang forever.
+ */
+function runToStepCount(frameSeconds: number, targetSteps: number): GameLoop {
+  const loop = new GameLoop(armed());
+  const maxFrames = Math.ceil((targetSteps + 60) / (frameSeconds * 60)) + 1000;
+  for (let frame = 0; frame < maxFrames; frame += 1) {
+    if (loop.stepsTaken >= targetSteps) return loop;
+    loop.advance(frameSeconds);
+  }
+  throw new Error(
+    `Loop reached only ${String(loop.stepsTaken)} of ${String(targetSteps)} steps in ${String(maxFrames)} frames — did the wave end?`,
+  );
+}
+
 describe('GameLoop', () => {
-  it('simulates identically at 60 Hz and 120 Hz', () => {
-    const sixty = run(600, 1 / 60);
-    const oneTwenty = run(1200, 1 / 120);
-    expect(oneTwenty.stepsTaken).toBe(sixty.stepsTaken);
-    expect(hashState(oneTwenty.state)).toBe(hashState(sixty.state));
+  // A frame-rate independence test must use a rate that does NOT divide the fixed
+  // step — 120 Hz divides 1/60 exactly, so the accumulator aligns and the
+  // prototype's variable-dt defect is invisible. Verified by reintroducing the
+  // defect (step(state, accumulator)) and watching these fail.
+  it('simulates identically at 60 Hz and 144 Hz, compared at an equal step count', () => {
+    const sixty = runToStepCount(1 / 60, 300);
+    const oneFortyFour = runToStepCount(1 / 144, 300);
+    expect(oneFortyFour.stepsTaken).toBe(sixty.stepsTaken);
+    expect(hashState(oneFortyFour.state)).toBe(hashState(sixty.state));
+  });
+
+  it('simulates identically under jittered frame times, compared at an equal step count', () => {
+    const steady = runToStepCount(1 / 60, 300);
+
+    const jittered = new GameLoop(armed());
+    let seed = 1;
+    const nextJitter = (): number => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed / 2147483647) / 40;
+    };
+    for (let frame = 0; frame < 100_000 && jittered.stepsTaken < 300; frame += 1) {
+      jittered.advance(1 / 120 + nextJitter());
+    }
+
+    expect(jittered.stepsTaken).toBe(steady.stepsTaken);
+    expect(hashState(jittered.state)).toBe(hashState(steady.state));
   });
 
   it('simulates identically at a stuttering 30 Hz', () => {
@@ -2799,10 +2857,12 @@ describe('GameLoop', () => {
 });
 ```
 
-- [ ] **Step 19: Run the loop tests**
+- [ ] **Step 19: Run the loop tests, then prove they can fail**
 
 Run: `npx vitest run src/game/loop.test.ts`
-Expected: PASS, 8 tests. If the 60 Hz / 120 Hz hashes differ, the cause is almost always a `dt` that reached a system unscaled, or a `Set`/`Map` iteration affecting order — not floating-point drift.
+Expected: PASS, 9 tests. If the cross-rate hashes differ, the cause is almost always a `dt` that reached a system unscaled, or a `Set`/`Map` iteration affecting order — not floating-point drift.
+
+Then reintroduce the prototype's defect — change the accumulator drain to `step(this.#state, this.#accumulator)` — and confirm the 144 Hz and jitter tests FAIL. Restore. A frame-rate test that stays green against the defect it exists to catch proves nothing (this exact vacuity shipped in an earlier draft of this phase, caught only as-built).
 
 - [ ] **Step 20: Write `src/game/commands.ts`**
 
@@ -3027,10 +3087,14 @@ git commit -m "feat(game): fixed-step loop, seeded RNG, path geometry, spawn and
 
 **Why now:** the sim state types are complete, so the renderer can be written against all of them at once even though Phases 5–8 have not yet filled them in. This is the first phase that produces something to look at, and it de-risks Pixi early rather than at the end.
 
-**Bundle note (from the committed d739211 interlude):** `FightPage` is already `React.lazy`, so Rollup's default async splitting puts Pixi in its own on-demand chunk the moment this phase imports it there. Do **not** add a `vendor-pixi` entry to `manualChunks` — forcing chunk boundaries was tried with `@ionic/core` and made the bundle worse. After this phase's build, confirm Pixi lives in the `FightPage` chunk, not the eager one.
+> **BUILT AND COMMITTED (41e464a).** 204 tests green. **The draft below originally specified a cover fit ("matching the prototype's `preserveAspectRatio="xMidYMid slice"`"); that was wrong and the as-built fit is contain.** The prototype drew into a fixed 374 px phone frame where nothing could crop; on a responsive canvas, cover at 390×844 scales to 1.963 and hides 47% of the board width — forearm's spots at x=58/292, throat's at x=64/258, stomach's at x=292/246 fell off screen, making entire cases unplayable. A build spot the player cannot see is a build spot they cannot tap. Caught by **screenshotting the rendered board** — every viewport test passed against the broken fit. As-built: `fitViewport` (`Math.min`), letterboxed and centred; letterboxing is invisible against the flat paper background; tests assert the whole board **and every build spot of every case** stay on screen across seven canvas sizes (390×844, 320×568, 430×932, 768×1024, 1024×768, 320×900, 900×320) — reverting to `Math.max` fails four of them. Listings below reflect as-built.
+>
+> Other as-built facts: files include `geometry.ts`, `pool.ts`, `exhaustive.ts` (+ `geometry.test.ts`, `pool.test.ts`) beyond the draft list. Pixi confirmed absent from the eager chunk — zero occurrences in `index-*.js`; it lives in `FightPage-*.js` (288 kB) with Pixi's WebGL backend split beneath it (`WebGLRenderer-*.js`, `RenderTargetSystem-*.js`), no `manualChunks` entry. **Float trap:** asserting a board edge lands exactly at 0 fails — scaling is a float multiply landing at −5.7e-14; edge-containment assertions need an epsilon on both bounds.
+
+**Bundle note (from the committed d739211 interlude):** `FightPage` is already `React.lazy`, so Rollup's default async splitting puts Pixi in its own on-demand chunk the moment this phase imports it there. Do **not** add a `vendor-pixi` entry to `manualChunks` — forcing chunk boundaries was tried with `@ionic/core` and made the bundle worse. Confirmed as-built (see banner).
 
 **Files:**
-- Create: `src/render/viewport.ts` + `viewport.test.ts`
+- Create: `src/render/viewport.ts` + `viewport.test.ts`, `src/render/geometry.ts` + `geometry.test.ts`, `src/render/pool.ts` + `pool.test.ts`, `src/render/exhaustive.ts`
 - Create: `src/render/colors.ts`, `src/render/shapes.ts`
 - Create: `src/render/layers/PathLayer.ts`, `TowerLayer.ts`, `EnemyLayer.ts`, `BeamLayer.ts`
 - Create: `src/render/BoardRenderer.ts`
@@ -3042,43 +3106,72 @@ git commit -m "feat(game): fixed-step loop, seeded RNG, path geometry, spawn and
 - Consumes: `SimState`, `Tower`, `Enemy`, `Beam`, `palette`, `CASE_BY_ID`, `GameLoop`.
 - Produces:
   - `interface Viewport { scale: number; offsetX: number; offsetY: number }`
-  - `coverViewport(w, h): Viewport`, `worldToScreen(v, x, y): [number, number]`, `screenToWorld(v, x, y): [number, number]`, `hitBuildSpot(caseId, wx, wy): number | null`
+  - `fitViewport(w, h): Viewport`, `worldToScreen(v, x, y): [number, number]`, `screenToWorld(v, x, y): [number, number]`, `hitBuildSpot(caseId, wx, wy): number | null`
   - `class BoardRenderer` with `static create(host: HTMLElement, caseId: CaseId): Promise<BoardRenderer>`, `draw(state: SimState): void`, `resize(): void`, `destroy(): void`, `readonly canvas: HTMLCanvasElement`
   - `useGameLoop(loop: GameLoop | null, onFrame: (state: SimState) => void): void`
 
 - [ ] **Step 1: Write the failing viewport test**
 
-The board is 374×430 in world units and is drawn with `preserveAspectRatio: xMidYMid slice` in the prototype (line 910) — that is a cover fit, not a contain fit. Getting this backwards puts build spots under the player's finger by tens of pixels.
+The board is 374×430 in world units. The fit is **contain** (`Math.min`), letterboxed and centred — see the banner for why the prototype's `slice` (cover) does not survive a responsive canvas. The tests that matter are the ones a screenshot would have made unnecessary: the whole board, and every build spot of every case, on screen at every plausible canvas size.
 
 `src/render/viewport.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { coverViewport, hitBuildSpot, screenToWorld, worldToScreen } from './viewport';
+import { fitViewport, hitBuildSpot, screenToWorld, worldToScreen } from './viewport';
+import { CASES } from '@game/content/cases';
+import { BOARD_HEIGHT, BOARD_WIDTH } from '@game/content/rules';
 
-describe('coverViewport', () => {
-  it('scales to fill and centres the overflow on a taller canvas', () => {
-    const v = coverViewport(374, 860);
-    expect(v.scale).toBe(2);
-    expect(v.offsetX).toBe(374 / 2 - 374);
-    expect(v.offsetY).toBe(0);
-  });
+const CANVASES: readonly (readonly [number, number])[] = [
+  [390, 844], [320, 568], [430, 932], [768, 1024], [1024, 768], [320, 900], [900, 320],
+];
+const EPSILON = 1e-6;
 
-  it('scales to fill and centres the overflow on a wider canvas', () => {
-    const v = coverViewport(748, 430);
-    expect(v.scale).toBe(2);
-    expect(v.offsetX).toBe(0);
-    expect(v.offsetY).toBe(430 / 2 - 430);
-  });
-
+describe('fitViewport', () => {
   it('is exactly 1:1 at the native size', () => {
-    expect(coverViewport(374, 430)).toEqual({ scale: 1, offsetX: 0, offsetY: 0 });
+    expect(fitViewport(BOARD_WIDTH, BOARD_HEIGHT)).toEqual({ scale: 1, offsetX: 0, offsetY: 0 });
+  });
+
+  it('keeps the whole board on screen at every canvas size', () => {
+    for (const [w, h] of CANVASES) {
+      const v = fitViewport(w, h);
+      const [left, top] = worldToScreen(v, 0, 0);
+      const [right, bottom] = worldToScreen(v, BOARD_WIDTH, BOARD_HEIGHT);
+      // Float epsilon on both bounds: scaling is a float multiply and a board
+      // edge lands at -5.7e-14, not 0.
+      expect(left).toBeGreaterThanOrEqual(-EPSILON);
+      expect(top).toBeGreaterThanOrEqual(-EPSILON);
+      expect(right).toBeLessThanOrEqual(w + EPSILON);
+      expect(bottom).toBeLessThanOrEqual(h + EPSILON);
+    }
+  });
+
+  it('keeps every build spot of every case on screen at every canvas size', () => {
+    for (const [w, h] of CANVASES) {
+      const v = fitViewport(w, h);
+      for (const definition of CASES) {
+        for (const [sx, sy] of definition.spots) {
+          const [x, y] = worldToScreen(v, sx, sy);
+          expect(x, `${definition.id} spot off screen at ${String(w)}x${String(h)}`).toBeGreaterThanOrEqual(-EPSILON);
+          expect(x).toBeLessThanOrEqual(w + EPSILON);
+          expect(y).toBeGreaterThanOrEqual(-EPSILON);
+          expect(y).toBeLessThanOrEqual(h + EPSILON);
+        }
+      }
+    }
+  });
+
+  it('centres the letterbox', () => {
+    const v = fitViewport(390, 844);
+    const [left] = worldToScreen(v, 0, 0);
+    const [right] = worldToScreen(v, BOARD_WIDTH, 0);
+    expect(left).toBeCloseTo(390 - right, 6);
   });
 });
 
 describe('worldToScreen and screenToWorld', () => {
   it('round-trip for any point', () => {
-    const v = coverViewport(500, 900);
+    const v = fitViewport(500, 900);
     const [sx, sy] = worldToScreen(v, 187, 215);
     const [wx, wy] = screenToWorld(v, sx, sy);
     expect(wx).toBeCloseTo(187, 6);
@@ -3121,9 +3214,14 @@ export interface Viewport {
   readonly offsetY: number;
 }
 
-/** Cover fit, matching the prototype's preserveAspectRatio="xMidYMid slice". */
-export function coverViewport(canvasWidth: number, canvasHeight: number): Viewport {
-  const scale = Math.max(canvasWidth / BOARD_WIDTH, canvasHeight / BOARD_HEIGHT);
+/**
+ * Contain fit, letterboxed and centred. NOT the prototype's slice/cover: that was
+ * safe only inside its fixed 374px frame. On a responsive canvas, cover crops up
+ * to 47% of the board width and puts build spots off screen — an unplayable case.
+ * The letterbox is invisible against the flat paper background.
+ */
+export function fitViewport(canvasWidth: number, canvasHeight: number): Viewport {
+  const scale = Math.min(canvasWidth / BOARD_WIDTH, canvasHeight / BOARD_HEIGHT);
   return {
     scale,
     offsetX: (canvasWidth - BOARD_WIDTH * scale) / 2,
@@ -3158,7 +3256,7 @@ export function hitBuildSpot(caseId: CaseId, worldX: number, worldY: number): nu
 }
 ```
 
-Run: `npx vitest run src/render/viewport.test.ts` — Expected: PASS, 8 tests.
+Run: `npx vitest run src/render/viewport.test.ts` — Expected: PASS, 9 tests. Then revert `Math.min` to `Math.max` and confirm the containment tests FAIL — the fit tests must be able to catch the cover defect they exist to prevent.
 
 - [ ] **Step 3: Write `src/render/colors.ts`**
 
@@ -3596,7 +3694,7 @@ import { BeamLayer } from './layers/BeamLayer';
 import { EnemyLayer } from './layers/EnemyLayer';
 import { PathLayer } from './layers/PathLayer';
 import { TowerLayer } from './layers/TowerLayer';
-import { coverViewport, type Viewport } from './viewport';
+import { fitViewport, type Viewport } from './viewport';
 
 export class BoardRenderer {
   #app: Application;
@@ -3642,7 +3740,7 @@ export class BoardRenderer {
   }
 
   resize(): void {
-    this.#viewport = coverViewport(this.#app.screen.width, this.#app.screen.height);
+    this.#viewport = fitViewport(this.#app.screen.width, this.#app.screen.height);
     this.#world.scale.set(this.#viewport.scale);
     this.#world.position.set(this.#viewport.offsetX, this.#viewport.offsetY);
   }
@@ -3842,9 +3940,9 @@ export function FightPage() {
 - [ ] **Step 13: Verify visually**
 
 Run: `npm run dev` and open `/play/forearm`.
-Expected: the vessel is drawn as two nested strokes; eight staph circles spawn at the left edge over roughly six seconds and walk the polyline to the bottom; nothing throws; the canvas fills the viewport with no letterboxing. Resize the window — the board re-covers and stays centred.
+Expected: the vessel is drawn as two nested strokes; staph circles spawn at the left edge over roughly six seconds and walk the polyline to the bottom; nothing throws; **the whole board is visible with every build spot on screen** — flat-paper letterbox bands above/below or left/right are correct and invisible by design. Resize the window — the board re-fits, stays centred, and never crops.
 
-Then open `/play/throat` and `/play/stomach` and confirm each draws its own path.
+Then open `/play/throat` and `/play/stomach` and confirm each draws its own path **and shows all five build spots**. A screenshot comparison against the prototype is part of this step — the unit tests for the previous (wrong) fit all passed; only looking at the rendered board caught it.
 
 - [ ] **Step 14: Verify the StrictMode double-mount is handled**
 
@@ -3877,8 +3975,10 @@ git commit -m "feat(render): imperative Pixi board with pooled entity layers and
 
 **Why these four together:** they are the starting dock (asset sheet line 217) and they share one file and one dispatch. Splitting them across two commits would leave `runDefenders` half-written in between.
 
+> **Phase 3 as-built (a017e28) already delivered `acquireHolds`** — implemented and tested there because D9 is untestable without it. Do NOT re-implement or re-test acquisition in this phase; the acquisition-focused tests below (grab the leader, ignore out of reach, never steal a meal, no grab while resting/stunned) exist in Phase 3's suites. This phase turns the `runDefenders` stub — as-built signature `(state, dt)` — into the real dispatch, **adding the `dead` parameter** as part of that.
+
 **Files:**
-- Modify: `src/game/systems/damage.ts` — replace the Phase 3 no-op
+- Modify: `src/game/systems/damage.ts` — replace the Phase 3 `runDefenders` stub (`acquireHolds` is already real)
 - Create: `src/game/systems/economy.ts`
 - Modify: `src/game/systems/deaths.ts` — phagocyte digest/rest cycle and kill rewards
 - Create: `src/game/systems/damage.test.ts`, `src/game/systems/deaths.test.ts`
@@ -3886,9 +3986,8 @@ git commit -m "feat(render): imperative Pixi board with pooled entity layers and
 - Port from: prototype lines 674–722 (engulf, tag, execute), 755–781 (deaths and rest)
 
 **Interfaces:**
-- Consumes: `targeting.ts` selectors, `DEFENDERS`, `PATHOGENS`.
+- Consumes: `targeting.ts` selectors, `DEFENDERS`, `PATHOGENS`, `acquireHolds` (built in Phase 3).
 - Produces:
-  - `acquireHolds(state: SimState, held: Set<number>, dead: Set<number>): void` — phagocyte grabs, before movement (decision D9)
   - `runDefenders(state: SimState, dt: number, dead: Set<number>): void`
   - `awardKill(state: SimState, enemy: Enemy): void`, `grantMemoryXp(state: SimState, enemy: Enemy): void`
   - `resolveDeaths(state: SimState, dead: Set<number>): void`
@@ -3957,7 +4056,9 @@ export function addTower(
 
 - [ ] **Step 2: Write the failing engulf test**
 
-`src/game/systems/damage.test.ts` — start with the phagocyte block only; the remaining describes are appended in later steps of this phase. The `tick` helper mirrors `step`'s sequencing for the two defender passes: acquisition first, then action. Every damage expectation derives from the content constants.
+`src/game/systems/damage.test.ts` — start with the phagocyte block only; the remaining describes are appended in later steps of this phase. The `tick` helper mirrors `step`'s sequencing for the two defender passes: acquisition first (the real Phase 3 `acquireHolds`), then action. Every damage expectation derives from the content constants.
+
+Acquisition behaviour itself — grab the leader, ignore out of reach, never steal a held meal, no grab while resting or stunned — is **already tested in Phase 3's suites**; do not duplicate those tests here. This suite covers what Phase 5 adds: digestion, and the acquire-then-digest interplay.
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -3978,27 +4079,6 @@ function tick(state: SimState, dt: number, dead = new Set<number>()): void {
 }
 
 describe('phagocyte — engulf', () => {
-  it('grabs the enemy furthest along the vessel in range, before movement runs', () => {
-    const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
-    addEnemy(state, 'staph', { x: 10, y: 0, distance: 5 });
-    const leader = addEnemy(state, 'staph', { x: 20, y: 0, distance: 40 });
-
-    const held = new Set<number>();
-    acquireHolds(state, held, new Set());
-    expect(tower.holdingEnemyId).toBe(leader.id);
-    expect(held.has(leader.id)).toBe(true);
-  });
-
-  it('ignores anything outside its reach', () => {
-    const state = simFor();
-    const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
-    addEnemy(state, 'staph', { x: DEFENDERS.phago.range + 1, y: 0 });
-
-    acquireHolds(state, new Set(), new Set());
-    expect(tower.holdingEnemyId).toBeNull();
-  });
-
   it('digests at its digest rate into whatever it is holding', () => {
     const state = simFor();
     addTower(state, 'phago', 0, 0, 0);
@@ -4032,19 +4112,6 @@ describe('phagocyte — engulf', () => {
     expect(PATHOGENS.film.hp - immunePrey.hp).toBeGreaterThan(PATHOGENS.film.hp - rawPrey.hp);
   });
 
-  it('holds one target at a time and never steals another phagocyte’s meal', () => {
-    const state = simFor();
-    const first = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
-    const second = addTower(state, 'phago', 1, 10, 0) as PhagocyteTower;
-    addEnemy(state, 'staph', { x: 5, y: 0, distance: 30 });
-    addEnemy(state, 'staph', { x: 6, y: 0, distance: 10 });
-
-    acquireHolds(state, new Set(), new Set());
-    expect(first.holdingEnemyId).not.toBeNull();
-    expect(second.holdingEnemyId).not.toBeNull();
-    expect(first.holdingEnemyId).not.toBe(second.holdingEnemyId);
-  });
-
   it('neither grabs nor digests while resting, and the rest ticks down in the action pass', () => {
     const state = simFor();
     const tower = addTower(state, 'phago', 0, 0, 0) as PhagocyteTower;
@@ -4074,11 +4141,11 @@ describe('phagocyte — engulf', () => {
 - [ ] **Step 3: Run it to verify it fails**
 
 Run: `npx vitest run src/game/systems/damage.test.ts`
-Expected: FAIL — `acquireHolds` is still the Phase 3 no-op, so nothing is grabbed and nothing is damaged. The rest and stun tests pass for the wrong reason; they still pass afterwards for the right one.
+Expected: FAIL — `runDefenders` is still the Phase 3 stub, so acquisition succeeds (it is real) but nothing digests. The rest and stun tests pass for the wrong reason; they still pass afterwards for the right one.
 
 - [ ] **Step 4: Write `src/game/systems/damage.ts`**
 
-Ports prototype lines 674–722 with the D9 correction: acquisition is its own pass, called by `step` before movement, so a grabbed enemy freezes the same step. The dispatch is a `switch` on the tower kind so TypeScript narrows to the right stats union and a new defender kind cannot be silently forgotten.
+Replaces the Phase 3 `runDefenders` stub with the real dispatch, adding the `dead` parameter. `acquireHolds` is already in this file from Phase 3 (a017e28) — leave it untouched. Ports prototype lines 674–722. The dispatch is a `switch` on the tower kind so TypeScript narrows to the right stats union and a new defender kind cannot be silently forgotten.
 
 ```ts
 import { DEFENDERS } from '../content/defenders';
@@ -4086,18 +4153,7 @@ import { PATHOGENS } from '../content/pathogens';
 import type { PhagocyteTower, SimState, Tower } from '../types';
 import { armourMultiplier, inRange, isAlive, pickLeader, pickMostWounded } from './targeting';
 
-/** Phagocyte grabs. Runs before movement so a grab freezes its prey this step (decision D9). */
-export function acquireHolds(state: SimState, held: Set<number>, dead: Set<number>): void {
-  for (const tower of state.towers) {
-    if (tower.kind !== 'phago') continue;
-    if (tower.stun > 0 || tower.rest > 0 || tower.holdingEnemyId !== null) continue;
-    const prey = pickLeader(state, tower, DEFENDERS.phago.range, dead, held);
-    if (prey !== null) {
-      tower.holdingEnemyId = prey.id;
-      held.add(prey.id);
-    }
-  }
-}
+// acquireHolds already lives here (Phase 3). Only the pieces below are new.
 
 function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
   const stats = DEFENDERS.phago;
@@ -4176,7 +4232,7 @@ The `clot` case is an explicit empty `break` with a comment rather than an omiss
 - [ ] **Step 5: Run the engulf tests to verify they pass**
 
 Run: `npx vitest run src/game/systems/damage.test.ts`
-Expected: PASS, 8 tests.
+Expected: PASS, 5 tests.
 
 - [ ] **Step 6: Append the block, tag and execute suites to `damage.test.ts`**
 
@@ -4307,7 +4363,7 @@ describe('killer cell — execute', () => {
 
 Add `import { armourMultiplier } from './targeting';` to the test file.
 
-Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 20 tests.
+Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 17 tests.
 
 Then confirm the D9 fix end to end in `src/game/step.test.ts` — this is the test spec criterion 4 demands, proving the old one-step lag is gone:
 
@@ -4733,7 +4789,7 @@ Wire them into the switch:
 
 Add `TAGGED_BURST_MULTIPLIER` to the `../content/rules` import, `isTagged` to the `./targeting` import, and `MastTower`/`MemoryTower` to the type import.
 
-Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 30 tests.
+Run: `npx vitest run src/game/systems/damage.test.ts` — Expected: PASS, 27 tests.
 
 - [ ] **Step 4: Write the failing split and regen tests**
 
@@ -6418,6 +6474,12 @@ Layout ported from prototype lines 140–203. The board is never covered; everyt
 .pip[data-lit='true'] { background: var(--frontline); }
 .pips-label { margin-left: 8px; font-size: 11px; letter-spacing: 0.08em; color: var(--label); }
 
+/*
+ * The canvas letterboxes INSIDE this region (contain fit, Phase 4 as-built) — the
+ * bands show tissue-field and are invisible by design. Never reintroduce a fit
+ * that can crop; a hidden build spot is an unplayable case. HUD chrome lives
+ * outside the canvas in the header/footer, not in the letterbox.
+ */
 .board { flex: 1; position: relative; min-height: 0; overflow: hidden; background: var(--tissue-field); }
 .board-hint {
   position: absolute; left: 12px; bottom: 12px; pointer-events: none;
@@ -8133,7 +8195,7 @@ export default defineConfig({
 
 - [ ] **Step 2: Write `tests/e2e/play.spec.ts`**
 
-The board is a canvas, so the spec computes screen coordinates from world coordinates using the same cover formula the renderer uses. No test-only backdoor is added to the application. Content values come straight from the content modules (relative imports — Playwright's transpiler does not read the Vite path aliases), so a tuning pass cannot break the E2E suite either.
+The board is a canvas, so the spec computes screen coordinates from world coordinates using the same contain formula the renderer uses. No test-only backdoor is added to the application. Content values come straight from the content modules (relative imports — Playwright's transpiler does not read the Vite path aliases), so a tuning pass cannot break the E2E suite either.
 
 ```ts
 import { expect, test, type Page } from '@playwright/test';
@@ -8148,12 +8210,15 @@ async function tapSpot(page: Page, index: number): Promise<void> {
   const box = await board.boundingBox();
   if (box === null) throw new Error('The board has no layout box');
 
-  const scale = Math.max(box.width / BOARD_WIDTH, box.height / BOARD_HEIGHT);
+  // Same CONTAIN formula as fitViewport (Math.min — Phase 4 as-built). If the
+  // renderer's fit ever changes, this must change with it or every tap misses.
+  const scale = Math.min(box.width / BOARD_WIDTH, box.height / BOARD_HEIGHT);
   const offsetX = (box.width - BOARD_WIDTH * scale) / 2;
   const offsetY = (box.height - BOARD_HEIGHT * scale) / 2;
-  const [wx, wy] = FOREARM.spots[index]!;
+  const spot = FOREARM.spots[index];
+  if (spot === undefined) throw new Error(`No build spot ${String(index)}`);
 
-  await page.mouse.click(box.x + wx * scale + offsetX, box.y + wy * scale + offsetY);
+  await page.mouse.click(box.x + spot[0] * scale + offsetX, box.y + spot[1] * scale + offsetY);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -8250,7 +8315,7 @@ The 60-second timeout on the wave result is generous on purpose: wave 1 of the f
 - [ ] **Step 3: Run the E2E suite**
 
 Run: `npx playwright install chromium && npm run test:e2e`
-Expected: PASS, 6 tests. If `tapSpot` misses, the cover formula in the spec and the one in `viewport.ts` have diverged — they must stay identical, which is why both are written out explicitly rather than shared.
+Expected: PASS, 6 tests. If `tapSpot` misses, the contain formula in the spec and the one in `viewport.ts` have diverged — they must stay identical, which is why both are written out explicitly rather than shared.
 
 - [ ] **Step 4: Enable E2E in CI**
 
