@@ -41,7 +41,7 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 3 }],
     ],
     path: [[-24, 46], [86, 58], [150, 116], [232, 146], [252, 238], [168, 298], [112, 342], [104, 430]],
-    spots: [[70, 118], [206, 88], [292, 196], [58, 268], [206, 372]],
+    spots: [[70, 118], [206, 88], [292, 196], [69, 282], [206, 372]],
   },
   {
     id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', rule: 'virus', credits: 'virus',
@@ -56,7 +56,7 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'virus', count: 16 }, { kind: 'spore', count: 6 }, { kind: 'mrsa', count: 2 }],
     ],
     path: [[-24, 120], [90, 120], [150, 60], [240, 74], [268, 170], [180, 230], [180, 320], [96, 380], [104, 430]],
-    spots: [[64, 62], [220, 148], [96, 216], [258, 286], [246, 386]],
+    spots: [[64, 62], [220, 148], [107, 218], [258, 286], [232, 372]],
   },
   {
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', rule: 'poison', credits: 'film',
@@ -71,7 +71,7 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'toxin', count: 8 }, { kind: 'film', count: 6 }, { kind: 'mrsa', count: 2 }],
     ],
     path: [[-24, 70], [100, 90], [180, 62], [268, 120], [230, 214], [120, 250], [90, 330], [180, 392], [180, 430]],
-    spots: [[74, 168], [212, 132], [292, 216], [46, 264], [246, 330]],
+    spots: [[74, 168], [212, 132], [292, 216], [46, 264], [234, 341]],
   },
 ];
 

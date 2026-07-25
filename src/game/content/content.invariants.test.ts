@@ -241,14 +241,37 @@ describe('build spots are usable', () => {
     return best;
   }
 
-  it('offers no spot that every defender is too short-ranged to use', () => {
-    const longest = Math.max(...Object.values(DEFENDERS).map((d) => d.range));
+  /**
+   * Distance is meant to be a trade-off — a spot far from the vessel should demand range —
+   * so a spread from "any cell fits" down to "only the long-ranged reach" is the design.
+   * What is not the design is a spot exactly one cell can use: if the player cannot afford
+   * that one cell, the spot is dead ground, and nothing in the fiction explains why.
+   *
+   * Two is the floor because two is the smallest number that is still a choice. This asserts
+   * no particular range; it says that whatever the ranges are, every spot offers a decision.
+   */
+  it('offers a choice of at least two defenders at every build spot', () => {
+    const ranges = Object.values(DEFENDERS).map((d) => d.range);
     for (const c of CASES) {
       c.spots.forEach((spot, index) => {
         const reach = distanceToPath(spot, c.path);
-        expect(reach, `${c.id} spot ${String(index)} sits ${reach.toFixed(0)} from the vessel`)
-          .toBeLessThanOrEqual(longest);
+        const usable = ranges.filter((range) => range >= reach).length;
+        expect(
+          usable,
+          `${c.id} spot ${String(index)} sits ${reach.toFixed(0)} from the vessel, which only ${String(usable)} defender(s) can cover`,
+        ).toBeGreaterThanOrEqual(2);
       });
+    }
+  });
+
+  it('keeps at least one spot per case that the cheapest defender can use', () => {
+    const cheapest = Object.values(DEFENDERS).reduce((a, b) => (a.cost <= b.cost ? a : b));
+    for (const c of CASES) {
+      const affordable = c.spots.filter((spot) => distanceToPath(spot, c.path) <= cheapest.range);
+      expect(
+        affordable.length,
+        `${c.id} offers nowhere the opening cell (${cheapest.label}) can be used`,
+      ).toBeGreaterThan(0);
     }
   });
 });
