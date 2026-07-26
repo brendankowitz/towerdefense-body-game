@@ -1,0 +1,421 @@
+/*
+ * The fight screen. Every rule is scoped under `.fight` so it is self-contained: the shared
+ * screen styles are a different screen's business and neither file can quietly restyle the
+ * other through a shared class name.
+ */
+
+.fight {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen-paper);
+}
+
+.fight button {
+  font-family: var(--font-words);
+  color: var(--ink);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.fight-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(var(--safe-top) + 4px) 18px 10px;
+}
+
+.fight-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fight-region {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--label);
+}
+
+.fight-wave {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.fight .energy-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 12px 7px 9px;
+  background: color-mix(in oklch, var(--energy) 16%, transparent);
+}
+
+.fight .energy-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--energy);
+}
+
+.fight .energy-value {
+  font-size: 15px;
+  color: oklch(0.42 0.06 80);
+}
+
+.fight .icon-button {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--radius-chip);
+  background: var(--surface-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.pause-bar {
+  width: 4px;
+  height: 13px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+/* ── Tissue ─────────────────────────────────────────────── */
+
+.fight .pips {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 18px 10px;
+}
+
+.fight .pip {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--not-reached);
+}
+
+.fight .pip[data-lit='true'] {
+  background: var(--frontline);
+}
+
+.fight .pips-label {
+  margin-left: 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--label);
+  white-space: nowrap;
+}
+
+/* ── Board ──────────────────────────────────────────────── */
+
+/*
+ * The canvas letterboxes INSIDE this region (contain fit) — the bands show tissue field and
+ * are invisible by design. Never reintroduce a fit that can crop: a hidden build spot is an
+ * unplayable case. HUD chrome lives in the header and footer, never in the letterbox.
+ */
+.board {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--tissue-field);
+}
+
+.board-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  pointer-events: none;
+  border-radius: 10px;
+  padding: 7px 11px;
+  background: oklch(0.98 0.005 70 / 0.94);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.board-modifier {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 10px;
+  padding: 7px 11px;
+  background: var(--threat);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--screen-paper);
+}
+
+.modifier-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--screen-paper);
+}
+
+/* ── Dock and actions ───────────────────────────────────── */
+
+.fight-footer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 12px 16px calc(var(--safe-bottom) + 10px);
+  background: var(--screen-paper);
+  box-shadow: 0 -8px 20px -12px oklch(0.3 0.02 60 / 0.3);
+}
+
+.dock-row {
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+}
+
+.dock {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+
+.fight .dock-card,
+.fight .fever {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 62px;
+  padding: 8px 2px 7px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+}
+
+.fight .fever {
+  width: 54px;
+  flex: none;
+  border-color: color-mix(in oklch, var(--fever) 35%, transparent);
+}
+
+.fight .fever[data-active='true'] {
+  background: color-mix(in oklch, var(--fever) 20%, transparent);
+}
+
+.dock-glyph,
+.fever-glyph {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fever-glyph {
+  background: var(--fever);
+}
+
+.dock-mark,
+.fever-mark {
+  display: block;
+  box-sizing: border-box;
+}
+
+.fever-mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 3px solid var(--screen-paper);
+}
+
+.dock-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.dock-cost {
+  font-size: 10px;
+  color: oklch(0.42 0.06 80);
+}
+
+.dock-cost[data-affordable='false'] {
+  color: var(--threat);
+}
+
+.fight .dock-card[data-locked='true'] .dock-cost {
+  color: var(--label);
+}
+
+/* Fever costs no energy, so its label is not an energy figure. */
+.fight .fever .dock-cost {
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fight .fight-primary {
+  flex: 1;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  background: var(--threat);
+  color: var(--screen-paper);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.fight .fight-primary[data-enabled='false'] {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
+.fight .fight-primary:active {
+  opacity: 0.85;
+}
+
+.fight .fight-secondary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fight .fight-speed {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: var(--radius-control);
+  background: var(--surface-strong);
+  font-size: 15px;
+}
+
+/* ── Result sheet ───────────────────────────────────────── */
+
+.fight .sheet-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  background: oklch(0.28 0.02 60 / 0.5);
+}
+
+.fight .sheet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 26px calc(var(--safe-bottom) + 16px);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 38px 38px;
+  background: var(--screen-paper);
+}
+
+.result-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-kicker {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.result-title {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.03;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.result-body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  text-wrap: pretty;
+  color: var(--muted);
+}
+
+.result-stats {
+  display: flex;
+  gap: 9px;
+}
+
+.result-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.result-stat-energy {
+  background: color-mix(in oklch, var(--energy) 20%, transparent);
+}
+
+.result-figure {
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.result-leaks {
+  color: var(--threat);
+}
+
+.result-caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.fight .result-actions .fight-primary {
+  min-height: 56px;
+  font-size: 18px;
+}

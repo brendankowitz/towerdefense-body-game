@@ -1,0 +1,41 @@
+:root {
+  --threat: oklch(0.66 0.15 25);
+  --frontline: oklch(0.66 0.15 195);
+  --support: oklch(0.7 0.14 145);
+  --control: oklch(0.45 0.14 320);
+  --energy: oklch(0.78 0.13 80);
+  --execute: oklch(0.55 0.16 265);
+  --burst: oklch(0.62 0.16 350);
+  --learn: oklch(0.5 0.1 210);
+  --armoured: oklch(0.58 0.16 15);
+  --splitter: oklch(0.62 0.15 300);
+  --fungal: oklch(0.6 0.11 115);
+  --chemical: oklch(0.52 0.13 45);
+  --resistant: oklch(0.42 0.13 10);
+  --fever: oklch(0.58 0.16 15);
+  --not-reached: oklch(0.9 0.014 60);
+  --vessel-casing: oklch(0.87 0.05 20);
+  --vessel-lumen: oklch(0.93 0.03 20);
+  --tissue-field: oklch(0.95 0.012 40);
+  --core: oklch(0.78 0.13 80);
+
+  --desk-paper: #F4EFE6;
+  --screen-paper: #FBF7F0;
+  --ink: #2C2A28;
+  --muted: oklch(0.5 0.01 60);
+  --label: oklch(0.58 0.01 60);
+  --surface: oklch(0.95 0.008 70);
+  --surface-strong: oklch(0.93 0.008 70);
+
+  --radius-tile: 9px;
+  --radius-chip: 14px;
+  --radius-control: 18px;
+  --radius-card: 22px;
+  --radius-sheet: 30px;
+
+  --rise-distance: 14px;
+  --rise-duration: 250ms;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

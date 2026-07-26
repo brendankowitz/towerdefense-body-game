@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run typecheck:game
+      - run: npm run test
+      - run: npm run build
+      # The dev tuning panel (spec §4.1) must be tree-shaken out of production. A case-sensitive
+      # match on one of its exports is enough — if this ever finds a hit, the import.meta.env.DEV
+      # guard stopped being statically analysable (the usual cause: reading it through a variable).
+      - run: "! grep -r applyDefenderTuning dist/"
+      # The E2E suite drives the production bundle: its webServer builds and serves dist/
+      # itself, so it runs after the build above rather than sharing it.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
