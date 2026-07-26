@@ -3,8 +3,30 @@ import { PATHOGENS } from '../content/pathogens';
 import { FEVER_SLOW, SPLIT_SPEED_FACTOR } from '../content/rules';
 import { positionAt } from '../path';
 import { distance } from '../state';
-import type { SimState } from '../types';
+import type { ClotTower, SimState } from '../types';
 import { applyPoison, applyToxinStun } from './hazards';
+import { statsFor } from './stats';
+
+interface ClotZone {
+  readonly tower: ClotTower;
+  readonly range: number;
+  readonly slow: number;
+  readonly wear: number;
+}
+
+/**
+ * Resolved once per step rather than once per enemy: a matured clot reads different numbers
+ * from an unmatured one, and the lookup below sits inside the enemy loop.
+ */
+function clotZones(state: SimState): readonly ClotZone[] {
+  const zones: ClotZone[] = [];
+  for (const tower of state.towers) {
+    if (tower.kind !== 'clot') continue;
+    const stats = statsFor(tower);
+    zones.push({ tower, range: stats.range, slow: stats.slow, wear: stats.wear });
+  }
+  return zones;
+}
 
 export function applyMovement(
   state: SimState,
@@ -13,6 +35,7 @@ export function applyMovement(
   dead: Set<number>,
 ): void {
   const globalSlow = state.fever > 0 ? FEVER_SLOW : 1;
+  const clots = clotZones(state);
 
   for (const enemy of state.enemies) {
     const stats = PATHOGENS[enemy.kind];
@@ -27,12 +50,11 @@ export function applyMovement(
     }
 
     let speedFactor = held.has(enemy.id) ? 0 : globalSlow;
-    for (const tower of state.towers) {
-      if (tower.kind !== 'clot') continue;
-      if (distance(tower.x, tower.y, enemy.x, enemy.y) < DEFENDERS.clot.range) {
-        speedFactor = Math.min(speedFactor, DEFENDERS.clot.slow);
+    for (const zone of clots) {
+      if (distance(zone.tower.x, zone.tower.y, enemy.x, enemy.y) < zone.range) {
+        speedFactor = Math.min(speedFactor, zone.slow);
         // Deliberate (D10): wear is per body, so a crowded clot buckles fast.
-        tower.hp -= DEFENDERS.clot.wear * dt;
+        zone.tower.hp -= zone.wear * dt;
       }
     }
 

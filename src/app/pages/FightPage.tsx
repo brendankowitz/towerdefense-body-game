@@ -1,5 +1,5 @@
 import { IonContent, IonPage } from '@ionic/react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import { Redirect, useHistory, useParams } from 'react-router-dom';
 import {
   advanceToNextWave, placeDefender, restartCase, selectDefender, startWave, toggleSpeed,
@@ -7,16 +7,18 @@ import {
 } from '@game/commands';
 import { CASES, CASE_BY_ID } from '@game/content/cases';
 import { GameLoop } from '@game/loop';
+import type { Profile } from '@game/progression';
 import { createSimState } from '@game/state';
 import type { CaseId, SimState } from '@game/types';
 import type { BoardRenderer } from '@render/BoardRenderer';
 import { BoardCanvas } from '@app/components/BoardCanvas';
 import { DefenderDock } from '@app/components/DefenderDock';
+import { PlacedCells } from '@app/components/PlacedCells';
 import { EnergyPill } from '@app/components/EnergyPill';
 import { FeverButton } from '@app/components/FeverButton';
 import { ResultSheet } from '@app/components/ResultSheet';
 import { TissuePips } from '@app/components/TissuePips';
-import { PLACEHOLDER_PROFILE, type PlaceholderProfile } from '@app/placeholderProfile';
+import { useProfile } from '@app/state/ProfileProvider';
 import { useGameLoop } from '@app/state/useGameLoop';
 import { useHud } from '@app/state/useHud';
 import '../fight.css';
@@ -25,13 +27,12 @@ function isCaseId(value: string): value is CaseId {
   return CASES.some((definition) => definition.id === value);
 }
 
-function createLoop(caseId: CaseId, profile: PlaceholderProfile): GameLoop {
+function createLoop(caseId: CaseId, profile: Profile): GameLoop {
   return new GameLoop(createSimState({
     caseId,
     immunity: profile.immunity,
     clearedCount: profile.cleared.length,
-    // The real profile carries a lifetime kill count; the placeholder does not yet.
-    totalKills: 0,
+    totalKills: profile.kills,
   }));
 }
 
@@ -41,13 +42,25 @@ function createLoop(caseId: CaseId, profile: PlaceholderProfile): GameLoop {
  */
 function Fight({ caseId }: { readonly caseId: CaseId }) {
   const history = useHistory();
-  // Swap for useProfile().profile once the provider lands. One line, one place.
-  const profile = PLACEHOLDER_PROFILE;
+  const { profile, recordClear } = useProfile();
 
   const rendererRef = useRef<BoardRenderer | null>(null);
   const [loop, setLoop] = useState<GameLoop>(() => createLoop(caseId, profile));
 
   const hud = useHud(loop);
+
+  // Dev-only: dynamically imported so the panel and tuning.ts's export machinery are absent
+  // from a production build (spec §4.1). `import.meta.env.DEV` is a compile-time constant Vite
+  // replaces with `false` in production, which Rollup then tree-shakes this whole branch on.
+  const [TuningPanel, setTuningPanel] = useState<ComponentType<{ readonly loop: GameLoop }> | null>(null);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    let cancelled = false;
+    void import('@app/dev/TuningPanel').then((module) => {
+      if (!cancelled) setTuningPanel(() => module.TuningPanel);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const onRendererReady = useCallback((renderer: BoardRenderer | null) => {
     rendererRef.current = renderer;
@@ -78,7 +91,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         run(() => { advanceToNextWave(loop.state); });
         return;
       case 'case':
-        // The clear is banked by the profile provider in a later pass; the placeholder is fixed.
+        recordClear(caseId, loop.state.totalKills);
         history.push('/');
         return;
       case 'lost':
@@ -137,6 +150,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
           </div>
 
           <footer className="fight-footer">
+            <PlacedCells loop={loop} />
             <div className="dock-row">
               <DefenderDock
                 energy={hud.energy}
@@ -184,6 +198,8 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               onLeave={() => { history.push('/'); }}
             />
           )}
+
+          {TuningPanel !== null && <TuningPanel loop={loop} />}
         </div>
       </IonContent>
     </IonPage>

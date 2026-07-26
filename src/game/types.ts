@@ -51,6 +51,13 @@ interface TowerBase {
   readonly y: number;
   hp: number;
   stun: number;
+  /**
+   * Whether this cell has been grown into its named matured form. A tier on the cell rather
+   * than a kind of its own: a macrophage is a matured monocyte, same lineage, so `kind` never
+   * changes and nothing that switches over the union gains a case (spec §5 naming policy).
+   * Which stats the tier moves lives in `content/defenders.ts`; `systems/stats.ts` resolves it.
+   */
+  matured: boolean;
 }
 
 export interface PhagocyteTower extends TowerBase {

@@ -1,0 +1,33 @@
+.save-error {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(14px + var(--safe-bottom));
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  box-shadow: 0 8px 20px -8px oklch(0.3 0.02 60 / 0.4);
+}
+
+.save-error span {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--screen-paper);
+}
+
+.save-error button {
+  flex: none;
+  font-family: var(--font-words);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--screen-paper);
+  background: transparent;
+  border: none;
+  padding: 4px 0 4px 12px;
+  cursor: pointer;
+}

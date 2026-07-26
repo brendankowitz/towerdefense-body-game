@@ -14,11 +14,14 @@ import '@theme/variables.css';
 import '@theme/typography.css';
 
 import { App } from '@app/App';
+import { ProfileProvider } from '@app/state/ProfileProvider';
 
 const host = document.getElementById('root');
 if (!host) throw new Error('Root element #root is missing from index.html');
 createRoot(host).render(
   <StrictMode>
-    <App />
+    <ProfileProvider>
+      <App />
+    </ProfileProvider>
   </StrictMode>,
 );

@@ -2,13 +2,12 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { seasonRows, vaccineRows } from '@game/progression';
 import { Season } from '@app/components/Season';
-import { PLACEHOLDER_PROFILE } from '@app/placeholderProfile';
+import { useProfile } from '@app/state/ProfileProvider';
 import '../screens.css';
 
 export function SeasonPage() {
   const history = useHistory();
-  // Swap for useProfile().profile once @game/progression's provider lands.
-  const profile = PLACEHOLDER_PROFILE;
+  const { profile } = useProfile();
 
   return (
     <IonPage>

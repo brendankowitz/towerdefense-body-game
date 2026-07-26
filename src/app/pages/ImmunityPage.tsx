@@ -2,13 +2,12 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { strainRows } from '@game/progression';
 import { Immunity } from '@app/components/Immunity';
-import { PLACEHOLDER_PROFILE } from '@app/placeholderProfile';
+import { useProfile } from '@app/state/ProfileProvider';
 import '../screens.css';
 
 export function ImmunityPage() {
   const history = useHistory();
-  // Swap for useProfile().profile once @game/progression's provider lands.
-  const profile = PLACEHOLDER_PROFILE;
+  const { profile, resetRun } = useProfile();
 
   return (
     <IonPage>
@@ -19,7 +18,7 @@ export function ImmunityPage() {
           kills={profile.kills}
           regionsHeld={profile.cleared.length}
           onSeasonClick={() => { history.push('/season'); }}
-          onResetClick={() => { history.push('/'); }}
+          onResetClick={() => { resetRun(); history.push('/'); }}
         />
       </IonContent>
     </IonPage>

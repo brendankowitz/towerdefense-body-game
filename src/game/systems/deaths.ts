@@ -1,4 +1,3 @@
-import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
 import {
   IMMUNITY_MAX,
@@ -10,6 +9,7 @@ import {
 import { positionAt } from '../path';
 import type { Enemy, SimState } from '../types';
 import { awardKill, grantMemoryXp } from './economy';
+import { statsFor } from './stats';
 
 /**
  * A splitter leaves weaker copies strung out behind where it fell — unless the strain's vaccine
@@ -72,10 +72,9 @@ export function resolveDeaths(state: SimState, dead: Set<number>): void {
     if (tower.kind !== 'phago') continue;
     if (tower.holdingEnemyId === null || !dead.has(tower.holdingEnemyId)) continue;
 
+    const stats = statsFor(tower);
     tower.holdingEnemyId = null;
     tower.eaten += 1;
-    tower.rest = tower.eaten % DEFENDERS.phago.streak === 0
-      ? DEFENDERS.phago.rest
-      : DEFENDERS.phago.gap;
+    tower.rest = tower.eaten % stats.streak === 0 ? stats.rest : stats.gap;
   }
 }

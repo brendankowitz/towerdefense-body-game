@@ -54,6 +54,7 @@ interface TowerBase {
   readonly y: number;
   hp: number;
   stun: number;
+  matured: boolean;
 }
 
 const TOWER_BUILDERS: { [K in DefenderKind]: (base: TowerBase) => Extract<Tower, { kind: K }> } = {
@@ -72,8 +73,9 @@ export function addTower<K extends DefenderKind>(
   spotIndex: number,
   x = 0,
   y = 0,
+  matured = false,
 ): Extract<Tower, { kind: K }> {
-  const tower = TOWER_BUILDERS[kind]({ spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0 });
+  const tower = TOWER_BUILDERS[kind]({ spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0, matured });
   state.towers.push(tower);
   return tower;
 }
@@ -83,7 +85,8 @@ export function addTowerOnPath<K extends DefenderKind>(
   state: SimState,
   kind: K,
   travelled: number,
+  matured = false,
 ): Extract<Tower, { kind: K }> {
   const [x, y] = positionAt(state.path, travelled);
-  return addTower(state, kind, state.towers.length, x, y);
+  return addTower(state, kind, state.towers.length, x, y, matured);
 }

@@ -13,6 +13,13 @@ export const BUILD_SPOT_RADIUS = 24;
 export const WAVE_CLEAR_ENERGY = 50;
 export const CASE_CLEAR_BANK = 180;
 
+/**
+ * The share of everything spent on a cell that comes back when the body reabsorbs it. Well
+ * under one on purpose: a full refund makes placement free to undo, and a decision with no
+ * cost to being wrong is not a decision.
+ */
+export const REABSORB_REFUND = 0.6;
+
 export const FEVER_DURATION = 5;
 export const FEVER_SLOW = 0.4;
 

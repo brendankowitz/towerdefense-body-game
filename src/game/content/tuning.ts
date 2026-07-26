@@ -143,8 +143,19 @@ export function listTunables(): readonly TunableField[] {
   return fields;
 }
 
+/**
+ * Recurses, though nothing exported today is nested: the defender and pathogen tables are
+ * deliberately flat, and `maturation.invariants.test.ts` asserts they stay that way. This
+ * exists because falling through to String() emits the literal text "[object Object]" into
+ * source a developer is meant to paste over a const — a silent corruption rather than a
+ * failure. Cheap insurance for the day a nested table becomes tunable.
+ */
 function literal(value: unknown): string {
   if (typeof value === 'string') return `'${value.replace(/'/g, "\\'")}'`;
+  if (Array.isArray(value)) return `[${value.map(literal).join(', ')}]`;
+  if (typeof value === 'object' && value !== null) {
+    return `{ ${entrySource(Object.entries(value))} }`;
+  }
   return String(value);
 }
 

@@ -23,7 +23,7 @@ function enemyOf(kind: PathogenKind, overrides: Partial<Enemy> = {}): Enemy {
   };
 }
 
-const tower: Tower = { kind: 'clot', spotIndex: 0, x: 0, y: 0, hp: 100, stun: 0 };
+const tower: Tower = { kind: 'clot', spotIndex: 0, x: 0, y: 0, hp: 100, stun: 0, matured: false };
 
 /** The armoured and untaggable pathogens the tests below reason about, read off the table. */
 const ARMOURED = (Object.keys(PATHOGENS) as PathogenKind[]).filter(

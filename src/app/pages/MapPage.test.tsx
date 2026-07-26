@@ -1,67 +1,78 @@
 import '@testing-library/jest-dom/vitest';
-import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { MapPage } from './MapPage';
 import { BODY_NODES } from '@game/content/body';
-import { PLACEHOLDER_PROFILE, placeholderNextCaseId } from '@app/placeholderProfile';
+import { createFreshProfile, nextCaseId } from '@game/progression';
 import { CASE_BY_ID } from '@game/content/cases';
+import { ProfileProvider } from '@app/state/ProfileProvider';
 
 function LocationProbe() {
   const location = useLocation();
   return <span data-testid="location">{location.pathname}</span>;
 }
 
-function renderMap() {
-  return render(
-    <MemoryRouter initialEntries={['/']}>
-      <MapPage />
-      <Route component={LocationProbe} />
-    </MemoryRouter>,
+async function renderMap() {
+  const result = render(
+    <ProfileProvider>
+      <MemoryRouter initialEntries={['/']}>
+        <MapPage />
+        <Route component={LocationProbe} />
+      </MemoryRouter>
+    </ProfileProvider>,
   );
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  return result;
 }
 
+const PROFILE = createFreshProfile();
+
+beforeEach(() => {
+  localStorage.clear();
+});
+
 describe('MapPage', () => {
-  it('shows the day and the bank from the profile', () => {
-    renderMap();
-    expect(screen.getByText(`DAY ${String(PLACEHOLDER_PROFILE.day)} · MORNING`)).toBeInTheDocument();
-    expect(screen.getByTestId('bank').textContent).toBe(String(PLACEHOLDER_PROFILE.bank));
+  it('shows the day and the bank from the profile', async () => {
+    await renderMap();
+    expect(screen.getByText(`DAY ${String(PROFILE.day)} · MORNING`)).toBeInTheDocument();
+    expect(screen.getByTestId('bank').textContent).toBe(String(PROFILE.bank));
   });
 
-  it('reports regions held against the total number of non-core body nodes', () => {
-    renderMap();
+  it('reports regions held against the total number of non-core body nodes', async () => {
+    await renderMap();
     const nonCoreCount = BODY_NODES.filter((n) => n.core !== true).length;
     expect(screen.getByTestId('held-count').textContent).toBe(
-      `${String(PLACEHOLDER_PROFILE.cleared.length)} / ${String(nonCoreCount)}`,
+      `${String(PROFILE.cleared.length)} / ${String(nonCoreCount)}`,
     );
   });
 
-  it('names the next case in the day pick', () => {
-    renderMap();
-    const nextId = placeholderNextCaseId(PLACEHOLDER_PROFILE.cleared);
+  it('names the next case in the day pick', async () => {
+    await renderMap();
+    const nextId = nextCaseId(PROFILE);
     expect(nextId).not.toBeNull();
     if (nextId !== null) {
       expect(screen.getByText(CASE_BY_ID[nextId].title)).toBeInTheDocument();
     }
   });
 
-  it('navigates to the brief for the next case when "Go there" is tapped', () => {
-    renderMap();
-    const nextId = placeholderNextCaseId(PLACEHOLDER_PROFILE.cleared);
+  it('navigates to the brief for the next case when "Go there" is tapped', async () => {
+    await renderMap();
+    const nextId = nextCaseId(PROFILE);
     fireEvent.click(screen.getByTestId('go-there'));
     expect(screen.getByTestId('location').textContent).toBe(`/brief/${String(nextId)}`);
   });
 
-  it('navigates to the brief when the region under attack is tapped on the map', () => {
-    renderMap();
-    const nextId = placeholderNextCaseId(PLACEHOLDER_PROFILE.cleared);
+  it('navigates to the brief when the region under attack is tapped on the map', async () => {
+    await renderMap();
+    const nextId = nextCaseId(PROFILE);
     if (nextId === null) throw new Error('fixture expects an open case');
     fireEvent.click(screen.getByTestId(`map-node-${CASE_BY_ID[nextId].node}`));
     expect(screen.getByTestId('location').textContent).toBe(`/brief/${nextId}`);
   });
 
-  it('navigates to the season screen when "Season" is tapped', () => {
-    renderMap();
+  it('navigates to the season screen when "Season" is tapped', async () => {
+    await renderMap();
     fireEvent.click(screen.getByText('Season'));
     expect(screen.getByTestId('location').textContent).toBe('/season');
   });

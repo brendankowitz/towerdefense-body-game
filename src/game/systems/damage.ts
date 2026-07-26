@@ -1,9 +1,9 @@
-import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
 import { TAGGED_BURST_MULTIPLIER } from '../content/rules';
 import type {
   AntibodyTower, MastTower, MemoryTower, NkTower, PhagocyteTower, SimState,
 } from '../types';
+import { statsFor } from './stats';
 import {
   armourMultiplier, inRange, isAlive, isTagged, pickLeader, pickMostWounded,
 } from './targeting';
@@ -18,7 +18,7 @@ export function acquireHolds(state: SimState, held: Set<number>, dead: ReadonlyS
     if (tower.kind !== 'phago') continue;
     if (tower.stun > 0 || tower.rest > 0 || tower.holdingEnemyId !== null) continue;
 
-    const prey = pickLeader(state, tower, DEFENDERS.phago.range, dead, held);
+    const prey = pickLeader(state, tower, statsFor(tower).range, dead, held);
     if (prey === null) continue;
 
     tower.holdingEnemyId = prey.id;
@@ -40,12 +40,12 @@ function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
     return;
   }
 
-  prey.hp -= DEFENDERS.phago.dps * armourMultiplier(state, prey) * dt;
+  prey.hp -= statsFor(tower).dps * armourMultiplier(state, prey) * dt;
 }
 
 /** Marks everything in reach at once. A tag strips armour, burns, and pays more on the kill. */
 function tag(state: SimState, tower: AntibodyTower, dt: number, dead: ReadonlySet<number>): void {
-  const stats = DEFENDERS.anti;
+  const stats = statsFor(tower);
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
 
@@ -67,7 +67,7 @@ function tag(state: SimState, tower: AntibodyTower, dt: number, dead: ReadonlySe
 
 /** One heavy hit on the most wounded thing in reach, and a clean finish below the threshold. */
 function execute(state: SimState, tower: NkTower, dt: number, dead: ReadonlySet<number>): void {
-  const stats = DEFENDERS.nk;
+  const stats = statsFor(tower);
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
 
@@ -84,7 +84,7 @@ function execute(state: SimState, tower: NkTower, dt: number, dead: ReadonlySet<
 
 /** One pulse over everything in reach at once, landing harder on anything already tagged. */
 function burst(state: SimState, tower: MastTower, dt: number, dead: ReadonlySet<number>): void {
-  const stats = DEFENDERS.mast;
+  const stats = statsFor(tower);
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
 
@@ -105,7 +105,7 @@ function burst(state: SimState, tower: MastTower, dt: number, dead: ReadonlySet<
 
 /** Weak on its own, but every nearby kill is banked as `xp` and rides on every hit after it. */
 function learn(state: SimState, tower: MemoryTower, dt: number, dead: ReadonlySet<number>): void {
-  const stats = DEFENDERS.mem;
+  const stats = statsFor(tower);
   tower.cooldown -= dt;
   if (tower.cooldown > 0) return;
 

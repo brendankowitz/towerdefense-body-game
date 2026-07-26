@@ -181,7 +181,7 @@ describe('GameLoop', () => {
 
   it('reports occupied build spots as a bit mask', () => {
     const state = armed();
-    state.towers.push({ kind: 'clot', spotIndex: 2, x: 0, y: 0, hp: 1, stun: 0 });
+    state.towers.push({ kind: 'clot', spotIndex: 2, x: 0, y: 0, hp: 1, stun: 0, matured: false });
     const loop = new GameLoop(state);
     loop.publish();
     expect(loop.getSnapshot().occupiedMask).toBe(0b100);

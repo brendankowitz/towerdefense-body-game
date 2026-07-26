@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
+import { SaveErrorBanner } from '@app/components/SaveErrorBanner';
 
 const MapPage = lazy(() => import('./pages/MapPage').then((m) => ({ default: m.MapPage })));
 const BriefPage = lazy(() => import('./pages/BriefPage').then((m) => ({ default: m.BriefPage })));
@@ -14,6 +15,7 @@ setupIonicReact({ mode: 'ios' });
 export function App() {
   return (
     <IonApp>
+      <SaveErrorBanner />
       <IonReactRouter>
         <Suspense fallback={null}>
           <IonRouterOutlet>

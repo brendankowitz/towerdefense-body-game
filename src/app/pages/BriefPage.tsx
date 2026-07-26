@@ -3,7 +3,7 @@ import { Redirect, useHistory, useParams } from 'react-router-dom';
 import { CASES, CASE_BY_ID } from '@game/content/cases';
 import type { CaseId } from '@game/types';
 import { Brief } from '@app/components/Brief';
-import { PLACEHOLDER_PROFILE } from '@app/placeholderProfile';
+import { useProfile } from '@app/state/ProfileProvider';
 import '../screens.css';
 
 function isCaseId(value: string): value is CaseId {
@@ -13,12 +13,12 @@ function isCaseId(value: string): value is CaseId {
 export function BriefPage() {
   const { caseId } = useParams<{ caseId: string }>();
   const history = useHistory();
+  const { profile } = useProfile();
 
   if (!isCaseId(caseId)) return <Redirect to="/" />;
   const definition = CASE_BY_ID[caseId];
 
-  // Swap for useProfile().profile.immunity[definition.credits] once @game/progression lands.
-  const strainClears = PLACEHOLDER_PROFILE.immunity[definition.credits];
+  const strainClears = profile.immunity[definition.credits];
 
   return (
     <IonPage>

@@ -1,4 +1,5 @@
 export * from './defenders';
+export * from './maturation';
 export * from './pathogens';
 export * from './cases';
 export * from './vaccines';

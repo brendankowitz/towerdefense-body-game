@@ -4,8 +4,11 @@ import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { CASE_BY_ID } from '@game/content/cases';
 import { DEFENDERS } from '@game/content/defenders';
+import { clearCase, createFreshProfile } from '@game/progression';
 import { FEVER_DURATION, TISSUE_PIPS } from '@game/content/rules';
-import { PLACEHOLDER_PROFILE } from '@app/placeholderProfile';
+import type { SimState } from '@game/types';
+import { STORAGE_KEY } from '@progress/ProgressRepository';
+import { ProfileProvider } from '@app/state/ProfileProvider';
 import { FightPage } from './FightPage';
 
 /**
@@ -26,7 +29,27 @@ vi.mock('@render/BoardRenderer', () => ({
   },
 }));
 
+/**
+ * The only way to reach a case-clear result is to defeat every wave, which would make the
+ * outcome a balance assertion in disguise (Global Constraints). Instead the real simulation
+ * state is captured as it is built, and the one test that needs a "case cleared" result sets
+ * it by construction rather than by out-damaging the content.
+ */
+const captured = vi.hoisted(() => ({ state: undefined as SimState | undefined }));
+
+vi.mock('@game/state', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@game/state')>();
+  return {
+    ...actual,
+    createSimState: (input: Parameters<typeof actual.createSimState>[0]): SimState => {
+      captured.state = actual.createSimState(input);
+      return captured.state;
+    },
+  };
+});
+
 const CASE = CASE_BY_ID.forearm;
+const PROFILE = createFreshProfile();
 
 /** Hand-driven animation frames, so a test decides how much time passes. */
 const frames: ((timestamp: number) => void)[] = [];
@@ -36,15 +59,17 @@ function LocationProbe() {
   return <span data-testid="location">{location.pathname}</span>;
 }
 
-/** Renders and lets the board's asynchronous start settle, after which taps are accepted. */
+/** Renders and lets the profile load and the board's asynchronous start settle. */
 async function renderFight(path = `/play/${CASE.id}`): Promise<void> {
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <Route exact path="/play/:caseId" component={FightPage} />
-      <Route component={LocationProbe} />
-    </MemoryRouter>,
+    <ProfileProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Route exact path="/play/:caseId" component={FightPage} />
+        <Route component={LocationProbe} />
+      </MemoryRouter>
+    </ProfileProvider>,
   );
-  await act(async () => { await Promise.resolve(); });
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 }
 
 function board(): HTMLElement {
@@ -80,6 +105,8 @@ function tapEmptyBoard(host: HTMLElement): void {
 }
 
 beforeEach(() => {
+  localStorage.clear();
+  captured.state = undefined;
   frames.length = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: (timestamp: number) => void): number => {
     frames.push(callback);
@@ -170,7 +197,7 @@ describe('FightPage', () => {
     await renderFight();
     const locked = screen.getByTestId('dock-card-mem');
     expect(locked).toHaveAttribute('data-locked', 'true');
-    expect(DEFENDERS.mem.unlock).toBeGreaterThan(PLACEHOLDER_PROFILE.cleared.length);
+    expect(DEFENDERS.mem.unlock).toBeGreaterThan(PROFILE.cleared.length);
 
     act(() => { locked.click(); });
     expect(screen.getByTestId('dock-card-mem')).toHaveAttribute('aria-pressed', 'false');
@@ -293,5 +320,26 @@ describe('FightPage', () => {
       .toBe(`Wave 1 of ${String(CASE.waves.length)}`);
     expect(screen.getAllByTestId('pip').filter((p) => p.dataset['lit'] === 'true'))
       .toHaveLength(TISSUE_PIPS);
+  });
+
+  it('banks the clear and credits the strain, and persists it, when a case is won', async () => {
+    await renderFight();
+    if (captured.state === undefined) throw new Error('createSimState was never called');
+
+    captured.state.totalKills = 42;
+    captured.state.result = 'case';
+    // Two frames: the first only establishes the previous timestamp (elapsed is always zero
+    // on it), the second supplies the elapsed time the HUD publish timer needs to fire.
+    tickFrame(0);
+    tickFrame(0.2);
+
+    const cta = screen.getByTestId('result-cta');
+    expect(cta.textContent).toBe('Back to the body');
+    act(() => { cta.click(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as { profile?: unknown };
+    expect(stored.profile).toEqual(clearCase(PROFILE, CASE.id, 42));
   });
 });

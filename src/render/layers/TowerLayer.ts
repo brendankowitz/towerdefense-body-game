@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 import { CASE_BY_ID } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
 import { BUILD_SPOT_RADIUS, TOWER_MAX_HP } from '@game/content/rules';
+import { statsFor } from '@game/systems/stats';
 import type { CaseId, SimState, Tower } from '@game/types';
 import {
   EMPTY_SPOT_CROSS, EMPTY_SPOT_FILL, EMPTY_SPOT_STROKE, PAPER, TOWER_HEALTH_TRACK,
@@ -20,6 +21,10 @@ const HEALTH_BAR_HEIGHT = 4;
 const HEALTH_BAR_OFFSET = 30;
 const HEALTH_STEPS = HEALTH_TRACK_WIDTH;
 
+/** A matured cell wears a second ring outside its body. Same vocabulary, one more coat. */
+const MATURED_RING_RADIUS = 25;
+const MATURED_RING_WIDTH = 2.5;
+
 const TETHER_WIDTH = 9;
 const XP_LABEL_OFFSET = 30;
 const XP_LABEL_SIZE = 11;
@@ -33,7 +38,7 @@ const SPENT_ALPHA = 0.4;
 /** A cell that cannot act right now: stunned by a toxin, or a phagocyte resting off a streak. */
 function isSpent(tower: Tower): boolean {
   if (tower.stun > 0) return true;
-  return tower.kind === 'phago' && tower.rest > DEFENDERS.phago.gap;
+  return tower.kind === 'phago' && tower.rest > statsFor(tower).gap;
 }
 
 /**
@@ -47,6 +52,7 @@ function signatureOf(tower: Tower): number {
   signature = signature * 2 + (isSpent(tower) ? 1 : 0);
   signature = signature * 2 + (tower.kind === 'phago' && tower.holdingEnemyId !== null ? 1 : 0);
   signature = signature * 2 + (tower.kind === 'mast' && tower.flash > 0 ? 1 : 0);
+  signature = signature * 2 + (tower.matured ? 1 : 0);
   return signature;
 }
 
@@ -81,7 +87,7 @@ function paintGlyph(g: Graphics, tower: Tower, spent: boolean): void {
 
 function paintBody(g: Graphics, tower: Tower): void {
   g.clear();
-  const stats = DEFENDERS[tower.kind];
+  const stats = statsFor(tower);
   const color = defenderHex(tower.kind);
   const spent = isSpent(tower);
   const alpha = spent ? SPENT_ALPHA : 1;
@@ -98,6 +104,7 @@ function paintBody(g: Graphics, tower: Tower): void {
 
   filledCircle(g, 0, 0, BODY_RADIUS, color, alpha);
   ring(g, 0, 0, BODY_RADIUS, PAPER, PAPER_RING_WIDTH, alpha);
+  if (tower.matured) ring(g, 0, 0, MATURED_RING_RADIUS, color, MATURED_RING_WIDTH, alpha);
   if (spent) dashedRing(g, 0, 0, BODY_RADIUS, color, 3, 4, 6);
 
   paintGlyph(g, tower, spent);

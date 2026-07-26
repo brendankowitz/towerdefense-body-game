@@ -36,6 +36,7 @@ export function hashState(state: SimState): string {
     mix(tower.spotIndex);
     mix(tower.hp);
     mix(tower.stun);
+    mix(tower.matured ? 1 : 0);
     switch (tower.kind) {
       case 'phago':
         mix(tower.eaten);

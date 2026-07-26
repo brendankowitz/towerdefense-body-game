@@ -2,16 +2,16 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { BODY_NODES } from '@game/content/body';
 import { CASE_BY_ID } from '@game/content/cases';
+import { nextCaseId } from '@game/progression';
 import { palette } from '@theme/tokens';
 import { BodyMap } from '@app/components/BodyMap';
-import { PLACEHOLDER_PROFILE, placeholderNextCaseId } from '@app/placeholderProfile';
+import { useProfile } from '@app/state/ProfileProvider';
 import '../screens.css';
 
 export function MapPage() {
   const history = useHistory();
-  // Swap for useProfile().profile and nextCaseId(profile) once @game/progression lands.
-  const profile = PLACEHOLDER_PROFILE;
-  const nextId = placeholderNextCaseId(profile.cleared);
+  const { profile } = useProfile();
+  const nextId = nextCaseId(profile);
   const next = nextId === null ? null : CASE_BY_ID[nextId];
 
   const region = next === null ? '' : next.region.split(' · ')[0]?.toLowerCase() ?? '';

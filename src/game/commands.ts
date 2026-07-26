@@ -1,9 +1,13 @@
 import { CASE_BY_ID } from './content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from './content/defenders';
-import { FEVER_DURATION, SPAWN_FIRST_DELAY, TOWER_MAX_HP } from './content/rules';
+import { maturedFormOf, type MaturedForm } from './content/maturation';
+import {
+  FEVER_DURATION, REABSORB_REFUND, SPAWN_FIRST_DELAY, TOWER_MAX_HP,
+} from './content/rules';
 import { DEFAULT_SELECTION, createSimState } from './state';
 import { buildQueue } from './systems/spawn';
-import type { DefenderKind, SimState, Tower } from './types';
+import { maturationOffer } from './systems/stats';
+import type { DefenderKind, Phase, SimState, Tower } from './types';
 
 export function isUnlocked(state: SimState, kind: DefenderKind): boolean {
   return state.clearedCount >= DEFENDERS[kind].unlock;
@@ -19,7 +23,7 @@ export function selectDefender(state: SimState, kind: DefenderKind): void {
 }
 
 function createTower(kind: DefenderKind, spotIndex: number, x: number, y: number): Tower {
-  const base = { spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0 };
+  const base = { spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0, matured: false };
   switch (kind) {
     case 'phago': return { ...base, kind, holdingEnemyId: null, eaten: 0, rest: 0 };
     case 'clot': return { ...base, kind };
@@ -47,8 +51,78 @@ export function placeDefender(state: SimState, spotIndex: number): boolean {
   return true;
 }
 
+/**
+ * When the board may be rearranged. Reabsorbing and maturing both answer to this: a cell
+ * pulled out mid-wave would be free to farm and replace, which is not a decision either.
+ *
+ * Takes the phase rather than the state so the HUD snapshot satisfies it too — the rule is
+ * stated once and the chrome cannot drift out of step with what the commands will accept.
+ */
+export function isBuildPhase(state: { readonly phase: Phase }): boolean {
+  return state.phase === 'build' || state.phase === 'built';
+}
+
+export function towerAt(state: SimState, spotIndex: number): Tower | null {
+  return state.towers.find((tower) => tower.spotIndex === spotIndex) ?? null;
+}
+
+/** Everything paid for this cell so far: its placement, plus its maturation if it was grown. */
+function totalSpent(tower: Tower): number {
+  const form = tower.matured ? maturedFormOf(tower.kind) : null;
+  return DEFENDERS[tower.kind].cost + (form?.cost ?? 0);
+}
+
+/**
+ * The refund rule on its own. Whole units only, and never more than went in: energy is spent
+ * and displayed in whole units everywhere else, so a refund fraction that lands off one would
+ * otherwise leave a fractional balance behind the moment a cost is retuned.
+ */
+export function refundOf(spent: number): number {
+  return Math.floor(spent * REABSORB_REFUND);
+}
+
+/** What the body gets back for reabsorbing this cell. */
+export function reabsorbValue(tower: Tower): number {
+  return refundOf(totalSpent(tower));
+}
+
+/** The form the cell on this spot can still be grown into, or null. */
+export function maturationAt(state: SimState, spotIndex: number): MaturedForm | null {
+  const tower = towerAt(state, spotIndex);
+  return tower === null ? null : maturationOffer(tower);
+}
+
+/** Returns true when a cell was actually taken back. Build phase only. */
+export function reabsorbDefender(state: SimState, spotIndex: number): boolean {
+  if (!isBuildPhase(state)) return false;
+
+  const index = state.towers.findIndex((tower) => tower.spotIndex === spotIndex);
+  const tower = state.towers[index];
+  if (tower === undefined) return false;
+
+  state.towers.splice(index, 1);
+  state.energy += reabsorbValue(tower);
+  return true;
+}
+
+/** Returns true when a cell was actually grown. Build phase only, and only ever once. */
+export function matureDefender(state: SimState, spotIndex: number): boolean {
+  if (!isBuildPhase(state)) return false;
+
+  const tower = towerAt(state, spotIndex);
+  if (tower === null) return false;
+
+  const form = maturationOffer(tower);
+  if (form === null) return false;
+  if (state.energy < form.cost) return false;
+
+  tower.matured = true;
+  state.energy -= form.cost;
+  return true;
+}
+
 export function startWave(state: SimState): void {
-  if (state.phase !== 'build' && state.phase !== 'built') return;
+  if (!isBuildPhase(state)) return;
 
   state.queue = buildQueue(state);
   state.spawnTimer = SPAWN_FIRST_DELAY;

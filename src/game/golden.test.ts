@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { placeDefender, startWave, triggerFever } from './commands';
+import { matureDefender, placeDefender, startWave, triggerFever } from './commands';
 import { DEFENDERS } from './content/defenders';
+import { maturedFormOf } from './content/maturation';
 import { IMMUNITY_MAX, STEP_SECONDS } from './content/rules';
 import { hashState } from './hash';
 import { createSimState } from './state';
@@ -37,6 +38,12 @@ interface Scenario {
   readonly waveIndex: number;
   readonly immunity: Readonly<Record<StrainId, number>>;
   readonly board: readonly (readonly [DefenderKind, number])[];
+  /**
+   * One cell per case is grown before the wave starts, so matured stats are inside the net
+   * rather than beside it. A different kind each time, and never the only cell of its kind on
+   * the board, so both forms of every grown cell are exercised somewhere.
+   */
+  readonly matureKind?: DefenderKind;
   /** Step at which fever is called, for the scenario that covers the slow. */
   readonly feverAtStep?: number;
 }
@@ -48,6 +55,7 @@ const SCENARIOS: readonly Scenario[] = [
     waveIndex: 3,
     immunity: { staph: IMMUNITY_MAX, film: 0, virus: 0 },
     board: [['anti', 0], ['nk', 1], ['phago', 2], ['mast', 3], ['mem', 4]],
+    matureKind: 'phago',
   },
   // Virus: splitting, spore regeneration, biofilm armour, clot slow and wear, and fever.
   {
@@ -55,6 +63,7 @@ const SCENARIOS: readonly Scenario[] = [
     waveIndex: 3,
     immunity: { staph: 0, film: 0, virus: 0 },
     board: [['clot', 0], ['anti', 1], ['nk', 2], ['phago', 3], ['mem', 4]],
+    matureKind: 'clot',
     feverAtStep: 300,
   },
   // Poison: defenders taking damage, toxin stun, resistant strains, and the Biofilm serum.
@@ -63,6 +72,7 @@ const SCENARIOS: readonly Scenario[] = [
     waveIndex: 4,
     immunity: { staph: 0, film: IMMUNITY_MAX, virus: 0 },
     board: [['clot', 0], ['anti', 1], ['phago', 2], ['mast', 3], ['nk', 4]],
+    matureKind: 'anti',
   },
 ];
 
@@ -75,11 +85,21 @@ function armBoard(scenario: Scenario): SimState {
   });
 
   state.waveIndex = scenario.waveIndex;
-  state.energy = scenario.board.reduce((total, [kind]) => total + DEFENDERS[kind].cost, 0);
+  const toGrow = scenario.matureKind;
+  const growthCost = toGrow === undefined ? 0 : maturedFormOf(toGrow)?.cost ?? 0;
+  state.energy = scenario.board.reduce((total, [kind]) => total + DEFENDERS[kind].cost, growthCost);
   for (const [kind, spot] of scenario.board) {
     state.selected = kind;
     if (!placeDefender(state, spot)) {
       throw new Error(`Could not place ${kind} on spot ${String(spot)} of ${scenario.caseId}`);
+    }
+  }
+
+  if (toGrow !== undefined) {
+    const placed = scenario.board.find(([kind]) => kind === toGrow);
+    if (placed === undefined) throw new Error(`${scenario.caseId} has no ${toGrow} to mature`);
+    if (!matureDefender(state, placed[1])) {
+      throw new Error(`Could not mature the ${toGrow} of ${scenario.caseId}`);
     }
   }
 

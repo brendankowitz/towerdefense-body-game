@@ -33,7 +33,7 @@ function spawn(state: SimState, kind: PathogenKind, at = 0, generation: 0 | 1 = 
 /** A clot sitting on the path head, so anything at distance 0 is inside it. */
 function clotAtStart(state: SimState): void {
   const [x, y] = positionAt(state.path, 0);
-  state.towers.push({ kind: 'clot', spotIndex: 0, x, y, hp: TOWER_MAX_HP, stun: 0 });
+  state.towers.push({ kind: 'clot', spotIndex: 0, x, y, hp: TOWER_MAX_HP, stun: 0, matured: false });
 }
 
 describe('applyMovement', () => {
