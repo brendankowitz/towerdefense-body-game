@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { CASE_CLEAR_BANK, WAVE_CLEAR_ENERGY } from '@game/content/rules';
+import { CASE_CLEAR_BANK, TISSUE_PIPS, WAVE_CLEAR_ENERGY } from '@game/content/rules';
 import type { ResultKind } from '@game/types';
 import { ResultSheet } from './ResultSheet';
 
@@ -12,12 +12,30 @@ const base = {
   waveCount: 5,
   kills: 12,
   leaks: 1,
+  tissue: TISSUE_PIPS,
   caseTitle: 'Deep cut',
   onPrimary: () => undefined,
   onLeave: () => undefined,
 };
 
 describe('ResultSheet', () => {
+  /**
+   * Reported from play: a run that had already lost four pips showed "1 got through" on the
+   * loss sheet, because the figure was the wave's. One leak reads as the thing that ended the
+   * run. On a loss the number that explains it is the case total.
+   */
+  it('reports the case total on a loss, not the leaks of the final wave', () => {
+    render(<ResultSheet {...base} result="lost" leaks={1} tissue={0} />);
+    expect(screen.getByTestId('result-leaks').textContent).toBe(String(TISSUE_PIPS));
+    expect(screen.getByText('Got through in all')).toBeInTheDocument();
+  });
+
+  it('still reports the wave figure when a wave is held', () => {
+    render(<ResultSheet {...base} result="wave" leaks={2} tissue={TISSUE_PIPS - 2} />);
+    expect(screen.getByTestId('result-leaks').textContent).toBe('2');
+    expect(screen.getByText('Got through')).toBeInTheDocument();
+  });
+
   it('states which wave was held and offers the next one', () => {
     render(<ResultSheet {...base} result="wave" waveIndex={2} waveCount={5} />);
     expect(screen.getByTestId('result-kicker').textContent).toBe('WAVE 3 OF 5 HELD');

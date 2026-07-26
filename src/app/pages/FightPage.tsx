@@ -194,6 +194,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               waveCount={hud.waveCount}
               kills={hud.waveKills}
               leaks={hud.waveLeaks}
+              tissue={hud.tissue}
               caseTitle={definition.title}
               onPrimary={onResultPrimary}
               onLeave={() => { history.push('/'); }}

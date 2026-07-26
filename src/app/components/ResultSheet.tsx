@@ -1,4 +1,4 @@
-import { CASE_CLEAR_BANK, WAVE_CLEAR_ENERGY } from '@game/content/rules';
+import { CASE_CLEAR_BANK, TISSUE_PIPS, WAVE_CLEAR_ENERGY } from '@game/content/rules';
 import { palette } from '@theme/tokens';
 import type { ResultKind } from '@game/types';
 import { RiseSheet } from './RiseSheet';
@@ -9,6 +9,8 @@ interface ResultSheetProps {
   readonly waveCount: number;
   readonly kills: number;
   readonly leaks: number;
+  /** Pips remaining. On a loss the sheet reports the case total, not this wave's. */
+  readonly tissue: number;
   readonly caseTitle: string;
   readonly onPrimary: () => void;
   readonly onLeave: () => void;
@@ -22,6 +24,9 @@ interface Copy {
   readonly accent: string;
   readonly reward: string;
   readonly canLeave: boolean;
+  /** What the "got through" figure counts, and the caption that says which. */
+  readonly leaks: number;
+  readonly leaksCaption: string;
 }
 
 /**
@@ -41,6 +46,8 @@ function copyFor(props: ResultSheetProps): Copy {
         accent: palette.frontline.css,
         reward: `+${String(WAVE_CLEAR_ENERGY)}`,
         canLeave: true,
+        leaks: props.leaks,
+        leaksCaption: 'Got through',
       };
     case 'case':
       return {
@@ -51,6 +58,8 @@ function copyFor(props: ResultSheetProps): Copy {
         accent: palette.support.css,
         reward: `+${String(CASE_CLEAR_BANK)}`,
         canLeave: false,
+        leaks: props.leaks,
+        leaksCaption: 'Got through',
       };
     case 'lost':
       return {
@@ -61,6 +70,11 @@ function copyFor(props: ResultSheetProps): Copy {
         accent: palette.threat.css,
         reward: '0',
         canLeave: true,
+        // The wave figure is what made this sheet confusing in play: losing the last pip after
+        // four earlier waves reported "1 got through", which reads as one leak ending the run.
+        // The case total is the number that explains the loss.
+        leaks: TISSUE_PIPS - Math.max(0, props.tissue),
+        leaksCaption: 'Got through in all',
       };
   }
 }
@@ -93,9 +107,9 @@ export function ResultSheet(props: ResultSheetProps) {
         </div>
         <div className="result-stat">
           <span className="mono result-figure result-leaks" data-testid="result-leaks">
-            {String(props.leaks)}
+            {String(copy.leaks)}
           </span>
-          <span className="result-caption">Got through</span>
+          <span className="result-caption">{copy.leaksCaption}</span>
         </div>
         <div className="result-stat result-stat-energy">
           <span className="mono result-figure" data-testid="result-reward">{copy.reward}</span>
