@@ -171,6 +171,28 @@ describe('FightPage', () => {
     expect(energy()).toBe(before - DEFENDERS.clot.cost);
   });
 
+  /**
+   * Reported from play: the reabsorb and grow actions were only reachable from the chip row, so
+   * tapping the cell you wanted to change — the gesture anyone reaches for first — did nothing.
+   */
+  it('opens a placed cell for reabsorbing or growing when it is tapped on the board', async () => {
+    await renderFight();
+    const host = board();
+
+    // Not the dock's default pick: clicking that card would toggle the selection off.
+    act(() => { screen.getByTestId('dock-card-clot').click(); });
+    tapSpot(host, 0);
+    expect(screen.getByTestId('cell-chip-0')).toBeInTheDocument();
+    expect(screen.queryByTestId('reabsorb')).not.toBeInTheDocument();
+
+    tapSpot(host, 0);
+    expect(screen.getByTestId('reabsorb')).toBeInTheDocument();
+
+    // Tapping it again closes it, so the gesture is a toggle rather than a one-way door.
+    tapSpot(host, 0);
+    expect(screen.queryByTestId('reabsorb')).not.toBeInTheDocument();
+  });
+
   it('spends nothing for a tap that lands on no junction', async () => {
     await renderFight();
     const host = board();

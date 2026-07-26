@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   isBuildPhase, matureDefender, maturationAt, reabsorbDefender, reabsorbValue, towerAt,
 } from '@game/commands';
@@ -29,9 +28,15 @@ function cellName(tower: Tower): string {
  * moves energy, and energy is in the HUD snapshot, so `useHud` re-renders this row on the
  * same tick as the change it caused.
  */
-export function PlacedCells({ loop }: { readonly loop: GameLoop }) {
+interface PlacedCellsProps {
+  readonly loop: GameLoop;
+  /** Which placed cell is open. Controlled by the page so a tap on the board reaches it too. */
+  readonly chosenSpot: number | null;
+  readonly onChoose: (spot: number | null) => void;
+}
+
+export function PlacedCells({ loop, chosenSpot, onChoose }: PlacedCellsProps) {
   const hud = useHud(loop);
-  const [chosenSpot, setChosenSpot] = useState<number | null>(null);
 
   if (!isBuildPhase(hud)) return null;
 
@@ -64,7 +69,7 @@ export function PlacedCells({ loop }: { readonly loop: GameLoop }) {
                 borderColor: on ? color : 'transparent',
                 background: on ? `color-mix(in oklch, ${color} 14%, transparent)` : 'var(--surface)',
               }}
-              onClick={() => { setChosenSpot(on ? null : tower.spotIndex); }}
+              onClick={() => { onChoose(on ? null : tower.spotIndex); }}
             >
               <span
                 className="cell-dot"
@@ -86,7 +91,7 @@ export function PlacedCells({ loop }: { readonly loop: GameLoop }) {
             aria-label={`Reabsorb this cell for ${String(reabsorbValue(chosen))} energy`}
             onClick={() => {
               run(() => { reabsorbDefender(loop.state, chosen.spotIndex); });
-              setChosenSpot(null);
+              onChoose(null);
             }}
           >
             <span className="cell-action-label">Reabsorb</span>

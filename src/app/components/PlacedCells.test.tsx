@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { placeDefender, reabsorbValue, startWave, towerAt } from '@game/commands';
@@ -42,6 +43,15 @@ function boardOf(...kinds: readonly DefenderKind[]): GameLoop {
   return new GameLoop(state);
 }
 
+/**
+ * The row is controlled: the page owns which cell is open so that a tap on the board can open
+ * one too. This host stands in for the page.
+ */
+function Host({ loop }: { readonly loop: GameLoop }) {
+  const [chosenSpot, setChosenSpot] = useState<number | null>(null);
+  return <PlacedCells loop={loop} chosenSpot={chosenSpot} onChoose={setChosenSpot} />;
+}
+
 describe('PlacedCells', () => {
   it('has a defender with a matured form and one without, or the cases below are vacuous', () => {
     expect(GROWABLE.length).toBeGreaterThan(0);
@@ -52,7 +62,7 @@ describe('PlacedCells', () => {
     const kinds = [firstOf(GROWABLE, 'a cell that can be grown'), firstOf(UNGROWABLE, 'a cell that cannot')];
     const loop = boardOf(...kinds);
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
 
     for (const [spot] of kinds.entries()) {
       expect(screen.getByTestId(`cell-chip-${String(spot)}`)).toBeInTheDocument();
@@ -61,7 +71,7 @@ describe('PlacedCells', () => {
 
   it('says nothing about actions until a cell is chosen', () => {
     const loop = boardOf(firstOf(GROWABLE, 'a cell that can be grown'));
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     expect(screen.queryByTestId('cell-actions')).not.toBeInTheDocument();
   });
 
@@ -72,7 +82,7 @@ describe('PlacedCells', () => {
     expect(tower).not.toBeNull();
     if (tower === null) return;
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
 
     expect(screen.getByTestId('reabsorb').textContent)
@@ -88,7 +98,7 @@ describe('PlacedCells', () => {
     if (tower === null) return;
     const refund = reabsorbValue(tower);
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
     fireEvent.click(screen.getByTestId('reabsorb'));
 
@@ -102,7 +112,7 @@ describe('PlacedCells', () => {
     const form = maturedForm(kind);
     const loop = boardOf(kind);
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
 
     expect(screen.getByTestId('mature').textContent).toBe(`${form.name}−${String(form.cost)}`);
@@ -114,7 +124,7 @@ describe('PlacedCells', () => {
     const loop = boardOf(kind);
     const before = loop.state.energy;
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
     fireEvent.click(screen.getByTestId('mature'));
 
@@ -130,7 +140,7 @@ describe('PlacedCells', () => {
     const loop = boardOf(kind);
     loop.state.energy = form.cost - 1;
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
 
     const button = screen.getByTestId('mature');
@@ -143,7 +153,7 @@ describe('PlacedCells', () => {
     const kind = firstOf(UNGROWABLE, 'a cell that cannot be grown');
     const loop = boardOf(kind);
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
 
     expect(screen.queryByTestId('mature')).not.toBeInTheDocument();
@@ -155,13 +165,13 @@ describe('PlacedCells', () => {
     startWave(loop.state);
     loop.publish();
 
-    render(<PlacedCells loop={loop} />);
+    render(<Host loop={loop} />);
     expect(screen.queryByTestId('placed-cells')).not.toBeInTheDocument();
   });
 
   it('never exclaims, and never uses an emoji — spec copy rules', () => {
     const loop = boardOf(firstOf(UNGROWABLE, 'a cell that cannot be grown'));
-    const { container } = render(<PlacedCells loop={loop} />);
+    const { container } = render(<Host loop={loop} />);
     fireEvent.click(screen.getByTestId('cell-chip-0'));
 
     const text = container.textContent;

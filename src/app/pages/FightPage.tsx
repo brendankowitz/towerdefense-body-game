@@ -46,6 +46,12 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
 
   const rendererRef = useRef<BoardRenderer | null>(null);
   const [loop, setLoop] = useState<GameLoop>(() => createLoop(caseId, profile));
+  /**
+   * Which placed cell is open for reabsorbing or growing. It lives here rather than inside
+   * PlacedCells so that tapping the cell on the board opens it too — that is the gesture a
+   * player reaches for first, and it did nothing while the row owned its own selection.
+   */
+  const [chosenSpot, setChosenSpot] = useState<number | null>(null);
 
   const hud = useHud(loop);
 
@@ -134,7 +140,15 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
             <BoardCanvas
               caseId={caseId}
               onRendererReady={onRendererReady}
-              onSpotTap={(spot) => { run(() => { placeDefender(loop.state, spot); }); }}
+              onSpotTap={(spot) => {
+                const occupied = loop.state.towers.some((tower) => tower.spotIndex === spot);
+                if (occupied) {
+                  setChosenSpot((open) => (open === spot ? null : spot));
+                  return;
+                }
+                setChosenSpot(null);
+                run(() => { placeDefender(loop.state, spot); });
+              }}
             />
             <span className="mono board-hint" data-testid="board-hint">
               {buildPhase
@@ -150,7 +164,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
           </div>
 
           <footer className="fight-footer">
-            <PlacedCells loop={loop} />
+            <PlacedCells loop={loop} chosenSpot={chosenSpot} onChoose={setChosenSpot} />
             <div className="dock-row">
               <DefenderDock
                 energy={hud.energy}
