@@ -54,10 +54,15 @@ test('wave 1 of the first case is held by starter cells alone', async ({ page })
 /**
  * NOT COVERED — BLOCKED ON BALANCE, NOT ON CODE.
  *
- * Spec §13.1's other half: "clearing one advances progression correctly". A headless sweep of
- * every defender composition across all three cases, with reach-aware buying, produced zero
- * clears. No case is currently winnable end to end, so this cannot be written as a passing
- * test and has deliberately not been shaped into one.
+ * Spec §13.1's other half: "clearing one advances progression correctly". An exhaustive sweep
+ * of every affordable board at the correct unlock tier, playing the real simulation, clears
+ * forearm 0 times in 1024 and throat 0 times in 3125. Stomach clears 3 times in 7776 — 0.04%,
+ * and unreachable in play because it is the third case and the two before it cannot be won.
+ * So this cannot be written as a passing test and has deliberately not been shaped into one.
+ *
+ * An earlier version of this comment said no case was winnable at all. That was measured from
+ * six hand-picked compositions rather than a sweep, and it was wrong about stomach. Corrected
+ * after the holistic review searched the whole space.
  *
  * The body below has therefore never executed and is a statement of the promise, not verified
  * code — expect to rework it when the balance pass lands. What it would prove that nothing
