@@ -192,8 +192,12 @@ button {
 }
 
 .primary {
-  flex: 1;
+  /* `flex: 1` sets a zero basis, which fills the width in the map's row of actions but governs
+     the *height* in a column footer — the brief's call to action collapsed to 17px because of
+     it. An auto basis fills the row just the same and leaves the height to the height. */
+  flex: 1 1 auto;
   height: 54px;
+  min-height: 54px;
   border-radius: var(--radius-control);
   display: flex;
   align-items: center;
@@ -226,7 +230,9 @@ button {
 }
 
 .secondary {
-  height: 40px;
+  /* 44px is the minimum comfortable tap target (Apple HIG, WCAG 2.5.5). This button is bare
+     text, so the extra height is invisible — it is all reachable area. */
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;

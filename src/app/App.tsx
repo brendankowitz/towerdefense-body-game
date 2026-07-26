@@ -20,7 +20,10 @@ export function App() {
           wants neither, so an empty basename is the correct value in the common case. */}
       <IonReactRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Suspense fallback={null}>
-          <IonRouterOutlet>
+          {/* Ionic's iOS mode slides a page in from the side, and every screen then runs its own
+              14px rise — two entrances for one navigation, which reads as a stutter. The design's
+              motion rules say nothing slides sideways, so the slide is the one to drop. */}
+          <IonRouterOutlet animated={false}>
             <Route exact path="/" component={MapPage} />
             <Route exact path="/brief/:caseId" component={BriefPage} />
             <Route exact path="/play/:caseId" component={FightPage} />
