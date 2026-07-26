@@ -2,6 +2,7 @@ import { BODY_LINKS, BODY_MAP_VIEWBOX, BODY_NODES } from '@game/content/body';
 import { CASES } from '@game/content/cases';
 import { NEUTRALS, palette } from '@theme/tokens';
 import type { BodyNodeId, CaseId } from '@game/types';
+import { ORBIT_KEYFRAMES } from './orbit';
 
 type NodeState = 'held' | 'hot' | 'core' | 'cold';
 
@@ -18,7 +19,7 @@ const STATE_TOKEN: Record<NodeState, string> = {
   cold: palette.notReached.css,
 };
 
-/** The body graph: fifteen regions, fourteen links, the core, the case under attack pulsing. */
+/** The body graph: fifteen regions, fourteen links, the core, the case under attack circling. */
 export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
   const clearedNodes = new Set(
     CASES.filter((c) => cleared.includes(c.id)).map((c) => c.node),
@@ -39,6 +40,10 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
       role="img"
       aria-label="The body"
     >
+      {/* Generated from the ellipse, so the shape is stated once. `.orbit` and the reduced
+          motion rule that switches it off both live in typography.css. */}
+      <style>{ORBIT_KEYFRAMES}</style>
+
       {BODY_LINKS.map(([from, to]) => {
         const a = BODY_NODES.find((n) => n.id === from);
         const b = BODY_NODES.find((n) => n.id === to);
@@ -64,12 +69,14 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
         const interactive = state === 'hot';
         return (
           <g key={node.id}>
+            {/* The sickness itself, circling the region it has taken. Still the only thing
+                on this screen that moves, and still only ever on a threat. */}
             {state === 'hot' && (
               <circle
-                className="pulse"
+                className="orbit"
                 cx={node.x}
                 cy={node.y}
-                r={node.r + 20}
+                r={node.r + 16}
                 fill={STATE_TOKEN.hot}
                 opacity={0.14}
               />

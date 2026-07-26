@@ -1,18 +1,23 @@
 import { Application, Container } from 'pixi.js';
+import { FAST_MULTIPLIER } from '@game/content/rules';
+import { MAX_FRAME_SECONDS } from '@game/loop';
 import type { CaseId, SimState } from '@game/types';
 import { BeamLayer } from './layers/BeamLayer';
 import { EnemyLayer } from './layers/EnemyLayer';
 import { PathLayer } from './layers/PathLayer';
+import { PuffLayer } from './layers/PuffLayer';
 import { TowerLayer } from './layers/TowerLayer';
+import { motionOf, reducedMotionQuery } from './motion';
 import { IDENTITY_VIEWPORT, fitViewport, type Viewport } from './viewport';
 
 /**
  * The board, drawn imperatively from sim state.
  *
- * It has no clock. Nothing here advances, fades or pulses on its own: every frame is a
- * pure function of the state it is handed, and whoever owns the animation frame decides
- * when that happens. That is what makes "the simulation pauses when the page is hidden"
- * true of the picture as well as the rules — a hidden page simply stops calling `draw`.
+ * It still has no clock. Nothing here advances on its own: every frame is a pure function of
+ * the state it is handed plus the elapsed time the caller measured, and whoever owns the
+ * animation frame decides when that happens. That is what makes "the simulation pauses when
+ * the page is hidden" true of the picture as well as the rules — a hidden page simply stops
+ * calling `draw`, and the effects freeze with everything else.
  */
 export class BoardRenderer {
   readonly #app: Application;
@@ -21,7 +26,9 @@ export class BoardRenderer {
   readonly #path: PathLayer;
   readonly #towers: TowerLayer;
   readonly #beams = new BeamLayer();
+  readonly #puffs = new PuffLayer();
   readonly #enemies = new EnemyLayer();
+  readonly #reducedMotion = reducedMotionQuery();
   #viewport: Viewport = IDENTITY_VIEWPORT;
 
   private constructor(app: Application, host: HTMLElement, caseId: CaseId) {
@@ -31,11 +38,13 @@ export class BoardRenderer {
     this.#towers = new TowerLayer(caseId);
 
     // Draw order, from the reference: vessel, then cells and the ranges they claim, then
-    // what they fire, then what is coming. Threats are never hidden behind anything.
+    // what they fire, then what is coming. Threats are never hidden behind anything — which
+    // is also why puffs go under the enemies rather than over them.
     this.#world.addChild(
       this.#path.container,
       this.#towers.container,
       this.#beams.container,
+      this.#puffs.container,
       this.#enemies.container,
     );
     this.#app.stage.addChild(this.#world);
@@ -80,9 +89,20 @@ export class BoardRenderer {
     this.#world.position.set(this.#viewport.offsetX, this.#viewport.offsetY);
   }
 
-  draw(state: SimState): void {
-    this.#towers.draw(state);
+  /**
+   * `elapsedSeconds` is the wall time the caller measured for this frame — the same number it
+   * handed the simulation, before the simulation scaled it. It is clamped and scaled here the
+   * way `GameLoop.advance` clamps and scales its own, so an effect ages on the clock the board
+   * is actually running on: a stalled frame does not jump one, and 2× is over twice as fast.
+   */
+  draw(state: SimState, elapsedSeconds: number): void {
+    const motion = motionOf(this.#reducedMotion);
+    const effectSeconds =
+      Math.min(elapsedSeconds, MAX_FRAME_SECONDS) * (state.fast ? FAST_MULTIPLIER : 1);
+
+    this.#towers.draw(state, motion);
     this.#beams.draw(state);
+    this.#puffs.draw(state, effectSeconds, motion);
     this.#enemies.draw(state);
     this.#app.render();
   }
@@ -91,6 +111,7 @@ export class BoardRenderer {
     this.#path.destroy();
     this.#towers.destroy();
     this.#beams.destroy();
+    this.#puffs.destroy();
     this.#enemies.destroy();
     this.#app.destroy(true, { children: true, texture: true });
   }

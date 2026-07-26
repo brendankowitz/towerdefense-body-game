@@ -5,7 +5,9 @@ import { maturedFormOf } from '@game/content/maturation';
 import { TOWER_MAX_HP } from '@game/content/rules';
 import { applyDefenderTuning, applyMaturationTuning, resetTuning } from '@game/content/tuning';
 import { createSimState } from '@game/state';
-import type { MemoryTower, SimState, Tower } from '@game/types';
+import type { MastTower, MemoryTower, SimState, Tower } from '@game/types';
+import { BURST_SECONDS } from '../effects';
+import type { Motion } from '../motion';
 import { TowerLayer } from './TowerLayer';
 
 function boardState(): SimState {
@@ -203,6 +205,136 @@ describe('TowerLayer matured cells', () => {
 
     plainLayer.destroy();
     grownLayer.destroy();
+  });
+});
+
+function mastCell(flash: number): MastTower {
+  return {
+    kind: 'mast', spotIndex: 1, x: CELL_X, y: CELL_Y, hp: TOWER_MAX_HP, stun: 0, matured: false,
+    cooldown: 0, flash,
+  };
+}
+
+/**
+ * What the cell is currently drawn from. A repaint builds new instructions, so holding the
+ * first one and comparing identity says whether the drawing was rebuilt — which is the thing
+ * an expanding pulse depends on and a cached signature is exactly what would prevent.
+ */
+function drawing(layer: TowerLayer): unknown {
+  const [first] = bodyAt(layer, CELL_X, CELL_Y).context.instructions;
+  if (first === undefined) throw new Error('The cell was never drawn');
+  return first;
+}
+
+/** Outlines in the cell's drawing. The pulse is one; a filled disc behind it is not. */
+function strokeCount(layer: TowerLayer): number {
+  return bodyAt(layer, CELL_X, CELL_Y).context.instructions
+    .filter((instruction) => instruction.action === 'stroke').length;
+}
+
+/** A mast cell drawn on its own layer, so two of them can be compared side by side. */
+function mastLayer(flash: number, motion?: Motion): TowerLayer {
+  const layer = new TowerLayer('forearm');
+  const state = boardState();
+  state.towers = [mastCell(flash)];
+  layer.draw(state, motion);
+  return layer;
+}
+
+describe('TowerLayer burst pulse', () => {
+  it('throws a front the resting cell does not have', () => {
+    const resting = mastLayer(0);
+    const bursting = mastLayer(BURST_SECONDS);
+
+    expect(strokeCount(bursting)).toBe(strokeCount(resting) + 1);
+    expect(bodyAt(bursting, CELL_X, CELL_Y).context.instructions.length)
+      .toBeGreaterThan(bodyAt(resting, CELL_X, CELL_Y).context.instructions.length);
+
+    resting.destroy();
+    bursting.destroy();
+  });
+
+  /** Reduced motion keeps the lit disc and drops the front, which is what it looked like before. */
+  it('lights the disc but throws nothing when motion is reduced', () => {
+    const resting = mastLayer(0, 'reduced');
+    const bursting = mastLayer(BURST_SECONDS, 'reduced');
+
+    expect(strokeCount(bursting)).toBe(strokeCount(resting));
+    expect(bodyAt(bursting, CELL_X, CELL_Y).context.instructions.length)
+      .toBeGreaterThan(bodyAt(resting, CELL_X, CELL_Y).context.instructions.length);
+
+    resting.destroy();
+    bursting.destroy();
+  });
+
+  /** The pulse expands, so it has to be repainted as the flash burns down. */
+  it('redraws the cell as the pulse travels', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    const cell = mastCell(BURST_SECONDS);
+    state.towers = [cell];
+
+    layer.draw(state);
+    const opening = drawing(layer);
+
+    cell.flash = BURST_SECONDS / 2;
+    layer.draw(state);
+
+    expect(drawing(layer)).not.toBe(opening);
+    layer.destroy();
+  });
+
+  /**
+   * Under reduced motion a burst is one state rather than a sequence: the disc lights and
+   * nothing travels, so the drawing must not be rebuilt frame after frame either.
+   */
+  it('holds one drawing for the whole burst when motion is reduced', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    const cell = mastCell(BURST_SECONDS);
+    state.towers = [cell];
+
+    layer.draw(state, 'reduced');
+    const opening = drawing(layer);
+
+    cell.flash = BURST_SECONDS / 2;
+    layer.draw(state, 'reduced');
+
+    expect(drawing(layer)).toBe(opening);
+    layer.destroy();
+  });
+
+  /**
+   * The pulse leaves the cell, so at the moment it lands it is still inside the disc — a ring
+   * that starts at the edge of the range has nowhere to travel and reads as the range blinking.
+   */
+  it('starts the front at the cell rather than at the edge of its reach', () => {
+    const opening = mastLayer(BURST_SECONDS);
+    const closing = mastLayer(0.0001);
+    const range = DEFENDERS.mast.range;
+
+    expect(bodyAt(opening, CELL_X, CELL_Y).getLocalBounds().width).toBeCloseTo(range * 2, 6);
+    expect(bodyAt(closing, CELL_X, CELL_Y).getLocalBounds().width).toBeGreaterThan(range * 2);
+
+    opening.destroy();
+    closing.destroy();
+  });
+
+  /** The last frame of a burst is the one before it ends, so that is where the drawing must go. */
+  it('takes the burst off the cell when the flash runs out', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    const cell = mastCell(BURST_SECONDS / 1000);
+    state.towers = [cell];
+
+    layer.draw(state);
+    const bursting = bodyAt(layer, CELL_X, CELL_Y).context.instructions.length;
+
+    cell.flash = 0;
+    layer.draw(state);
+
+    expect(bodyAt(layer, CELL_X, CELL_Y).context.instructions.length).toBeLessThan(bursting);
+    layer.destroy();
   });
 });
 

@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { BodyMap } from './BodyMap';
+import { ORBIT_ANIMATION, ORBIT_KEYFRAMES } from './orbit';
 import { BODY_LINKS, BODY_NODES } from '@game/content/body';
 
 const base = { cleared: [] as const, activeNode: 'forearm' as const, onSelectCase: () => undefined };
@@ -48,13 +49,21 @@ describe('BodyMap', () => {
     expect(onSelectCase).not.toHaveBeenCalled();
   });
 
-  it('pulses only the region under attack', () => {
+  it('circles only the region under attack', () => {
     const { container } = render(<BodyMap {...base} cleared={['forearm']} activeNode="throat" />);
-    expect(container.querySelectorAll('.pulse')).toHaveLength(1);
+    expect(container.querySelectorAll('.orbit')).toHaveLength(1);
   });
 
-  it('pulses nothing when no region is under attack', () => {
+  it('moves nothing when no region is under attack', () => {
     const { container } = render(<BodyMap {...base} activeNode={null} />);
+    expect(container.querySelectorAll('.orbit')).toHaveLength(0);
     expect(container.querySelectorAll('.pulse')).toHaveLength(0);
+  });
+
+  it('carries the track the sickness travels, built from the ellipse', () => {
+    const { container } = render(<BodyMap {...base} />);
+    const style = container.querySelector('style');
+    expect(style?.textContent).toContain(`@keyframes ${ORBIT_ANIMATION}`);
+    expect(style?.textContent).toBe(ORBIT_KEYFRAMES);
   });
 });

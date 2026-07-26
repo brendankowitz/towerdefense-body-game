@@ -72,8 +72,8 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
     rendererRef.current = renderer;
   }, []);
 
-  const onFrame = useCallback((state: SimState) => {
-    rendererRef.current?.draw(state);
+  const onFrame = useCallback((state: SimState, elapsedSeconds: number) => {
+    rendererRef.current?.draw(state, elapsedSeconds);
   }, []);
 
   useGameLoop(loop, onFrame);
