@@ -24,6 +24,7 @@ jobs:
       # match on one of its exports is enough — if this ever finds a hit, the import.meta.env.DEV
       # guard stopped being statically analysable (the usual cause: reading it through a variable).
       - run: "! grep -r applyDefenderTuning dist/"
-      # Enabled in Phase 13, once there is a game to drive.
-      # - run: npx playwright install --with-deps chromium
-      # - run: npm run test:e2e
+      # The E2E suite drives the production bundle: its webServer builds and serves dist/
+      # itself, so it runs after the build above rather than sharing it.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
