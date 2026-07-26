@@ -9,6 +9,20 @@ import { buildQueue } from './systems/spawn';
 import { maturationOffer } from './systems/stats';
 import type { DefenderKind, Phase, SimState, Tower } from './types';
 
+/**
+ * When the board may be rearranged. Placing, reabsorbing and maturing all answer to this, and
+ * so does picking a cell up off the dock: a cell placed mid-wave is an emergency buy no rule
+ * grants, and one pulled out mid-wave would be free to farm and replace. Neither is a decision,
+ * and placing is the half that adds power — the wound rule's "energy drains until a clot exists"
+ * only forces an opening purchase if the purchase cannot be deferred into the wave.
+ *
+ * Takes the phase rather than the state so the HUD snapshot satisfies it too — the rule is
+ * stated once and the chrome cannot drift out of step with what the commands will accept.
+ */
+export function isBuildPhase(state: { readonly phase: Phase }): boolean {
+  return state.phase === 'build' || state.phase === 'built';
+}
+
 export function isUnlocked(state: SimState, kind: DefenderKind): boolean {
   return state.clearedCount >= DEFENDERS[kind].unlock;
 }
@@ -18,6 +32,7 @@ export function unlockedDefenders(state: SimState): readonly DefenderKind[] {
 }
 
 export function selectDefender(state: SimState, kind: DefenderKind): void {
+  if (!isBuildPhase(state)) return;
   if (!isUnlocked(state, kind)) return;
   state.selected = state.selected === kind ? null : kind;
 }
@@ -34,8 +49,10 @@ function createTower(kind: DefenderKind, spotIndex: number, x: number, y: number
   }
 }
 
-/** Returns true when a defender was actually placed. */
+/** Returns true when a defender was actually placed. Build phase only. */
 export function placeDefender(state: SimState, spotIndex: number): boolean {
+  if (!isBuildPhase(state)) return false;
+
   const kind = state.selected;
   if (kind === null) return false;
 
@@ -49,17 +66,6 @@ export function placeDefender(state: SimState, spotIndex: number): boolean {
   state.towers.push(createTower(kind, spotIndex, spot[0], spot[1]));
   state.energy -= stats.cost;
   return true;
-}
-
-/**
- * When the board may be rearranged. Reabsorbing and maturing both answer to this: a cell
- * pulled out mid-wave would be free to farm and replace, which is not a decision either.
- *
- * Takes the phase rather than the state so the HUD snapshot satisfies it too — the rule is
- * stated once and the chrome cannot drift out of step with what the commands will accept.
- */
-export function isBuildPhase(state: { readonly phase: Phase }): boolean {
-  return state.phase === 'build' || state.phase === 'built';
 }
 
 export function towerAt(state: SimState, spotIndex: number): Tower | null {

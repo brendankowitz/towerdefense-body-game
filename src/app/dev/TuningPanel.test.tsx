@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DEFENDERS } from '@game/content/defenders';
+import { MATURED_FORMS } from '@game/content/maturation';
 import { PATHOGENS } from '@game/content/pathogens';
 import { CASES } from '@game/content/cases';
 import { resetTuning } from '@game/content/tuning';
@@ -56,6 +57,26 @@ describe('TuningPanel', () => {
     fireEvent.change(input, { target: { value: String(before + 9) } });
 
     expect(PATHOGENS.staph.speed).toBe(before + 9);
+  });
+
+  it('moves a matured form against the live table, which the defender rows cannot reach', () => {
+    render(<TuningPanel loop={testLoop()} />);
+    fireEvent.click(screen.getByTestId('tuning-handle'));
+
+    const before = MATURED_FORMS.phago?.stats.range;
+    if (before === undefined) throw new Error('fixture expects the macrophage to override range');
+
+    fireEvent.change(screen.getByTestId('tuning-matured-phago-range'), { target: { value: String(before + 20) } });
+
+    expect(MATURED_FORMS.phago?.stats.range).toBe(before + 20);
+  });
+
+  it('offers no matured section for a cell that has nothing to grow into', () => {
+    render(<TuningPanel loop={testLoop()} />);
+    fireEvent.click(screen.getByTestId('tuning-handle'));
+
+    expect(screen.getByTestId('tuning-matured-phago')).toBeInTheDocument();
+    expect(screen.queryByTestId('tuning-matured-nk')).not.toBeInTheDocument();
   });
 
   it('ignores an unparseable field edit rather than corrupting the live table', () => {

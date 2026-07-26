@@ -10,12 +10,12 @@ const BROWSER_GLOBALS = [
 ];
 
 export default defineConfig([
-  // Fixtures are deliberate boundary violations. They are excluded from the repo-wide
+  // The boundary fixtures are deliberate violations. They are excluded from the repo-wide
   // lint and reached only by tests/lint/boundaries.test.ts, which lints them with
   // `ignore: false` precisely to assert that they are rejected.
   globalIgnores([
     'dist', 'coverage', 'playwright-report', 'test-results', 'ios', 'android', 'design',
-    'tests/lint/fixtures/**',
+    'src/game/__fixtures__/**',
   ]),
 
   {
@@ -77,17 +77,16 @@ export default defineConfig([
     },
   },
 
-  // Mirrors the src/game import restriction without type information, since fixtures
-  // are deliberately outside the tsconfig projects. The meta-test proves the mechanism
-  // still fires; it does not prove these two lists agree. Change both together.
+  // The boundary fixtures sit under src/game/ so the block above reaches them: they are what
+  // tests/lint/boundaries.test.ts lints, and the point of that test is to prove the real rules
+  // fire rather than a copy of them kept in step by hand. Nothing here restates a restriction —
+  // this block only takes away the type information, since the fixtures are deliberately
+  // outside both tsconfig projects and `projectService` would refuse to parse them otherwise.
   {
-    files: ['tests/lint/fixtures/**/*.ts'],
+    files: ['src/game/__fixtures__/**/*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { parserOptions: { projectService: false, project: false } },
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [{ group: ['pixi.js', 'react', '@render/*'], message: 'boundary' }],
-      }],
       '@typescript-eslint/no-unused-vars': 'off',
       'no-unused-vars': 'off',
     },

@@ -4,7 +4,8 @@ import { createSimState } from '../state';
 import { CASE_BY_ID } from '../content/cases';
 import { PATHOGENS } from '../content/pathogens';
 import { IMMUNITY_MAX, SPAWN_FIRST_DELAY } from '../content/rules';
-import type { CaseId, SimState, StrainId } from '../types';
+import { createRng, waveSeed } from '../rng';
+import type { CaseId, PathogenKind, SimState, StrainId } from '../types';
 
 function waveSize(state: SimState): number {
   const wave = CASE_BY_ID[state.caseId].waves[state.waveIndex] ?? [];
@@ -39,6 +40,23 @@ function shielded(immunity: Partial<Record<StrainId, number>> = { staph: IMMUNIT
   return state;
 }
 
+/** The first wound wave that mixes kinds. A wave of one kind cannot show a shuffle at all. */
+const MIXED_WAVE = CASE_BY_ID.forearm.waves
+  .findIndex((wave) => new Set(wave.map((entry) => entry.kind)).size > 1);
+
+/** The wave table expanded in table order and left unshuffled — what a missing shuffle produces. */
+function grouped(caseId: CaseId, waveIndex: number): readonly PathogenKind[] {
+  return (CASE_BY_ID[caseId].waves[waveIndex] ?? [])
+    .flatMap((entry) => Array.from({ length: entry.count }, () => entry.kind));
+}
+
+/** Where mulberry32 sits after `draws` numbers have been taken from `seed`. */
+function advanced(seed: number, draws: number): number {
+  const rng = createRng(seed);
+  for (let i = 0; i < draws; i += 1) rng.next();
+  return rng.state;
+}
+
 function drain(state: SimState): void {
   state.spawnTimer = 0;
   applySpawn(state, SPAWN_FIRST_DELAY);
@@ -63,19 +81,43 @@ describe('buildQueue', () => {
     expect(wounded().queue).toEqual(wounded().queue);
   });
 
-  it('differs between waves of the same case', () => {
-    const first = wounded();
-    const second = wounded();
-    second.waveIndex = 2;
-    expect(buildQueue(second)).not.toEqual(first.queue);
+  it('has a wound wave that mixes kinds, or the two cases below are vacuous', () => {
+    expect(MIXED_WAVE).toBeGreaterThanOrEqual(0);
+    expect(CASE_BY_ID.forearm.waves.length).toBeGreaterThan(1);
   });
 
+  /**
+   * The previous version asserted the queue differed from its own alphabetically sorted copy.
+   * An unshuffled queue is already in wave-table order, which is not alphabetical order, so that
+   * assertion held with the shuffle deleted. The falsifier is the grouped expansion itself.
+   */
   it('shuffles a mixed wave rather than leaving it grouped by kind', () => {
     const state = wounded();
-    state.waveIndex = 3;
+    state.waveIndex = MIXED_WAVE;
     const queue = buildQueue(state);
+    const inTableOrder = grouped('forearm', MIXED_WAVE);
+
     expect(queue).toHaveLength(waveSize(state));
-    expect(queue.join(',')).not.toBe([...queue].sort().join(','));
+    expect([...queue].sort()).toEqual([...inTableOrder].sort());
+    expect(queue).not.toEqual(inTableOrder);
+  });
+
+  /**
+   * Comparing two waves' queues cannot show this: waves of different composition differ whatever
+   * the seed does, which is what made the previous version of this test unfalsifiable. What
+   * isolates the seed is where the generator ends up — advance a rival wave's seed by the same
+   * number of draws, and it can only land in the same place if both waves were seeded alike.
+   */
+  it('shuffles each wave from its own seed rather than one seed per case', () => {
+    const other = (MIXED_WAVE + 1) % CASE_BY_ID.forearm.waves.length;
+    expect(other).not.toBe(MIXED_WAVE);
+
+    const state = wounded();
+    state.waveIndex = MIXED_WAVE;
+    const draws = buildQueue(state).length - 1;
+
+    expect(state.rngState).toBe(advanced(waveSeed('forearm', MIXED_WAVE), draws));
+    expect(state.rngState).not.toBe(advanced(waveSeed('forearm', other), draws));
   });
 
   it('records the generator state so the run stays serialisable', () => {

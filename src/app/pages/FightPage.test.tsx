@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { CASE_BY_ID } from '@game/content/cases';
-import { DEFENDERS } from '@game/content/defenders';
+import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
 import { clearCase, createFreshProfile } from '@game/progression';
 import { FEVER_DURATION, TISSUE_PIPS } from '@game/content/rules';
 import type { SimState } from '@game/types';
@@ -201,6 +201,32 @@ describe('FightPage', () => {
 
     act(() => { locked.click(); });
     expect(screen.getByTestId('dock-card-mem')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  /**
+   * Build and fight are meant to be separate decisions. The dock going dead is the visible half;
+   * the tap being refused with a cell still in hand is the half that matters, so the selection is
+   * put back on the state directly rather than through the dock the test has just proved is dead.
+   */
+  it('builds nothing once the wave is running', async () => {
+    await renderFight();
+    if (captured.state === undefined) throw new Error('createSimState was never called');
+    const host = board();
+
+    act(() => { screen.getByTestId('start-wave').click(); });
+
+    const banked = energy();
+    expect(banked, 'the refusal has to be about the phase, not the price')
+      .toBeGreaterThanOrEqual(DEFENDERS.clot.cost);
+    for (const kind of DEFENDER_ORDER) {
+      expect(screen.getByTestId(`dock-card-${kind}`), kind).toBeDisabled();
+    }
+
+    captured.state.selected = 'clot';
+    tapSpot(host, 0);
+
+    expect(energy()).toBe(banked);
+    expect(captured.state.towers).toHaveLength(0);
   });
 
   it('shows the case rule on the board only while a wave is running', async () => {

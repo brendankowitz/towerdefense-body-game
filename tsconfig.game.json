@@ -16,5 +16,9 @@
     "baseUrl": ".",
     "paths": { "@game/*": ["src/game/*"] }
   },
-  "include": ["src/game/**/*.ts"]
+  // The boundary fixtures are deliberate rule violations, linted by tests/lint/boundaries.test.ts
+  // and compiled by nothing. Keeping them out of every project is what lets ESLint parse them
+  // without type information, which is the only way a Pixi import can sit under src/game/ at all.
+  "include": ["src/game/**/*.ts"],
+  "exclude": ["src/game/__fixtures__"]
 }

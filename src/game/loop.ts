@@ -3,8 +3,17 @@ import { step } from './step';
 import type { DefenderKind, Phase, ResultKind, SimState } from './types';
 
 /** Longer than this and the tab was backgrounded or the device stalled — the time is dropped. */
-const MAX_FRAME_SECONDS = 0.25;
-const MAX_STEPS_PER_FRAME = 8;
+export const MAX_FRAME_SECONDS = 0.25;
+
+/**
+ * Derived rather than chosen, so the two budgets cannot mean different things. The cap has to
+ * cover a whole clamped frame at the fastest speed, plus the sub-step remainder carried in from
+ * the frame before; anything lower discards simulation time the clamp above said to keep, which
+ * makes a wave quietly easier on a device that stutters. A literal 8 here lost time on any frame
+ * over ~133 ms, and over ~67 ms at 2×.
+ */
+const MAX_STEPS_PER_FRAME = Math.ceil((MAX_FRAME_SECONDS * FAST_MULTIPLIER) / STEP_SECONDS);
+
 const HUD_INTERVAL_SECONDS = 0.1;
 
 export interface HudSnapshot {

@@ -1,25 +1,23 @@
 import { expect, test } from '@playwright/test';
 import { CASE_BY_ID } from '../../src/game/content/cases';
+import { DEFENDERS } from '../../src/game/content/defenders';
 import { TISSUE_PIPS, WAVE_CLEAR_ENERGY } from '../../src/game/content/rules';
+import type { DefenderKind } from '../../src/game/types';
 import { onScreen, openCase, placeCell } from './helpers';
 
 /**
- * THE ONE SANCTIONED BALANCE-COUPLED TEST IN THIS SUITE.
+ * THE ONLY TWO BALANCE-COUPLED TESTS IN THIS SUITE.
  *
  * Spec §13.1, and the design's pacing promise: the opening wave of the first case is winnable
- * with the starter cell alone, on a budget the case hands the player. Every other spec in
- * `tests/e2e/` asserts mechanics and navigation and never an outcome that depends on
- * damage-per-second beating hit-points-over-distance. This one does depend on exactly that,
- * on purpose. If a retune breaks it, the design has broken and not the test — retune, or
- * change the promise deliberately. Do not add a second test of this shape.
+ * with the starter cell alone, and the case as a whole is winnable on a board a player can
+ * afford. Every other spec in `tests/e2e/` asserts mechanics and navigation and never an outcome
+ * that depends on damage-per-second beating hit-points-over-distance. These two do depend on
+ * exactly that, on purpose. If a retune breaks one, the design has broken and not the test —
+ * retune, or change the promise deliberately. Do not add a third test of this shape.
  *
- * The build is three phagocytes on the three spots that reach the vessel, well inside the
- * case's starting energy. Measured on this build, repeatedly: eight cleared, none through.
- *
- * Forearm is the only case where this build is even possible. A phagocyte's range is 56 and
- * forearm spots 0, 1 and 2 sit 55.2, 45.5 and 48.0 from the vessel; on throat and stomach
- * exactly one spot of five is inside that range. That is why the pacing promise is asserted
- * on wave 1 of case 1 and nowhere else — see the fixme below for what is *not* asserted.
+ * Both boards below came out of `npm run sweep` (`tests/sweep/`), which plays every affordable
+ * board of every case through the real simulation. When a tuning moves, re-run it and take the
+ * new boards from its output rather than guessing at one here.
  */
 
 const FOREARM = CASE_BY_ID.forearm;
@@ -52,31 +50,40 @@ test('wave 1 of the first case is held by starter cells alone', async ({ page })
 });
 
 /**
- * NOT COVERED — BLOCKED ON BALANCE, NOT ON CODE.
+ * Spec §13.1's other half: "clearing one advances progression correctly". This is the only test
+ * anywhere that proves a clear earned through real combat reaches storage and survives a reload —
+ * `progression.test.ts` covers the transition and `persistence.spec.ts` covers the storage
+ * boundary, each with the other half assumed.
  *
- * Spec §13.1's other half: "clearing one advances progression correctly". An exhaustive sweep
- * of every affordable board at the correct unlock tier, playing the real simulation, clears
- * forearm 0 times in 1024 and throat 0 times in 3125. Stomach clears 3 times in 7776 — 0.04%,
- * and unreachable in play because it is the third case and the two before it cannot be won.
- * So this cannot be written as a passing test and has deliberately not been shaped into one.
- *
- * An earlier version of this comment said no case was winnable at all. That was measured from
- * six hand-picked compositions rather than a sweep, and it was wrong about stomach. Corrected
- * after the holistic review searched the whole space.
- *
- * The body below has therefore never executed and is a statement of the promise, not verified
- * code — expect to rework it when the balance pass lands. What it would prove that nothing
- * else does: that a clear earned through real combat reaches storage and survives a reload.
- * Until then `progression.test.ts` covers the transition and `persistence.spec.ts` covers the
- * storage boundary, each on its own.
+ * It was `test.fixme` for as long as no case was winnable. It is not any more: the 2026-07-26
+ * tuning clears forearm on 407 of its 3125 affordable boards, and this is one of them —
+ * `anti` on 0, `mast` on 1, phagocytes on 2, 3 and 4, finishing on all five pips with nothing
+ * through. Listed cheapest-first, and bought that way, because that is the policy the sweep
+ * measured: the board is an intent the economy fills in over the first three waves, not a
+ * starting position.
  */
-test.fixme('clearing a case banks the reward and the clear survives a reload', async ({ page }) => {
+const WINNING_BOARD: readonly (readonly [DefenderKind, number])[] = [
+  ['phago', 2], ['phago', 3], ['phago', 4], ['anti', 0], ['mast', 1],
+];
+
+test('clearing a case banks the reward and the clear survives a reload', async ({ page }) => {
+  test.setTimeout(600_000);
   await openCase(page, 'forearm');
 
+  await onScreen(page, 'speed').click();
+  await expect(onScreen(page, 'speed')).toHaveText('2×');
+
   for (let wave = 1; wave <= FOREARM.waves.length; wave += 1) {
-    for (const spot of [0, 1, 2]) await placeCell(page, 'forearm', 'phago', spot);
+    for (const [kind, spot] of WINNING_BOARD) {
+      if (await onScreen(page, `cell-chip-${String(spot)}`).count() > 0) continue;
+      const energy = Number(await onScreen(page, 'energy').innerText());
+      if (energy < DEFENDERS[kind].cost) continue;
+      await placeCell(page, 'forearm', kind, spot);
+    }
+
     await onScreen(page, 'start-wave').click();
-    await expect(onScreen(page, 'result-kicker')).toBeVisible({ timeout: 90_000 });
+    await expect(onScreen(page, 'result-kicker')).toBeVisible({ timeout: 120_000 });
+    await expect(onScreen(page, 'result-leaks')).toHaveText('0');
     await onScreen(page, 'result-cta').click();
   }
 

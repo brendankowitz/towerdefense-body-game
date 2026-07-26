@@ -43,6 +43,33 @@ describe('selectDefender', () => {
     expect(state.selected).toBe(first);
   });
 
+  it('refuses to pick a cell up while a wave is running', () => {
+    const state = fresh(MAX_UNLOCK);
+    const [first] = DEFENDER_ORDER;
+    expect(first).toBeDefined();
+    if (first === undefined) return;
+
+    startWave(state);
+    expect(state.phase).toBe('wave');
+    expect(state.selected).toBeNull();
+
+    selectDefender(state, first);
+    expect(state.selected).toBeNull();
+  });
+
+  it('picks a cell up again once the wave is held', () => {
+    const state = fresh(MAX_UNLOCK);
+    const [first] = DEFENDER_ORDER;
+    expect(first).toBeDefined();
+    if (first === undefined) return;
+
+    startWave(state);
+    state.phase = 'built';
+
+    selectDefender(state, first);
+    expect(state.selected).toBe(first);
+  });
+
   it('ignores a defender that is still locked', () => {
     const state = fresh(0);
     const locked = DEFENDER_ORDER.find((kind) => DEFENDERS[kind].unlock > 0);
@@ -123,6 +150,45 @@ describe('placeDefender', () => {
     const state = fresh();
     state.selected = null;
     expect(placeDefender(state, 0)).toBe(false);
+  });
+
+  /**
+   * The selection is put back by hand after `startWave` clears it, because clearing it is not
+   * the guard — it costs the player one extra tap on the dock and nothing else. The board has to
+   * refuse the placement itself, or the wound rule becomes a pay-as-you-bleed tap loop: let the
+   * clot die mid-wave and buy another one on the spot.
+   */
+  it('refuses while a wave is running, and charges nothing', () => {
+    const state = fresh();
+    state.energy = DEFENDERS[STARTER].cost * 2;
+    state.selected = STARTER;
+    expect(placeDefender(state, 0)).toBe(true);
+
+    startWave(state);
+    expect(state.phase).toBe('wave');
+    state.selected = STARTER;
+
+    const banked = state.energy;
+    expect(banked, 'the refusal must be about the phase, not the price')
+      .toBeGreaterThanOrEqual(DEFENDERS[STARTER].cost);
+
+    expect(placeDefender(state, 1)).toBe(false);
+    expect(state.towers).toHaveLength(1);
+    expect(state.energy).toBe(banked);
+  });
+
+  it('is available again once the wave is held', () => {
+    const state = fresh();
+    state.energy = DEFENDERS[STARTER].cost * 2;
+    state.selected = STARTER;
+    placeDefender(state, 0);
+
+    startWave(state);
+    state.phase = 'built';
+    state.selected = STARTER;
+
+    expect(placeDefender(state, 1)).toBe(true);
+    expect(state.towers).toHaveLength(2);
   });
 
   it('refuses a spot index the case does not have', () => {

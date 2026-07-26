@@ -42,18 +42,23 @@ function isSpent(tower: Tower): boolean {
 }
 
 /**
- * Everything that changes a cell's drawing rather than its position, packed into one
- * number. Earned XP is deliberately absent: it lives on its own label, which compares
- * separately, so a memory cell learning does not rebuild the whole body.
+ * Everything that changes a cell's drawing rather than its position. Earned XP is deliberately
+ * absent: it lives on its own label, which compares separately, so a memory cell learning does
+ * not rebuild the whole body.
+ *
+ * Range is here and cannot be packed with the rest — it is a tunable, so it is an arbitrary
+ * float rather than one of a small set of states. Without it a range moved in the tuning panel
+ * left the ring on screen at its old radius until something else about the cell changed, which
+ * is the one thing a balance session most needs to see.
  */
-function signatureOf(tower: Tower): number {
-  let signature = DEFENDER_ORDER.indexOf(tower.kind);
-  signature = signature * (HEALTH_STEPS + 1) + quantise(tower.hp / TOWER_MAX_HP, HEALTH_STEPS);
-  signature = signature * 2 + (isSpent(tower) ? 1 : 0);
-  signature = signature * 2 + (tower.kind === 'phago' && tower.holdingEnemyId !== null ? 1 : 0);
-  signature = signature * 2 + (tower.kind === 'mast' && tower.flash > 0 ? 1 : 0);
-  signature = signature * 2 + (tower.matured ? 1 : 0);
-  return signature;
+function signatureOf(tower: Tower): string {
+  let packed = DEFENDER_ORDER.indexOf(tower.kind);
+  packed = packed * (HEALTH_STEPS + 1) + quantise(tower.hp / TOWER_MAX_HP, HEALTH_STEPS);
+  packed = packed * 2 + (isSpent(tower) ? 1 : 0);
+  packed = packed * 2 + (tower.kind === 'phago' && tower.holdingEnemyId !== null ? 1 : 0);
+  packed = packed * 2 + (tower.kind === 'mast' && tower.flash > 0 ? 1 : 0);
+  packed = packed * 2 + (tower.matured ? 1 : 0);
+  return `${String(packed)}:${String(statsFor(tower).range)}`;
 }
 
 /** The inner mark that says what a cell does. Cut out of the body in paper, never outlined. */
@@ -123,10 +128,11 @@ function paintBody(g: Graphics, tower: Tower): void {
 class TowerView {
   readonly body = new Graphics();
   /**
-   * Packed appearance. NaN means "never painted" — it compares unequal to every signature
-   * whatever the packing does next, so a recycled view always repaints for its new cell.
+   * Last painted appearance. The empty string means "never painted" — `signatureOf` always
+   * emits at least one digit, so it compares unequal to every real signature and a recycled
+   * view always repaints for its new cell.
    */
-  signature = Number.NaN;
+  signature = '';
 }
 
 class LabelView {
@@ -155,7 +161,7 @@ export class TowerLayer {
   readonly #labels = new Container();
   readonly #bodyPool: ViewPool<TowerView>;
   readonly #labelPool: ViewPool<LabelView>;
-  #spotsSignature = Number.NaN;
+  #spotsSignature = '';
 
   constructor(caseId: CaseId) {
     this.#caseId = caseId;
@@ -171,7 +177,7 @@ export class TowerLayer {
       attach: (view) => { view.body.visible = true; },
       detach: (view) => {
         view.body.visible = false;
-        view.signature = Number.NaN;
+        view.signature = '';
       },
       destroy: (view) => { view.body.destroy(); },
     });
@@ -237,9 +243,14 @@ export class TowerLayer {
     for (const tower of state.towers) occupied |= 1 << tower.spotIndex;
 
     const selected = state.selected === null ? 0 : DEFENDER_ORDER.indexOf(state.selected) + 1;
-    let signature = showing ? 1 : 0;
-    signature = signature * (1 << CASE_BY_ID[this.#caseId].spots.length) + occupied;
-    signature = signature * (DEFENDER_ORDER.length + 1) + selected;
+    let packed = showing ? 1 : 0;
+    packed = packed * (1 << CASE_BY_ID[this.#caseId].spots.length) + occupied;
+    packed = packed * (DEFENDER_ORDER.length + 1) + selected;
+
+    // The reach preview draws the picked cell's range, so a tuned range has to reach this
+    // comparison — same reason it is in `signatureOf`, same reason it cannot be packed.
+    const previewRange = state.selected === null ? 0 : DEFENDERS[state.selected].range;
+    const signature = `${String(packed)}:${String(previewRange)}`;
     if (signature === this.#spotsSignature) return;
     this.#spotsSignature = signature;
 

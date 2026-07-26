@@ -2,8 +2,8 @@
 
 exports[`golden run > matches the blessed snapshot 1`] = `
 {
-  "forearm": "4f967386 d10dfd77 a9d95a6a 57a5dcdf ad50e79d d8240e36 9ed6564f d537ef0c 9a3035e4 08db9d07 e9005071 57a0b47b e61add4d 1d2bc3bf 1a99cac9",
-  "stomach": "eae39558 b78409bd 44e98cac 1d9c10ca 8f85bf92 35fd1051 8259f99a 6af87869 aebe9bb3 2dc2f8d6 0236aee9 5d677173 896c0275 6055cc47 da53c9f0",
-  "throat": "b505def6 40baa4d2 6ef7f111 ba64408d d303c6cd 721328f3 a44eec89 cda9dcc8 45295bcd 02440a45 ed6cbe51 868c44b1 33883eae 558793f3 6051cbf1",
+  "forearm": "a3a160c7 de99946e b4b87cda 45ab0e65 d9938edb 9407c487 a98fb3e9 95b01fa6 1b32907d 37f2255f 8acf0588 f0465c6d f83a01e0 7952d501 0847e3e1",
+  "stomach": "4f12c3ae 4e7b1b05 9571c9c0 e377bf55 0968e619 96eabf32 ea9c6456 3296b92e 9ac9806a 5b6f946d 3cfba0b2 fba255ca dd256c6a ff41fbff 2d01ea88",
+  "throat": "d19ddd2b 988f9114 b4a0266b 8e02f202 98c54bde 7e3bee77 7d2b55be d5d1d561 06f05407 e9d53146 643efd48 d67e16c8 3e90c116 84c0d9a2 9c32a73a",
 }
 `;

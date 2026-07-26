@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { Container, Graphics, Text } from 'pixi.js';
 import { DEFENDERS } from '@game/content/defenders';
 import { maturedFormOf } from '@game/content/maturation';
 import { TOWER_MAX_HP } from '@game/content/rules';
+import { applyDefenderTuning, applyMaturationTuning, resetTuning } from '@game/content/tuning';
 import { createSimState } from '@game/state';
 import type { MemoryTower, SimState, Tower } from '@game/types';
 import { TowerLayer } from './TowerLayer';
@@ -202,5 +203,46 @@ describe('TowerLayer matured cells', () => {
 
     plainLayer.destroy();
     grownLayer.destroy();
+  });
+});
+
+/**
+ * A tuning session is a loop: move a number, watch the board. A range the board does not redraw
+ * breaks the loop silently — the ring keeps its old radius until something unrelated about the
+ * cell changes, and the balancer trusts a picture that is out of date.
+ */
+describe('TowerLayer redraws a tuned range', () => {
+  afterEach(() => { resetTuning(); });
+
+  it('redraws a plain cell when its range moves under it', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    state.towers = [phagocyteGrown(false)];
+
+    layer.draw(state);
+    expect(bodyAt(layer, CELL_X, CELL_Y).getLocalBounds().width)
+      .toBeCloseTo(DEFENDERS.phago.range * 2, 6);
+
+    applyDefenderTuning('phago', { range: DEFENDERS.phago.range + 40 });
+    layer.draw(state);
+
+    expect(bodyAt(layer, CELL_X, CELL_Y).getLocalBounds().width)
+      .toBeCloseTo(DEFENDERS.phago.range * 2, 6);
+    layer.destroy();
+  });
+
+  it('redraws a grown cell when its matured range moves under it', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    state.towers = [phagocyteGrown(true)];
+
+    layer.draw(state);
+    expect(bodyAt(layer, CELL_X, CELL_Y).getLocalBounds().width).toBeCloseTo(maturedRange() * 2, 6);
+
+    applyMaturationTuning('phago', { range: maturedRange() + 40 });
+    layer.draw(state);
+
+    expect(bodyAt(layer, CELL_X, CELL_Y).getLocalBounds().width).toBeCloseTo(maturedRange() * 2, 6);
+    layer.destroy();
   });
 });

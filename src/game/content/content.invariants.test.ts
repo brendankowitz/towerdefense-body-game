@@ -90,6 +90,31 @@ describe('vaccine reachability', () => {
     }
   });
 
+  /**
+   * The third time this class of defect has shipped: `film` immunity that was never incremented,
+   * then Chickenpox at `gate: 99` against a maximum of three clears. A gate the player cannot
+   * reach renders as LOCKED forever, which reads as something they are failing at.
+   */
+  it('gates every gated vaccine at a number of clears the player can actually reach', () => {
+    for (const v of VACCINES) {
+      if (v.gate === undefined) continue;
+      expect(
+        v.gate,
+        `${v.name} opens at ${String(v.gate)} clears; the season only has ${String(CASES.length)} cases`,
+      ).toBeLessThanOrEqual(CASES.length);
+      expect(v.gate, `${v.name} is gated at zero, which is not a gate`).toBeGreaterThan(0);
+    }
+  });
+
+  /** A row cannot be both earnable now and deferred to a rule that does not exist yet. */
+  it('never marks a vaccine as later when it is already earnable', () => {
+    for (const v of VACCINES) {
+      if (v.later !== true) continue;
+      expect(v.strain, `${v.name} is marked later but a case credits it`).toBeUndefined();
+      expect(v.gate, `${v.name} is marked later but also carries a gate`).toBeUndefined();
+    }
+  });
+
   it('lists a strain row for every earnable vaccine, one to one', () => {
     const strains = VACCINES.map((v) => v.strain).filter((strain) => strain !== undefined).sort();
     expect(STRAIN_ROWS.map((r) => r.key).sort()).toEqual(strains);
@@ -218,59 +243,117 @@ describe('brief copy stays true to the stats it describes', () => {
   });
 });
 
-// A build spot no cell can shoot from is dead content, the same class of defect as a vaccine
-// that cannot be earned. This does not assert any particular range — only that whatever the
-// ranges are, every spot a case offers can be used by something.
+/**
+ * A build spot no cell can fight from is dead content, the same class of defect as a vaccine that
+ * cannot be earned.
+ *
+ * This used to measure the *minimum distance* from spot to vessel, and it is why the balance
+ * problem reached a review instead of CI. Minimum distance says a spot is fine the moment one
+ * range circle touches the path — but a circle that grazes the vessel tangentially covers almost
+ * none of it, and an enemy crosses that sliver in a fraction of a second. Forearm spot 4 passed
+ * the old test with a memory cell covering 15 units of vessel: a third of a second of a staph's
+ * life, on a cell that fires every 1.3 s.
+ *
+ * What matters is how long an enemy actually spends inside the cell's reach, so that is what is
+ * measured: the arc length of vessel inside the range circle, divided by a pathogen's speed.
+ *
+ * None of this asserts a particular range or a particular geometry. It says that whatever those
+ * are, every spot the case offers is a place a player can fight from.
+ */
 describe('build spots are usable', () => {
-  function distanceToPath(spot: readonly [number, number], path: readonly (readonly [number, number])[]): number {
-    let best = Number.POSITIVE_INFINITY;
+  /**
+   * The floor, in seconds an enemy spends inside the circle. One second is a low bar on purpose —
+   * it is roughly one action from the slowest-firing cell in the dock, so a spot under it cannot
+   * host that cell at all. It is a dead-content detector, not a balance target.
+   */
+  const MIN_DWELL_SECONDS = 1;
+
+  /**
+   * Measured at the *slowest* pathogen, which is the most generous reading: the slowest thing on
+   * the board dwells the longest, so a spot that fails even here fails for everything. Using the
+   * fastest would make this a balance assertion, and content values are not asserted (spec §4).
+   */
+  const SLOWEST_SPEED = Math.min(...Object.values(PATHOGENS).map((p) => p.speed));
+
+  /**
+   * Arc length of `path` lying within `range` of `spot`. Solved per segment rather than sampled:
+   * a point on segment A + t·d is inside the circle when |A + t·d − S|² ≤ r², a quadratic in t
+   * whose roots clamped to [0, 1] bound exactly the covered stretch. Segments partition the path,
+   * so summing them double-counts nothing.
+   */
+  function coveredArc(
+    spot: readonly [number, number],
+    path: readonly (readonly [number, number])[],
+    range: number,
+  ): number {
+    let covered = 0;
     for (let i = 0; i < path.length - 1; i += 1) {
       const a = path[i];
       const b = path[i + 1];
       if (a === undefined || b === undefined) continue;
-      const vx = b[0] - a[0];
-      const vy = b[1] - a[1];
-      const lengthSquared = vx * vx + vy * vy;
-      const along = lengthSquared === 0
-        ? 0
-        : Math.max(0, Math.min(1, ((spot[0] - a[0]) * vx + (spot[1] - a[1]) * vy) / lengthSquared));
-      const dx = a[0] + along * vx - spot[0];
-      const dy = a[1] + along * vy - spot[1];
-      best = Math.min(best, Math.sqrt(dx * dx + dy * dy));
+
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const fx = a[0] - spot[0];
+      const fy = a[1] - spot[1];
+
+      const qa = dx * dx + dy * dy;
+      if (qa === 0) continue;
+      const qb = 2 * (fx * dx + fy * dy);
+      const qc = fx * fx + fy * fy - range * range;
+
+      const discriminant = qb * qb - 4 * qa * qc;
+      if (discriminant <= 0) continue;
+
+      const root = Math.sqrt(discriminant);
+      const enter = Math.max(0, (-qb - root) / (2 * qa));
+      const leave = Math.min(1, (-qb + root) / (2 * qa));
+      if (leave > enter) covered += (leave - enter) * Math.sqrt(qa);
     }
-    return best;
+    return covered;
+  }
+
+  function dwellSeconds(
+    spot: readonly [number, number],
+    path: readonly (readonly [number, number])[],
+    range: number,
+  ): number {
+    return coveredArc(spot, path, range) / SLOWEST_SPEED;
   }
 
   /**
-   * Distance is meant to be a trade-off — a spot far from the vessel should demand range —
-   * so a spread from "any cell fits" down to "only the long-ranged reach" is the design.
-   * What is not the design is a spot exactly one cell can use: if the player cannot afford
-   * that one cell, the spot is dead ground, and nothing in the fiction explains why.
+   * Distance is meant to be a trade-off — a spot far from the vessel should demand range — so a
+   * spread from "any cell fits" down to "only the long-ranged reach" is the design. What is not
+   * the design is a spot exactly one cell can use: if the player cannot afford that one cell, the
+   * spot is dead ground, and nothing in the fiction explains why.
    *
-   * Two is the floor because two is the smallest number that is still a choice. This asserts
-   * no particular range; it says that whatever the ranges are, every spot offers a decision.
+   * Two is the floor because two is the smallest number that is still a choice.
    */
-  it('offers a choice of at least two defenders at every build spot', () => {
-    const ranges = Object.values(DEFENDERS).map((d) => d.range);
+  it('gives at least two defenders a real stretch of vessel at every build spot', () => {
     for (const c of CASES) {
       c.spots.forEach((spot, index) => {
-        const reach = distanceToPath(spot, c.path);
-        const usable = ranges.filter((range) => range >= reach).length;
+        const usable = Object.values(DEFENDERS)
+          .filter((d) => dwellSeconds(spot, c.path, d.range) >= MIN_DWELL_SECONDS);
+        const detail = Object.values(DEFENDERS)
+          .map((d) => `${d.kind} ${dwellSeconds(spot, c.path, d.range).toFixed(2)}s`)
+          .join(', ');
         expect(
-          usable,
-          `${c.id} spot ${String(index)} sits ${reach.toFixed(0)} from the vessel, which only ${String(usable)} defender(s) can cover`,
+          usable.length,
+          `${c.id} spot ${String(index)} holds only ${String(usable.length)} defender(s) over the vessel for ${String(MIN_DWELL_SECONDS)}s — ${detail}`,
         ).toBeGreaterThanOrEqual(2);
       });
     }
   });
 
-  it('keeps at least one spot per case that the cheapest defender can use', () => {
+  it('keeps at least one spot per case the cheapest defender can actually fight from', () => {
     const cheapest = Object.values(DEFENDERS).reduce((a, b) => (a.cost <= b.cost ? a : b));
     for (const c of CASES) {
-      const affordable = c.spots.filter((spot) => distanceToPath(spot, c.path) <= cheapest.range);
+      const usable = c.spots.filter(
+        (spot) => dwellSeconds(spot, c.path, cheapest.range) >= MIN_DWELL_SECONDS,
+      );
       expect(
-        affordable.length,
-        `${c.id} offers nowhere the opening cell (${cheapest.label}) can be used`,
+        usable.length,
+        `${c.id} offers nowhere the opening cell (${cheapest.label}) can hold anything for ${String(MIN_DWELL_SECONDS)}s`,
       ).toBeGreaterThan(0);
     }
   });

@@ -32,7 +32,7 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', rule: 'wound', credits: 'staph',
     story: 'Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.',
     ruleLabel: 'Bleeding', ruleSub: 'You lose energy every second until a clot is placed',
-    startingEnergy: 170,
+    startingEnergy: 260,
     waves: [
       [{ kind: 'staph', count: 8 }],
       [{ kind: 'staph', count: 13 }],
@@ -41,13 +41,16 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 3 }],
     ],
     path: [[-24, 46], [86, 58], [150, 116], [232, 146], [252, 238], [168, 298], [112, 342], [104, 430]],
-    spots: [[70, 118], [206, 88], [292, 196], [69, 282], [206, 372]],
+    // Spot 4 was at [206, 372]: 81.7 from the vessel, where the only cell that covered a whole
+    // second of it was the antibody. Pulled 20 left, it is still the case's longest reach and now
+    // every cell can do something from it. See `content.invariants.test.ts`, build spots.
+    spots: [[70, 118], [206, 88], [292, 196], [69, 282], [186, 372]],
   },
   {
     id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', rule: 'virus', credits: 'virus',
     story: 'Someone coughed on the train. The virus is already copying itself in your throat.',
     ruleLabel: 'Multiplying', ruleSub: 'Every virus that dies splits into two smaller ones',
-    startingEnergy: 215,
+    startingEnergy: 300,
     waves: [
       [{ kind: 'virus', count: 6 }],
       [{ kind: 'virus', count: 9 }, { kind: 'spore', count: 2 }],
@@ -62,7 +65,7 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', rule: 'poison', credits: 'film',
     story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
     ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders. Antibodies survive toxins far better than phagocytes',
-    startingEnergy: 250,
+    startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'toxin', count: 2 }],
       [{ kind: 'staph', count: 9 }, { kind: 'toxin', count: 4 }, { kind: 'film', count: 3 }],
@@ -71,7 +74,10 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'toxin', count: 8 }, { kind: 'film', count: 6 }, { kind: 'mrsa', count: 2 }],
     ],
     path: [[-24, 70], [100, 90], [180, 62], [268, 120], [230, 214], [120, 250], [90, 330], [180, 392], [180, 430]],
-    spots: [[74, 168], [212, 132], [292, 216], [46, 264], [234, 341]],
+    // Spot 0 was at [74, 168]: 81.1 from the vessel, antibody-only for the same reason forearm's
+    // spot 4 was. Ten units up is enough — it stays the case's longest reach and stops being a
+    // parking space.
+    spots: [[70, 158], [212, 132], [292, 216], [46, 264], [234, 341]],
   },
 ];
 

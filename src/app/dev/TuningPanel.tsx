@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { DEFENDER_ORDER, DEFENDERS } from '@game/content/defenders';
+import { MATURED_FORMS } from '@game/content/maturation';
 import { PATHOGENS } from '@game/content/pathogens';
 import { CASE_BY_ID } from '@game/content/cases';
 import {
-  applyDefenderTuning, applyPathogenTuning, applyWaveTuning, exportContentModules, resetTuning,
+  applyDefenderTuning, applyMaturationTuning, applyPathogenTuning, applyWaveTuning,
+  exportContentModules, resetTuning, type MaturationField,
 } from '@game/content/tuning';
 import type { GameLoop } from '@game/loop';
 import type { DefenderKind, PathogenKind } from '@game/types';
 import './tuning.css';
 
 const PATHOGEN_ORDER = Object.keys(PATHOGENS) as readonly PathogenKind[];
+
+/** Dock order, restricted to the cells that have something to grow into. */
+const GROWN_ORDER = DEFENDER_ORDER.filter((kind) => MATURED_FORMS[kind] !== undefined);
 
 /** Fields that read as a rate or a fraction get a finer step; everything else moves by whole units. */
 const FINE_STEP_FIELDS = new Set(['rate', 'gap', 'rest', 'slow', 'armour', 'execute', 'stun']);
@@ -54,6 +59,13 @@ export function TuningPanel({ loop }: TuningPanelProps) {
     const value = parseField(raw);
     if (value === null) return;
     applyDefenderTuning(kind, { [field]: value });
+    refresh();
+  };
+
+  const onMaturationField = (kind: DefenderKind, field: MaturationField, raw: string): void => {
+    const value = parseField(raw);
+    if (value === null) return;
+    applyMaturationTuning(kind, { [field]: value });
     refresh();
   };
 
@@ -140,6 +152,44 @@ export function TuningPanel({ loop }: TuningPanelProps) {
           })}
         </details>
 
+        {/*
+          A grown cell fights with its base stats *overridden* by these, so a row here is the
+          only way to move what a macrophage, a fibrin mesh or a high-affinity antibody actually
+          does — tuning `phago.range` above leaves the macrophage exactly where it was. Only the
+          stats a form overrides are listed: everything else it fights with comes from the
+          defender section, one panel up.
+        */}
+        <details open>
+          <summary>Matured forms</summary>
+          {GROWN_ORDER.map((kind) => {
+            const form = MATURED_FORMS[kind];
+            if (form === undefined) return null;
+            const fields: readonly (readonly [MaturationField, number])[] = [
+              ['cost', form.cost],
+              ...Object.entries(form.stats).map(
+                ([field, value]) => [field as MaturationField, value] as const,
+              ),
+            ];
+            return (
+              <details key={kind} data-testid={`tuning-matured-${kind}`}>
+                <summary>{form.name}</summary>
+                {fields.map(([field, value]) => (
+                  <label key={field} className="tuning-row">
+                    <span className="tuning-row-label">{field}</span>
+                    <input
+                      type="number"
+                      step={stepFor(field)}
+                      value={value}
+                      data-testid={`tuning-matured-${kind}-${field}`}
+                      onChange={(event) => { onMaturationField(kind, field, event.target.value); }}
+                    />
+                  </label>
+                ))}
+              </details>
+            );
+          })}
+        </details>
+
         <details open>
           <summary>Pathogens</summary>
           {PATHOGEN_ORDER.map((kind) => {
@@ -212,6 +262,13 @@ export function TuningPanel({ loop }: TuningPanelProps) {
           onClick={() => { copy('defenders.ts', exportContentModules().defenders); }}
         >
           Copy defenders.ts
+        </button>
+        <button
+          type="button"
+          data-testid="tuning-copy-maturation"
+          onClick={() => { copy('maturation.ts', exportContentModules().maturation); }}
+        >
+          Copy maturation.ts
         </button>
         <button
           type="button"

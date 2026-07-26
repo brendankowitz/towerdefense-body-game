@@ -28,10 +28,17 @@ interface DefenderDockProps {
   readonly energy: number;
   readonly selected: DefenderKind | null;
   readonly clearedCount: number;
+  /**
+   * False during a wave. `selectDefender` and `placeDefender` refuse then, so a live dock would
+   * offer a purchase the simulation will not honour — the cards say so rather than failing quietly.
+   */
+  readonly buildPhase: boolean;
   readonly onSelect: (kind: DefenderKind) => void;
 }
 
-export function DefenderDock({ energy, selected, clearedCount, onSelect }: DefenderDockProps) {
+export function DefenderDock({
+  energy, selected, clearedCount, buildPhase, onSelect,
+}: DefenderDockProps) {
   return (
     <div className="dock">
       {DEFENDER_ORDER.map((kind) => {
@@ -50,10 +57,11 @@ export function DefenderDock({ energy, selected, clearedCount, onSelect }: Defen
             data-locked={String(locked)}
             aria-pressed={on}
             className="dock-card"
+            disabled={!buildPhase}
             style={{
               borderColor: on ? color : 'transparent',
               background: on ? `color-mix(in oklch, ${color} 14%, transparent)` : 'var(--surface)',
-              opacity: locked ? 0.4 : 1,
+              opacity: locked || !buildPhase ? 0.4 : 1,
             }}
             onClick={() => { if (!locked) onSelect(kind); }}
           >

@@ -15,6 +15,7 @@ const base = {
   energy: RICH,
   selected: null,
   clearedCount: ALL_UNLOCKED,
+  buildPhase: true,
   onSelect: () => undefined,
 };
 
@@ -89,6 +90,30 @@ describe('DefenderDock', () => {
 
     fireEvent.click(screen.getByTestId(`dock-card-${kind}`));
     expect(onSelect).toHaveBeenCalledWith(kind);
+  });
+
+  /**
+   * `selectDefender` refuses outside the build phase, so a live dock would offer a purchase the
+   * simulation will not honour. Every card goes dead, not just the affordable ones — this is the
+   * phase saying no, which is a different refusal from a price the player cannot meet.
+   */
+  it('goes dead while a wave is running', () => {
+    const onSelect = vi.fn();
+    render(<DefenderDock {...base} buildPhase={false} onSelect={onSelect} />);
+
+    for (const kind of DEFENDER_ORDER) {
+      expect(screen.getByTestId(`dock-card-${kind}`), kind).toBeDisabled();
+    }
+
+    fireEvent.click(screen.getByTestId(`dock-card-${free()}`));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('is live while the board may still be built on', () => {
+    render(<DefenderDock {...base} />);
+    for (const kind of DEFENDER_ORDER) {
+      expect(screen.getByTestId(`dock-card-${kind}`), kind).not.toBeDisabled();
+    }
   });
 
   it('ignores a tap on a locked defender', () => {

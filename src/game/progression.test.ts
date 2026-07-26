@@ -223,13 +223,33 @@ describe('vaccineRows', () => {
 
   it('says so plainly when no vaccine exists, and quotes no cost for it', () => {
     VACCINES.forEach((vaccine, index) => {
-      if (vaccine.strain !== undefined || vaccine.gate !== undefined) return;
+      if (vaccine.strain !== undefined || vaccine.gate !== undefined || vaccine.later === true) return;
 
       const row = vaccineRows(profileWith({ cleared: clearedIds(CASES.length) }))[index];
       expect(row?.status).toBe('none');
       expect(row?.label).toBe('NONE EXISTS');
       expect(row?.cost).toBe('');
     });
+  });
+
+  /**
+   * The Chickenpox row shipped as `gate: 99` against a maximum of three clears, so it read LOCKED
+   * whatever the player did — the same broken promise as the Biofilm serum that could never be
+   * earned. A deferred row must never move, however much of the season is finished.
+   */
+  it('never lets a deferred vaccine look like something the player is failing to unlock', () => {
+    const deferred = VACCINES.map((vaccine, index) => ({ vaccine, index }))
+      .filter(({ vaccine }) => vaccine.later === true);
+    expect(deferred.length, 'no vaccine is deferred, so this asserts nothing').toBeGreaterThan(0);
+
+    for (let count = 0; count <= CASES.length; count += 1) {
+      const rows = vaccineRows(profileWith({ cleared: clearedIds(count) }));
+      for (const { vaccine, index } of deferred) {
+        expect(rows[index]?.status, `${vaccine.name} at ${String(count)} clears`).toBe('later');
+        expect(rows[index]?.label).toBe('LATER');
+        expect(rows[index]?.label).not.toBe('LOCKED');
+      }
+    }
   });
 
   it('carries the stated cost through and leaves it empty where content states none', () => {

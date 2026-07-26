@@ -25,5 +25,7 @@
       "@theme/*": ["src/theme/*"]
     }
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests"],
+  // See tsconfig.game.json: the boundary fixtures belong to no project on purpose.
+  "exclude": ["src/game/__fixtures__"]
 }

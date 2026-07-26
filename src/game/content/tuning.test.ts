@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  applyDefenderTuning, applyPathogenTuning, applyWaveTuning, exportContentModules,
-  listTunables, resetTuning,
+  applyDefenderTuning, applyMaturationTuning, applyPathogenTuning, applyWaveTuning,
+  exportContentModules, listTunables, resetTuning,
 } from './tuning';
 import { DEFENDERS } from './defenders';
+import { MATURED_FORMS } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
+import { statsFor } from '../systems/stats';
 
 /** Content tables are plain JSON-safe data; a JSON round-trip is a sufficient deep clone. */
 function clone<T>(value: T): T {
@@ -34,6 +36,58 @@ describe('applyDefenderTuning', () => {
     const before = DEFENDERS.phago.dps;
     expect(() => { applyDefenderTuning('phago', { dps: Number.NaN }); }).toThrow();
     expect(DEFENDERS.phago.dps).toBe(before);
+  });
+});
+
+/**
+ * `statsFor` merges a matured form on top of the defender table, so a stat the form names is the
+ * one the grown cell fights with and the base table's value for it never reaches the board. These
+ * assert against `statsFor` rather than against the table, because that is the thing that was
+ * broken: the panel could move `DEFENDERS.phago.range` all day and the macrophage never noticed.
+ */
+describe('applyMaturationTuning', () => {
+  const GROWN_PHAGO = { kind: 'phago', matured: true } as const;
+
+  it('changes the reach a grown cell actually fights with', () => {
+    const before = statsFor(GROWN_PHAGO).range;
+    applyMaturationTuning('phago', { range: before + 30 });
+    expect(statsFor(GROWN_PHAGO).range).toBe(before + 30);
+  });
+
+  it('is the only thing that can move a stat the matured form overrides', () => {
+    const grownBefore = statsFor(GROWN_PHAGO).dps;
+    applyDefenderTuning('phago', { dps: grownBefore + 500 });
+    expect(statsFor(GROWN_PHAGO).dps, 'the macrophage names its own dps').toBe(grownBefore);
+
+    applyMaturationTuning('phago', { dps: grownBefore + 500 });
+    expect(statsFor(GROWN_PHAGO).dps).toBe(grownBefore + 500);
+  });
+
+  it('moves the energy the growth itself charges', () => {
+    const before = MATURED_FORMS.phago?.cost;
+    if (before === undefined) throw new Error('fixture expects the phagocyte to have a matured form');
+    applyMaturationTuning('phago', { cost: before + 25 });
+    expect(MATURED_FORMS.phago?.cost).toBe(before + 25);
+  });
+
+  it('rejects a stat the defender does not carry, which the type cannot rule out', () => {
+    // `MaturedForm.stats` is one flat union over every defender, so `dps` on the clot's form
+    // type-checks. The clot has no dps, so this must be refused at runtime.
+    expect(() => { applyMaturationTuning('clot', { dps: 1 }); }).toThrow(/unknown field/i);
+  });
+
+  it('rejects a kind that has nothing to grow into', () => {
+    expect(() => { applyMaturationTuning('nk', { range: 1 }); }).toThrow(/has none/i);
+  });
+
+  it('rejects a non-finite value', () => {
+    expect(() => { applyMaturationTuning('phago', { range: Number.NaN }); }).toThrow(/finite/i);
+  });
+
+  it('leaves the form unchanged when the patch is rejected', () => {
+    const before = statsFor(GROWN_PHAGO).range;
+    expect(() => { applyMaturationTuning('phago', { range: before + 10, dps: Number.NaN }); }).toThrow();
+    expect(statsFor(GROWN_PHAGO).range).toBe(before);
   });
 });
 
@@ -107,6 +161,19 @@ describe('resetTuning', () => {
     expect(PATHOGENS).toEqual(pathogensBefore);
   });
 
+  it('restores every matured form, including an override the seed never had', () => {
+    const before = clone(MATURED_FORMS);
+
+    applyMaturationTuning('phago', { range: 500, cost: 1 });
+    // `gap` is a stat the phagocyte carries but the macrophage does not override, so this adds a
+    // key the seed has no entry for — a merge would leave it behind.
+    applyMaturationTuning('phago', { gap: 9 });
+
+    resetTuning();
+
+    expect(MATURED_FORMS).toEqual(before);
+  });
+
   it('restores every wave count, deep-equal to the untouched case table', () => {
     const casesBefore = clone(CASES);
 
@@ -125,6 +192,16 @@ describe('listTunables', () => {
     expect(fields.some((f) => f.group === 'defender' && f.kind === 'phago' && f.field === 'dps')).toBe(true);
     expect(fields.some((f) => f.group === 'pathogen' && f.kind === 'mrsa' && f.field === 'armour')).toBe(true);
     expect(fields.every((f) => Number.isFinite(f.value))).toBe(true);
+  });
+
+  it('lists every stat a matured form overrides, and its growth cost', () => {
+    const fields = listTunables();
+    expect(fields.some((f) => f.group === 'maturation' && f.kind === 'phago' && f.field === 'range')).toBe(true);
+    expect(fields.some((f) => f.group === 'maturation' && f.kind === 'phago' && f.field === 'cost')).toBe(true);
+    expect(
+      fields.some((f) => f.group === 'maturation' && f.kind === 'nk'),
+      'the killer cell has no matured form to list',
+    ).toBe(false);
   });
 
   it('never lists a non-numeric field', () => {
@@ -151,6 +228,14 @@ describe('exportContentModules', () => {
     const { pathogens } = exportContentModules();
     expect(pathogens).toContain(`hp: ${String(PATHOGENS.staph.hp)}`);
     expect(pathogens).toContain('export const PATHOGENS');
+  });
+
+  it('emits an overridden matured value, nested inside its stats object', () => {
+    applyMaturationTuning('phago', { range: 123 });
+    const { maturation } = exportContentModules();
+    expect(maturation).toContain('export const MATURED_FORMS');
+    expect(maturation).toContain('stats: { range: 123');
+    expect(maturation, 'a nested object must never fall through to String()').not.toContain('[object Object]');
   });
 
   it('round-trips: exporting with no tuning applied reproduces the current defender values verbatim', () => {

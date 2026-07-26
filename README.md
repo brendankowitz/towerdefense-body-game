@@ -33,7 +33,17 @@ npm run typecheck:game  # tsc -p tsconfig.game.json — compiles src/game/ with 
                          # browser
 npm run test:e2e    # Playwright, driven against the built web app
 npm run verify      # lint + both typechecks + unit tests + production build; the full gate
+npm run sweep       # the balance harness: plays every affordable board of every case through
+                     # the real simulation and asserts the clear rate falls inside the design
+                     # band. Minutes, so it is deliberately outside `verify`
 ```
+
+`npm run sweep` is how a tuning is justified. It plays each of the 3125 / 7776 / 7776 boards a
+player could build, buying cheapest-first with the real economy, and reports what fraction clear.
+The target is 5–15% of boards clearing, falling as the season goes on — not "some board somewhere
+wins", which is a game nobody can find. `SWEEP_CASES=stomach npm run sweep` narrows it while
+iterating. Re-run it whenever a number in `src/game/content/` moves, and put the result in the
+commit message.
 
 `src/game/loop.test.ts` includes a reproducibility check: it runs the same seed twice and asserts
 the resulting state hashes are identical. If it fails, the simulation stopped being deterministic

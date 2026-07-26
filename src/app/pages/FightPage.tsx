@@ -156,6 +156,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
                 energy={hud.energy}
                 selected={hud.selected}
                 clearedCount={profile.cleared.length}
+                buildPhase={buildPhase}
                 onSelect={(kind) => { run(() => { selectDefender(loop.state, kind); }); }}
               />
               <FeverButton

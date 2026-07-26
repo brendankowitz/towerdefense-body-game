@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GameLoop } from './loop';
+import { GameLoop, MAX_FRAME_SECONDS } from './loop';
 import { createSimState } from './state';
 import { startWave } from './commands';
 import { hashState } from './hash';
@@ -115,6 +115,28 @@ describe('GameLoop', () => {
     const loop = new GameLoop(state);
     loop.advance(1);
     expect(loop.stepsTaken).toBe(0);
+  });
+
+  /**
+   * The step cap and the frame clamp are two statements of one budget, and they have to agree:
+   * time the clamp keeps, the cap must spend. Splitting the same elapsed time into small frames
+   * is the falsifier — a cap lower than the clamp needs leaves the single-frame loop behind,
+   * which is a wave getting easier because the phone stuttered.
+   */
+  it('spends the whole clamped frame however that time arrives, at either speed', () => {
+    for (const fast of [false, true]) {
+      const whole = new GameLoop(armed());
+      whole.state.fast = fast;
+      whole.advance(MAX_FRAME_SECONDS);
+
+      const split = new GameLoop(armed());
+      split.state.fast = fast;
+      for (let i = 0; i < 16; i += 1) split.advance(MAX_FRAME_SECONDS / 16);
+
+      const label = fast ? '2x' : '1x';
+      expect(whole.stepsTaken, label).toBe(split.stepsTaken);
+      expect(hashState(whole.state), label).toBe(hashState(split.state));
+    }
   });
 
   it('discards a long stall rather than fast-forwarding the wave', () => {

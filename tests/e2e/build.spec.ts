@@ -62,17 +62,32 @@ test('a tap on bare tissue builds nothing', async ({ page }) => {
   await expect(screen(page).locator('[data-testid^="cell-chip-"]')).toHaveCount(1);
 });
 
+/**
+ * The dearest cell the dock offers on day one, so one purchase is the largest dent a single tap
+ * can make in the opening balance. Derived rather than named: this was written against the killer
+ * cell and the 2026-07-26 tuning raised forearm's opening energy to 260, which made two of them
+ * affordable and quietly skipped the test. Whichever cell is dearest is the one that breaks the
+ * bank soonest, so deriving it is what keeps this running through the next retune too.
+ */
+const DEAREST_ON_DAY_ONE = Object.values(DEFENDERS)
+  .filter((stats) => stats.unlock === 0)
+  .reduce((a, b) => (a.cost >= b.cost ? a : b));
+
 test('a cell that cannot be afforded is priced red and refuses to be placed', async ({ page }) => {
-  const afterOne = FOREARM.startingEnergy - DEFENDERS.nk.cost;
-  test.skip(afterOne >= DEFENDERS.nk.cost, 'a retune made two killer cells affordable; retarget this test');
+  const afterOne = FOREARM.startingEnergy - DEAREST_ON_DAY_ONE.cost;
+  test.skip(
+    afterOne >= DEAREST_ON_DAY_ONE.cost,
+    `a retune made two ${DEAREST_ON_DAY_ONE.label} cells affordable; retarget this test`,
+  );
 
   await openCase(page, 'forearm');
-  await placeCell(page, 'forearm', 'nk', 1);
+  await placeCell(page, 'forearm', DEAREST_ON_DAY_ONE.kind, 1);
   await expect(onScreen(page, 'energy')).toHaveText(String(afterOne));
-  await expect(onScreen(page, 'dock-cost-nk')).toHaveAttribute('data-affordable', 'false');
+  await expect(onScreen(page, `dock-cost-${DEAREST_ON_DAY_ONE.kind}`))
+    .toHaveAttribute('data-affordable', 'false');
 
-  // The killer cell is still selected and the board is demonstrably live — the placement
-  // above went through it — so this tap fails on cost and on nothing else.
+  // That cell is still selected and the board is demonstrably live — the placement above went
+  // through it — so this tap fails on cost and on nothing else.
   await tapSpot(page, 'forearm', 3);
   await expect(onScreen(page, 'cell-chip-3')).toHaveCount(0);
   await expect(onScreen(page, 'energy')).toHaveText(String(afterOne));
