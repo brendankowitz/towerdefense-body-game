@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow one deploy at a time, and let a newer push supersede a queued one rather than
+# stacking deploys of superseded commits.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+
+      # The site is only worth publishing if it works. This is the same gate CI runs.
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run typecheck:game
+      - run: npm test
+
+      - run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
+
+      # Pages has no rewrite rules, so a deep link like /season is a 404 on a hard refresh.
+      # Serving the app from 404.html hands those requests to the client router instead.
+      - run: cp dist/index.html dist/404.html
+
+      # Jekyll would otherwise skip files and directories beginning with an underscore.
+      - run: touch dist/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

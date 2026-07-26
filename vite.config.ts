@@ -33,7 +33,16 @@ function manualChunks(id: string): string | undefined {
   return match ? match[0] : undefined;
 }
 
+/**
+ * GitHub Pages serves a project site from `/<repo>/`, so the build needs that prefix on every
+ * asset URL. It is opt-in rather than unconditional because `npm run preview` and the Playwright
+ * suite both drive the built output at the site root; making the prefix permanent would move the
+ * app out from under them for the sake of one deploy target.
+ */
+const base = process.env.GITHUB_PAGES === 'true' ? '/towerdefense-body-game/' : '/';
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tsconfigPaths(),

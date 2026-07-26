@@ -16,7 +16,9 @@ export function App() {
   return (
     <IonApp>
       <SaveErrorBanner />
-      <IonReactRouter>
+      {/* Vite's BASE_URL carries a trailing slash and is bare "/" at the site root; react-router
+          wants neither, so an empty basename is the correct value in the common case. */}
+      <IonReactRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Suspense fallback={null}>
           <IonRouterOutlet>
             <Route exact path="/" component={MapPage} />
