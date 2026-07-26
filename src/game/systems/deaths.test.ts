@@ -82,35 +82,80 @@ describe('resolveDeaths', () => {
     expect(tower.xp).toBeCloseTo(DEFENDERS.mem.learn, 6);
   });
 
-  it('rests a phagocyte briefly between meals', () => {
-    expect(DEFENDERS.phago.streak).toBeGreaterThan(1);
-
+  it('rests a phagocyte briefly after a body that left it room to spare', () => {
     const state = simFor();
     const tower = addTower(state, 'phago', 0, 0, 0);
+    tower.digested = DEFENDERS.phago.capacity / 2;
     const prey = addEnemy(state, 'staph', { hp: 0 });
     tower.holdingEnemyId = prey.id;
 
     resolveDeaths(state, new Set());
 
     expect(tower.holdingEnemyId).toBeNull();
-    expect(tower.eaten).toBe(1);
     expect(tower.rest).toBe(DEFENDERS.phago.gap);
   });
 
-  it('rests a phagocyte for the long rest on every streak-th meal', () => {
-    // The two rests must be distinguishable for the streak to be a mechanic at all.
-    expect(DEFENDERS.phago.rest).not.toBe(DEFENDERS.phago.gap);
-
+  it('keeps what it has broken down across bodies, so a short rest never empties it', () => {
     const state = simFor();
     const tower = addTower(state, 'phago', 0, 0, 0);
-    tower.eaten = DEFENDERS.phago.streak - 1;
+    const banked = DEFENDERS.phago.capacity / 2;
+    tower.digested = banked;
     const prey = addEnemy(state, 'staph', { hp: 0 });
     tower.holdingEnemyId = prey.id;
 
     resolveDeaths(state, new Set());
 
-    expect(tower.eaten).toBe(DEFENDERS.phago.streak);
+    expect(tower.rest).toBe(DEFENDERS.phago.gap);
+    expect(tower.digested).toBe(banked);
+  });
+
+  it('takes the long rest once it has broken down its whole capacity, and starts empty', () => {
+    // The two rests must be distinguishable for the appetite to be a mechanic at all.
+    expect(DEFENDERS.phago.rest).not.toBe(DEFENDERS.phago.gap);
+
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    tower.digested = DEFENDERS.phago.capacity;
+    const prey = addEnemy(state, 'staph', { hp: 0 });
+    tower.holdingEnemyId = prey.id;
+
+    resolveDeaths(state, new Set());
+
     expect(tower.rest).toBe(DEFENDERS.phago.rest);
+    expect(tower.digested).toBe(0);
+  });
+
+  /**
+   * The whole point of pricing the meal in health: one big body is a full load where several
+   * small ones are not, so the appetite has to notice a single body that overshot the capacity
+   * rather than only one that landed on it exactly.
+   */
+  it('takes the long rest after one body that overshot its capacity on its own', () => {
+    expect(PATHOGENS.mrsa.hp).toBeGreaterThan(DEFENDERS.phago.capacity);
+
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    tower.digested = PATHOGENS.mrsa.hp;
+    const prey = addEnemy(state, 'mrsa', { hp: 0 });
+    tower.holdingEnemyId = prey.id;
+
+    resolveDeaths(state, new Set());
+
+    expect(tower.rest).toBe(DEFENDERS.phago.rest);
+    expect(tower.digested).toBe(0);
+  });
+
+  it('is still hungry one point short of its capacity', () => {
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    tower.digested = DEFENDERS.phago.capacity - 1;
+    const prey = addEnemy(state, 'staph', { hp: 0 });
+    tower.holdingEnemyId = prey.id;
+
+    resolveDeaths(state, new Set());
+
+    expect(tower.rest).toBe(DEFENDERS.phago.gap);
+    expect(tower.digested).toBe(DEFENDERS.phago.capacity - 1);
   });
 
   it('leaves a phagocyte holding a meal that is still alive', () => {
@@ -118,12 +163,13 @@ describe('resolveDeaths', () => {
     const tower = addTower(state, 'phago', 0, 0, 0);
     const meal = addEnemy(state, 'staph', { hp: PATHOGENS.staph.hp / 2 });
     tower.holdingEnemyId = meal.id;
+    tower.digested = DEFENDERS.phago.capacity;
     addEnemy(state, 'staph', { hp: 0 });
 
     resolveDeaths(state, new Set());
 
     expect(tower.holdingEnemyId).toBe(meal.id);
-    expect(tower.eaten).toBe(0);
+    expect(tower.digested).toBe(DEFENDERS.phago.capacity);
     expect(tower.rest).toBe(0);
   });
 

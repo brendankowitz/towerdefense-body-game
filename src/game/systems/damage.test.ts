@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { acquireHolds, runDefenders } from './damage';
+import { resolveDeaths } from './deaths';
+import { statsFor } from './stats';
 import { armourMultiplier } from './targeting';
 import { DEFENDERS } from '../content/defenders';
 import { PATHOGENS } from '../content/pathogens';
@@ -120,6 +122,7 @@ describe('phagocyte — engulf', () => {
     expect(tower.holdingEnemyId).toBeNull();
     expect(prey.hp).toBe(prey.maxHp);
     expect(tower.rest).toBeCloseTo(1.5, 6);
+    expect(tower.digested).toBe(0);
   });
 
   it('grabs again once its rest has run out', () => {
@@ -155,6 +158,91 @@ describe('phagocyte — engulf', () => {
 
     runDefenders(state, STEP_SECONDS, new Set());
 
+    expect(tower.holdingEnemyId).toBeNull();
+  });
+});
+
+/**
+ * The appetite is measured in health broken down, so what the cell banks has to be the health it
+ * actually removed — not the size of the body it is holding, and not the raw digest rate before
+ * armour took its cut. Every expectation here is the same number the enemy lost, which is the
+ * whole claim.
+ */
+describe('phagocyte — what it banks against its appetite', () => {
+  it('banks exactly the health it took off, at its digest rate', () => {
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    tick(state, 1);
+
+    expect(tower.digested).toBeCloseTo(DEFENDERS.phago.dps, 6);
+    expect(tower.digested).toBeCloseTo(prey.maxHp - prey.hp, 6);
+  });
+
+  it('banks the armour-reduced health of an armoured body, not the rate it chewed at', () => {
+    const armour = PATHOGENS.film.armour ?? 1;
+    expect(armour).toBeLessThan(1);
+
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    const prey = addEnemy(state, 'film', { x: 10, y: 0 });
+
+    tick(state, 1);
+
+    expect(tower.digested).toBeCloseTo(DEFENDERS.phago.dps * armour, 6);
+    expect(tower.digested).toBeCloseTo(prey.maxHp - prey.hp, 6);
+    expect(tower.digested).toBeLessThan(DEFENDERS.phago.dps);
+  });
+
+  it('keeps banking across steps, so the appetite fills gradually rather than per body', () => {
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    addEnemy(state, 'film', { x: 10, y: 0 });
+
+    tick(state, 1);
+    const afterOne = tower.digested;
+    tick(state, 1);
+
+    expect(afterOne).toBeGreaterThan(0);
+    expect(tower.digested).toBeCloseTo(2 * afterOne, 6);
+  });
+
+  it('banks a macrophage’s heavier bite, so its appetite fills at the rate it eats', () => {
+    const plain = simFor();
+    const plainCell = addTower(plain, 'phago', 0, 0, 0);
+    addEnemy(plain, 'staph', { x: 10, y: 0 });
+
+    const grown = simFor();
+    const grownCell = addTower(grown, 'phago', 0, 0, 0, true);
+    addEnemy(grown, 'staph', { x: 10, y: 0 });
+
+    tick(plain, STEP_SECONDS);
+    tick(grown, STEP_SECONDS);
+
+    expect(plainCell.digested).toBeGreaterThan(0);
+    expect(grownCell.digested / plainCell.digested)
+      .toBeCloseTo(statsFor(grownCell).dps / statsFor(plainCell).dps, 6);
+  });
+
+  /**
+   * The case that made counting bodies wrong. A cell that chewed most of a biofilm and lost the
+   * kill to a burst has still done that work, and it goes on its own appetite — the body it was
+   * holding is not the unit of account, and never was one it could rely on finishing.
+   */
+  it('keeps the part it chewed when something else finishes the body off', () => {
+    const state = simFor();
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    const prey = addEnemy(state, 'film', { x: 10, y: 0 });
+
+    tick(state, 1);
+    const chewed = tower.digested;
+    prey.hp = 0;
+    resolveDeaths(state, new Set());
+
+    expect(chewed).toBeGreaterThan(0);
+    expect(chewed).toBeLessThan(PATHOGENS.film.hp);
+    expect(tower.digested).toBe(chewed);
     expect(tower.holdingEnemyId).toBeNull();
   });
 });

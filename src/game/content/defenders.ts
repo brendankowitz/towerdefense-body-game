@@ -9,8 +9,16 @@ interface DefenderBase {
   readonly token: PaletteToken;
 }
 
+/**
+ * `capacity` is the phagocyte's appetite, measured in health rather than in bodies: it banks the
+ * damage it deals, and once the bank reaches capacity it takes its long `rest` instead of the
+ * brief `gap` it takes after any other body. Counting bodies made every meal cost the same, so the
+ * heaviest thing on the vessel bought many times the matter of the lightest for one recovery.
+ * Counting health prices the meal by what it was, and a half-eaten body that a burst finished
+ * still counts for the half this cell did.
+ */
 export type DefenderStats =
-  | (DefenderBase & { readonly kind: 'phago'; readonly dps: number; readonly gap: number; readonly streak: number; readonly rest: number })
+  | (DefenderBase & { readonly kind: 'phago'; readonly dps: number; readonly gap: number; readonly capacity: number; readonly rest: number })
   | (DefenderBase & { readonly kind: 'clot'; readonly slow: number; readonly wear: number })
   | (DefenderBase & { readonly kind: 'anti'; readonly rate: number; readonly tag: number; readonly dot: number })
   | (DefenderBase & { readonly kind: 'nk'; readonly rate: number; readonly dmg: number; readonly execute: number })
@@ -18,7 +26,7 @@ export type DefenderStats =
   | (DefenderBase & { readonly kind: 'mem'; readonly rate: number; readonly dmg: number; readonly learn: number; readonly cap: number });
 
 export const DEFENDERS: { readonly [K in DefenderKind]: Extract<DefenderStats, { kind: K }> } = {
-  phago: { kind: 'phago', cost: 40, range: 74, dps: 15, gap: 0.7, streak: 4, rest: 3.4, label: 'Engulf', unlock: 0, token: 'frontline' },
+  phago: { kind: 'phago', cost: 40, range: 74, dps: 15, gap: 0.7, capacity: 104, rest: 3.4, label: 'Engulf', unlock: 0, token: 'frontline' },
   clot: { kind: 'clot', cost: 70, range: 76, slow: 0.28, wear: 6, label: 'Block', unlock: 0, token: 'control' },
   anti: { kind: 'anti', cost: 95, range: 94, rate: 1.5, tag: 10, dot: 6, label: 'Tag', unlock: 0, token: 'support' },
   nk: { kind: 'nk', cost: 130, range: 78, rate: 2.4, dmg: 58, execute: 0.35, label: 'Execute', unlock: 0, token: 'execute' },
@@ -59,7 +67,7 @@ function unlockSentence(unlock: number): string {
 export const DEFENDER_BLURBS: { readonly [K in DefenderKind]: { readonly name: string; readonly text: string } } = {
   phago: {
     name: 'Phagocyte · engulf',
-    text: `Digests one at a time, then tires — ${countWord(DEFENDERS.phago.streak)} and it rests.`,
+    text: `Digests one body at a time and fills up — ${String(DEFENDERS.phago.capacity)} health of matter, then a long rest. A big body costs it far more than a small one.`,
   },
   clot: {
     name: 'Clot · block',

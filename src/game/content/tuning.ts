@@ -247,6 +247,11 @@ function entrySource(entries: readonly (readonly [string, unknown])[]): string {
  * The maturation body carries its type annotation and the other two do not, because the
  * maturation table is emitted whole — its entries are optional, so the annotation is what tells
  * the compiler that a missing kind is legal rather than an error.
+ *
+ * A stat written in the source as a relationship — the macrophage's capacity is a multiple of the
+ * phagocyte's — exports as the number it evaluated to, because that is all the live table holds.
+ * Keep the expression when pasting, or the relationship is gone and the next base tuning breaks it
+ * silently, which is exactly the defect the expression exists to prevent.
  */
 export function exportContentModules(): {
   readonly defenders: string;

@@ -58,7 +58,7 @@ interface TowerBase {
 }
 
 const TOWER_BUILDERS: { [K in DefenderKind]: (base: TowerBase) => Extract<Tower, { kind: K }> } = {
-  phago: (base) => ({ ...base, kind: 'phago', holdingEnemyId: null, eaten: 0, rest: 0 }),
+  phago: (base) => ({ ...base, kind: 'phago', holdingEnemyId: null, digested: 0, rest: 0 }),
   clot: (base) => ({ ...base, kind: 'clot' }),
   anti: (base) => ({ ...base, kind: 'anti', cooldown: 0 }),
   nk: (base) => ({ ...base, kind: 'nk', cooldown: 0 }),

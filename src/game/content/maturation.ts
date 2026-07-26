@@ -1,3 +1,4 @@
+import { DEFENDERS } from './defenders';
 import type { DefenderKind } from '../types';
 
 /**
@@ -26,7 +27,7 @@ import type { DefenderKind } from '../types';
  * simulation never honours.
  */
 export type MaturedStatField =
-  | 'range' | 'dps' | 'gap' | 'streak' | 'rest' | 'slow' | 'wear'
+  | 'range' | 'dps' | 'gap' | 'capacity' | 'rest' | 'slow' | 'wear'
   | 'rate' | 'tag' | 'dmg' | 'execute' | 'learn' | 'cap';
 
 export interface MaturedForm {
@@ -35,6 +36,9 @@ export interface MaturedForm {
   readonly cost: number;
   readonly stats: Readonly<Partial<Record<MaturedStatField, number>>>;
 }
+
+/** How much more a macrophage holds than the phagocyte it grew from. See `MATURED_FORMS`. */
+const MACROPHAGE_APPETITE = 2;
 
 /**
  * A form is listed only where the real immunology names one, per the content naming policy. A
@@ -49,11 +53,19 @@ export interface MaturedForm {
  *   so a macrophage beats a phagocyte on one armoured thing and loses to it on a stream of small
  *   ones.
  *
+ *   Its appetite is the point of growing one. `MACROPHAGE_APPETITE` is written as a multiple of
+ *   the phagocyte's own capacity rather than as a number, so the relationship survives a balance
+ *   pass on the base. At the 2× it carries today that is enough to swallow the heaviest body in
+ *   the game whole and still have room, where the cell it grew from is filled by that one body
+ *   and has to rest it off — which is what makes the macrophage the answer to a Resistant and
+ *   leaves the base phagocyte, at less than half the energy, the answer to a stream of small ones.
+ *
  *   Its reach is derived from the phagocyte's, at 1.25×, and not written down independently. The
  *   2026-07-26 tuning raised the base from 56 to 74 and left this at its literal 70, which turned
  *   the cell's signature upgrade into a downgrade — growing a phagocyte cost it reach. Every
  *   value here is a relationship to a base stat; when the base moves, re-derive rather than
- *   re-check that the number still looks sensible.
+ *   re-check that the number still looks sensible. Capacity is spelled as that relationship
+ *   instead of a comment about one, which is the only form of it a stale base cannot break.
  * - **Fibrin mesh.** Fibrin cross-links a soft platelet plug into a firm one: it holds far
  *   harder, and it is consumed faster for it. Wear is per body (decision D10), so a mesh in a
  *   busy lane buys a long hold and then fails outright.
@@ -62,7 +74,16 @@ export interface MaturedForm {
  *   and re-marking a fresh crowd takes twice as long.
  */
 export const MATURED_FORMS: { readonly [K in DefenderKind]?: MaturedForm } = {
-  phago: { name: 'Macrophage', cost: 55, stats: { range: 92, dps: 26, rest: 7.2 } },
+  phago: {
+    name: 'Macrophage',
+    cost: 55,
+    stats: {
+      range: 92,
+      dps: 26,
+      capacity: DEFENDERS.phago.capacity * MACROPHAGE_APPETITE,
+      rest: 7.2,
+    },
+  },
   clot: { name: 'Fibrin mesh', cost: 80, stats: { slow: 0.16, wear: 10 } },
   anti: { name: 'High-affinity antibody', cost: 110, stats: { range: 78, rate: 3, tag: 15 } },
 };

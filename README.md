@@ -29,7 +29,7 @@ Six cells, each of which targets differently — and that is the whole design, n
 
 | | |
 |---|---|
-| **Engulf** | Holds one thing at a time, frozen, and digests it. Tires after a streak. |
+| **Engulf** | Holds one thing at a time, frozen, and digests it. Fills up on what it breaks down, then rests — one big body costs it as much as a crowd of small ones. |
 | **Block** | Deals no damage at all. Slows everything, and a crowd tears it apart. |
 | **Tag** | Kills little. Marks everything in reach: armour drops, damage burns, kills pay more. |
 | **Execute** | One heavy hit on the *most wounded* thing in range. Finishes anything under a threshold. |
@@ -37,9 +37,10 @@ Six cells, each of which targets differently — and that is the whole design, n
 | **Learn** | Weak, then permanently stronger with every kill nearby. |
 
 Three of them can be **grown** into a named form — a phagocyte into a macrophage — and every one
-is a trade rather than an upgrade. The macrophage bites nearly twice as hard and reaches further,
-but rests more than twice as long, so against a stream it is *worse* than the cell it came from
-and against one armoured target it is far better. That is roughly what macrophages actually do.
+is a trade rather than an upgrade. The macrophage bites harder, reaches further and has twice the
+appetite, but rests more than twice as long and costs more than twice as much — so per energy
+the plain phagocyte is nearly twice as efficient against a stream, and the macrophage earns its
+place on the big armoured bodies. That is roughly what macrophages actually do.
 
 Clearing a case three times earns that strain's vaccine, permanently, across every run after.
 
@@ -51,8 +52,8 @@ npm run dev        # http://localhost:5173
 ```
 
 ```bash
-npm run verify     # lint, both typechecks, 639 unit tests, production build
-npm run test:e2e   # 21 Playwright specs against the built app
+npm run verify     # lint, both typechecks, 710 unit tests, production build
+npm run test:e2e   # 26 Playwright specs against the built app
 npm run sweep      # plays every affordable board through the real simulation
 ```
 
@@ -80,9 +81,9 @@ move everything without turning the suite red.
 through the real simulation and reports the clear rate:
 
 ```
-forearm  5 cells  |  407/3125 clear (13.0%)  |  best: anti,mast,phago,phago,phago
-throat   6 cells  |  492/7776 clear ( 6.3%)  |  best: anti,anti,anti,phago,phago
-stomach  6 cells  |  345/7776 clear ( 4.4%)  |  best: anti,anti,anti,phago,anti
+forearm  5 cells  |  283/3125 clear (9.1%)  |  best: anti,mast,phago,phago,phago
+throat   6 cells  |  486/7776 clear (6.3%)  |  best: anti,anti,anti,phago,phago
+stomach  6 cells  |  424/7776 clear (5.5%)  |  best: anti,phago,anti,phago,anti
 ```
 
 It fails if a tuning makes a case unwinnable or breaks the difficulty curve.
@@ -125,8 +126,7 @@ finished codebase, and a proposal for the next seven cases.
 ## Known and open
 
 - **Poison stacks per enemy in range**, and that was never a decision — it is emergent from a
-  loop. It is what holds the stomach case below the intended win-rate floor, and the sweep
-  carries a named exception with its measurement until the rule is chosen.
+  loop rather than chosen. Stomach sits at the bottom of the band largely because of it.
 - **The balance sweep never matures a cell.** Its floor claim ("maturing can only help") is an
   argument, not a measurement.
 - **iOS is configured but unverified** — see below.

@@ -83,24 +83,46 @@ describe('macrophage — a matured phagocyte', () => {
     expect(grownCell.holdingEnemyId).toBe(prey.id);
   });
 
-  it('is slower to come back after a full streak, which is what it trades for the bite', () => {
-    function restAfterStreak(matured: boolean): number {
+  it('is slower to come back once it is full, which is what it trades for the bite', () => {
+    function restWhenFull(matured: boolean): number {
       const state = simFor();
       const cell = addTower(state, 'phago', 0, 0, 0, matured);
       const prey = addEnemy(state, 'staph', { x: 10, y: 0, hp: 0 });
 
-      cell.eaten = statsFor(cell).streak - 1;
+      cell.digested = statsFor(cell).capacity;
       cell.holdingEnemyId = prey.id;
       resolveDeaths(state, new Set());
       return cell.rest;
     }
 
-    const plainRest = restAfterStreak(false);
-    const grownRest = restAfterStreak(true);
+    const plainRest = restWhenFull(false);
+    const grownRest = restWhenFull(true);
 
     expect(plainRest).toBe(DEFENDERS.phago.rest);
     expect(grownRest).toBe(override('phago', 'rest'));
     expect(grownRest).toBeGreaterThan(plainRest);
+  });
+
+  /**
+   * The reason to grow one. Both cells are given the same load — everything the base can hold —
+   * and only the base has to stop for it. Written as one load rather than two capacities so it
+   * asserts the consequence a player feels, not the ratio the table happens to carry.
+   */
+  it('has room for a load that fills the cell it grew from', () => {
+    function restAfterLoad(matured: boolean): number {
+      const state = simFor();
+      const cell = addTower(state, 'phago', 0, 0, 0, matured);
+      const prey = addEnemy(state, 'staph', { x: 10, y: 0, hp: 0 });
+
+      cell.digested = DEFENDERS.phago.capacity;
+      cell.holdingEnemyId = prey.id;
+      resolveDeaths(state, new Set());
+      return cell.rest;
+    }
+
+    expect(override('phago', 'capacity')).toBeGreaterThan(DEFENDERS.phago.capacity);
+    expect(restAfterLoad(false)).toBe(DEFENDERS.phago.rest);
+    expect(restAfterLoad(true)).toBe(DEFENDERS.phago.gap);
   });
 });
 

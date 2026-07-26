@@ -219,6 +219,10 @@ describe('brief copy stays true to the stats it describes', () => {
     expect(DEFENDER_BLURBS.nk.text).toContain(shown);
   });
 
+  it('quotes the phagocyte appetite the simulation actually rests on', () => {
+    expect(DEFENDER_BLURBS.phago.text).toContain(String(DEFENDERS.phago.capacity));
+  });
+
   it('quotes the tag bonus as a percentage of the real multiplier', () => {
     const shown = `${String(Math.round((TAG_REWARD_MULTIPLIER - 1) * 100))}%`;
     expect(DEFENDER_BLURBS.anti.text).toContain(shown);

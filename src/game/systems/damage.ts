@@ -26,7 +26,15 @@ export function acquireHolds(state: SimState, held: Set<number>, dead: ReadonlyS
   }
 }
 
-/** One meal at a time, digested where it stands. Acquisition already happened in `acquireHolds`. */
+/**
+ * One body at a time, digested where it stands. Acquisition already happened in `acquireHolds`.
+ *
+ * Everything the cell breaks down is banked on the cell, not on the body: `resolveDeaths` reads
+ * the bank against the kind's capacity to decide whether the cell has room for another body or
+ * has to rest. Armour is already priced in — the bank counts health actually removed, so an
+ * armoured body costs the cell far more seconds for the same room it takes up. Armour buys the
+ * pathogen time; it does not also cost the cell appetite.
+ */
 function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
   if (tower.rest > 0) {
     tower.rest -= dt;
@@ -40,7 +48,9 @@ function engulf(state: SimState, tower: PhagocyteTower, dt: number): void {
     return;
   }
 
-  prey.hp -= statsFor(tower).dps * armourMultiplier(state, prey) * dt;
+  const digested = statsFor(tower).dps * armourMultiplier(state, prey) * dt;
+  prey.hp -= digested;
+  tower.digested += digested;
 }
 
 /** Marks everything in reach at once. A tag strips armour, burns, and pays more on the kill. */

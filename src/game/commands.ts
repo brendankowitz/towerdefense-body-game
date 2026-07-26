@@ -40,7 +40,7 @@ export function selectDefender(state: SimState, kind: DefenderKind): void {
 function createTower(kind: DefenderKind, spotIndex: number, x: number, y: number): Tower {
   const base = { spotIndex, x, y, hp: TOWER_MAX_HP, stun: 0, matured: false };
   switch (kind) {
-    case 'phago': return { ...base, kind, holdingEnemyId: null, eaten: 0, rest: 0 };
+    case 'phago': return { ...base, kind, holdingEnemyId: null, digested: 0, rest: 0 };
     case 'clot': return { ...base, kind };
     case 'anti': return { ...base, kind, cooldown: 0 };
     case 'nk': return { ...base, kind, cooldown: 0 };

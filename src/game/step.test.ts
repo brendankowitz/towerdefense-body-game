@@ -141,7 +141,7 @@ describe('step — the starting dock working together', () => {
     expect(state.waveKills).toBe(1);
     expect(state.tissue).toBe(TISSUE_PIPS);
     expect(phago.holdingEnemyId).toBeNull();
-    expect(phago.eaten).toBe(1);
+    expect(phago.digested).toBeGreaterThan(0);
     expect(phago.rest).toBeGreaterThan(0);
   });
 

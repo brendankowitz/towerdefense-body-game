@@ -63,7 +63,12 @@ interface TowerBase {
 export interface PhagocyteTower extends TowerBase {
   readonly kind: 'phago';
   holdingEnemyId: number | null;
-  eaten: number;
+  /**
+   * Health this cell has broken down since its last full rest. Damage it dealt itself, so a body
+   * something else finished still counts for the part this cell chewed. Reaching the kind's
+   * `capacity` buys the long `rest` and empties this back to zero.
+   */
+  digested: number;
   rest: number;
 }
 export interface ClotTower extends TowerBase {

@@ -68,13 +68,18 @@ export function resolveDeaths(state: SimState, dead: Set<number>): void {
 
   state.enemies = state.enemies.filter((enemy) => !dead.has(enemy.id));
 
+  // A phagocyte whose body is gone lets go and pauses. Which pause depends on how full it is,
+  // not on how many bodies it has been through: the brief `gap` reads as swallowing, and a cell
+  // that has broken down its whole capacity takes the long `rest` and starts empty again. A cell
+  // is never interrupted mid-body — it finishes what it is holding, then finds out it is full.
   for (const tower of state.towers) {
     if (tower.kind !== 'phago') continue;
     if (tower.holdingEnemyId === null || !dead.has(tower.holdingEnemyId)) continue;
 
     const stats = statsFor(tower);
     tower.holdingEnemyId = null;
-    tower.eaten += 1;
-    tower.rest = tower.eaten % stats.streak === 0 ? stats.rest : stats.gap;
+    const full = tower.digested >= stats.capacity;
+    if (full) tower.digested = 0;
+    tower.rest = full ? stats.rest : stats.gap;
   }
 }

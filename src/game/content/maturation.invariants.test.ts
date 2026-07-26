@@ -17,7 +17,7 @@ const GROWN = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) !== null);
  * `wear` is self-damage so lower lasts longer.
  */
 const BETTER_WHEN_HIGHER: Readonly<Record<string, boolean>> = {
-  range: true, dps: true, streak: true, tag: true, dmg: true, execute: true, learn: true, cap: true,
+  range: true, dps: true, capacity: true, tag: true, dmg: true, execute: true, learn: true, cap: true,
   gap: false, rest: false, slow: false, wear: false, rate: false,
 };
 

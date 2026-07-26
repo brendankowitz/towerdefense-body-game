@@ -23,5 +23,5 @@ export const PATHOGENS: { readonly [K in PathogenKind]: PathogenStats } = {
   virus: { kind: 'virus', name: 'Flu virus', note: 'Splits when it dies', hp: 34, speed: 58, reward: 8, radius: 9, shape: 'circle', token: 'splitter', splits: true },
   spore: { kind: 'spore', name: 'Spore', note: 'Heals itself unless tagged', hp: 60, speed: 34, reward: 12, radius: 10, shape: 'circle', token: 'fungal', regen: 7 },
   toxin: { kind: 'toxin', name: 'Toxin', note: 'Stuns the cells it passes', hp: 44, speed: 40, reward: 14, radius: 11, shape: 'diamond', token: 'chemical', stun: 1.6 },
-  mrsa: { kind: 'mrsa', name: 'Resistant', note: 'Tags do nothing — engulf it', hp: 150, speed: 36, reward: 24, radius: 12, shape: 'circle', token: 'resistant', armour: 0.6, noTag: true },
+  mrsa: { kind: 'mrsa', name: 'Resistant', note: 'Tags do nothing — execute it, or grow a bigger cell', hp: 150, speed: 36, reward: 24, radius: 12, shape: 'circle', token: 'resistant', armour: 0.6, noTag: true },
 };

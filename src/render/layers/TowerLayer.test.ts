@@ -26,7 +26,7 @@ function memoryCell(xp: number, spotIndex = 0): MemoryTower {
 function phagocyte(spotIndex = 1): Tower {
   return {
     kind: 'phago', spotIndex, x: 206, y: 88, hp: TOWER_MAX_HP, stun: 0, matured: false,
-    holdingEnemyId: null, eaten: 0, rest: 0,
+    holdingEnemyId: null, digested: 0, rest: 0,
   };
 }
 
@@ -117,7 +117,7 @@ const CELL_Y = 88;
 function phagocyteGrown(matured: boolean): Tower {
   return {
     kind: 'phago', spotIndex: 1, x: CELL_X, y: CELL_Y, hp: TOWER_MAX_HP, stun: 0, matured,
-    holdingEnemyId: null, eaten: 0, rest: 0,
+    holdingEnemyId: null, digested: 0, rest: 0,
   };
 }
 

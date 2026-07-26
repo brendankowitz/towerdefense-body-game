@@ -60,7 +60,7 @@ function burstStep(flash: number, motion: Motion): number {
   return 1 + quantise(burstProgress(flash), BURST_STEPS);
 }
 
-/** A cell that cannot act right now: stunned by a toxin, or a phagocyte resting off a streak. */
+/** A cell that cannot act right now: stunned by a toxin, or a phagocyte resting off a full load. */
 function isSpent(tower: Tower): boolean {
   if (tower.stun > 0) return true;
   return tower.kind === 'phago' && tower.rest > statsFor(tower).gap;
