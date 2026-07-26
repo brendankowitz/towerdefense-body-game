@@ -18,6 +18,14 @@ import { everyBoard, playBoard, unlockedKinds } from './playBoard';
  * kinds unlocked at that point in progression. The economy decides how much of it gets built —
  * see `playBoard.ts`, which also states what the purchasing policy deliberately does not model.
  *
+ * This run buys and never grows (`'never'`), which is the policy every recorded number in this
+ * repo was measured under. Whether growing would do better is its own question and its own run:
+ *
+ *   npm run sweep:maturation
+ *
+ * That one plays the same board space under three maturation policies and takes three times as
+ * long, which is why it is not this gate.
+ *
  * When a tuning changes, re-run this and put the numbers in the commit message. That is the whole
  * reason it is committed rather than living in a scratch directory: the next balance pass starts
  * from evidence instead of re-deriving it.
@@ -90,7 +98,7 @@ function sweepCase({ caseId, clearedCount }: SweepCase): SweepResult {
   let bestTissue = -1;
 
   for (const board of everyBoard(kinds, definition.spots.length)) {
-    const outcome = playBoard(caseId, clearedCount, board);
+    const outcome = playBoard(caseId, clearedCount, board, 'never');
     boards += 1;
     if (outcome.stalled) stalls += 1;
 

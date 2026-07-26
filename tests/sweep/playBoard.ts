@@ -1,4 +1,6 @@
-import { placeDefender, startWave, towerAt, advanceToNextWave } from '../../src/game/commands';
+import {
+  advanceToNextWave, matureDefender, maturationAt, placeDefender, startWave, towerAt,
+} from '../../src/game/commands';
 import { CASES } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '../../src/game/content/defenders';
 import { IMMUNITY_MAX, STEP_SECONDS } from '../../src/game/content/rules';
@@ -8,8 +10,9 @@ import type { CaseId, DefenderKind, SimState, StrainId } from '../../src/game/ty
 
 /**
  * Plays one board of one case through the real simulation, on the real fixed timestep, with the
- * real economy. Nothing here models the game: `step` is the shipped step, `placeDefender` is the
- * shipped command, and the only thing this file contributes is a purchasing policy and a loop.
+ * real economy. Nothing here models the game: `step` is the shipped step, `placeDefender` and
+ * `matureDefender` are the shipped commands, and the only thing this file contributes is what the
+ * player would decide — a purchasing policy, a maturation policy, and a loop.
  *
  * A board is an assignment of a defender kind to each of the case's five build spots. It is an
  * *intent*, not a starting position — the economy decides how much of it the player ever gets to
@@ -28,6 +31,8 @@ export interface BoardOutcome {
   readonly tissue: number;
   /** Cells the economy actually paid for over the whole run, of the five the board asked for. */
   readonly built: number;
+  /** Cells the economy actually grew over the whole run. Always zero under `'never'`. */
+  readonly grown: number;
   /** True if a wave hit the step ceiling — a bug in the sweep or a stall in the simulation. */
   readonly stalled: boolean;
 }
@@ -78,17 +83,23 @@ export function* everyBoard(
 }
 
 /**
- * The purchasing policy, and the one judgement call in this harness.
+ * The purchasing policy, and one of the two judgement calls in this harness.
  *
  * At every build phase the player fills as much of the board as the balance allows, cheapest
  * first: a real player buys what they can afford now rather than saving for a cell they cannot
  * name a wave for, and cheapest-first is the ordering that gets the most cells onto the board
  * soonest. Ties break on spot index, so the sweep is deterministic.
  *
- * What this deliberately does not model: maturing a placed cell, reabsorbing one, and calling
- * fever. All three are real decisions and all three can only help, so a clear rate measured here
- * is a floor on what a thinking player can reach — which is the right direction for a floor to
- * be wrong in.
+ * What this deliberately does not model: reabsorbing a cell and calling fever. Both are real
+ * decisions, both are optional, and a player who declines them plays exactly this policy — so a
+ * clear rate measured here is a floor on what a thinking player can reach, which is the right
+ * direction for a floor to be wrong in.
+ *
+ * Maturing used to be on that list, with the same "can only help" justification. It is now a
+ * policy of its own (`MaturationPolicy`) and it was measured, because "optional" and "an
+ * improvement" are not the same claim — and on two cases of three, growing is a rout. The floor
+ * survives on the first claim alone: a player who declines all three plays exactly this policy,
+ * so best play is at least this good whatever those decisions turn out to be worth.
  */
 function buyCheapestFirst(state: SimState, board: readonly DefenderKind[]): number {
   const pending = board
@@ -105,10 +116,82 @@ function buyCheapestFirst(state: SimState, board: readonly DefenderKind[]): numb
   return bought;
 }
 
+/**
+ * Whether the harness grows a placed cell, and what it is willing to give up to do it. The other
+ * judgement call, and the reason there is more than one: growth is not free and a matured form is
+ * a trade rather than an upgrade, so "the player could also mature" is a question with a
+ * direction, not an aside.
+ *
+ * - `'never'` — what the sweep has always done, and what `balance.sweep.ts` still measures. Every
+ *   number recorded in this repo comes from this policy.
+ * - `'surplus'` — grow only once every spot the board asked for is filled, so growth spends energy
+ *   placement had no use for. This is the strongest form of the "maturing can only help" claim:
+ *   it never starves the board, so anything it loses, it loses on the stat trade alone.
+ * - `'eager'` — grow whatever is affordable at the top of every build phase, before buying. The
+ *   naive upgrade-lover, and the policy that tests whether growth competing with placement is a
+ *   mistake.
+ *
+ * `maturation.sweep.ts` runs all three over the whole board space and reports the difference. It
+ * has: growing everything is a *win* on forearm (9.1% → 13.5%) and a rout on throat (6.3% →
+ * 0.4%) and stomach (5.5% → 1.9%), even under `'surplus'`, which never took a cell off the board
+ * to pay for it. Maturing is a trade and the trade is case-shaped, so no policy here is "the
+ * player playing well" — which is why `'never'` is still what the gate measures.
+ */
+export type MaturationPolicy = 'never' | 'surplus' | 'eager';
+
+/**
+ * Grows what the balance allows, cheapest form first for the same reason placement buys cheapest
+ * first: it is the ordering that gets the most cells grown soonest. Ties break on spot index, so
+ * the sweep stays deterministic.
+ */
+export function growCheapestFirst(state: SimState): number {
+  const offers: { readonly spotIndex: number; readonly cost: number }[] = [];
+  for (const tower of state.towers) {
+    const form = maturationAt(state, tower.spotIndex);
+    if (form !== null) offers.push({ spotIndex: tower.spotIndex, cost: form.cost });
+  }
+  offers.sort((a, b) => a.cost - b.cost || a.spotIndex - b.spotIndex);
+
+  let grown = 0;
+  for (const { spotIndex } of offers) {
+    if (matureDefender(state, spotIndex)) grown += 1;
+  }
+  return grown;
+}
+
+/** Every spot the board asked for is standing. Cells are lost mid-wave, so this is asked afresh. */
+function isBoardStanding(state: SimState, board: readonly DefenderKind[]): boolean {
+  return board.every((_kind, spotIndex) => towerAt(state, spotIndex) !== null);
+}
+
+export interface BuildPhaseSpend {
+  readonly built: number;
+  readonly grown: number;
+}
+
+/**
+ * One build phase: everything the policy does with the balance before the wave is started.
+ * Exported so the policies can be exercised on a state whose energy is chosen rather than earned
+ * — a test that had to play its way to a given balance would be asserting the economy.
+ */
+export function runBuildPhase(
+  state: SimState,
+  board: readonly DefenderKind[],
+  policy: MaturationPolicy,
+): BuildPhaseSpend {
+  const grownFirst = policy === 'eager' ? growCheapestFirst(state) : 0;
+  const built = buyCheapestFirst(state, board);
+  const grownAfter = policy === 'surplus' && isBoardStanding(state, board)
+    ? growCheapestFirst(state)
+    : 0;
+  return { built, grown: grownFirst + grownAfter };
+}
+
 export function playBoard(
   caseId: CaseId,
   clearedCount: number,
   board: readonly DefenderKind[],
+  policy: MaturationPolicy,
 ): BoardOutcome {
   const state = createSimState({
     caseId,
@@ -118,8 +201,11 @@ export function playBoard(
   });
 
   let built = 0;
+  let grown = 0;
   for (;;) {
-    built += buyCheapestFirst(state, board);
+    const spend = runBuildPhase(state, board, policy);
+    built += spend.built;
+    grown += spend.grown;
     startWave(state);
 
     let steps = 0;
@@ -128,7 +214,12 @@ export function playBoard(
       steps += 1;
       if (steps > MAX_STEPS_PER_WAVE) {
         return {
-          cleared: false, lastWave: state.waveIndex + 1, tissue: state.tissue, built, stalled: true,
+          cleared: false,
+          lastWave: state.waveIndex + 1,
+          tissue: state.tissue,
+          built,
+          grown,
+          stalled: true,
         };
       }
     }
@@ -139,6 +230,7 @@ export function playBoard(
         lastWave: state.waveIndex + 1,
         tissue: state.tissue,
         built,
+        grown,
         stalled: false,
       };
     }

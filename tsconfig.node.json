@@ -19,6 +19,7 @@
   "include": [
     "vite.config.ts",
     "vitest.sweep.config.ts",
+    "vitest.sweep-maturation.config.ts",
     "vitest.setup.ts",
     "playwright.config.ts",
     "capacitor.config.ts",

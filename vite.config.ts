@@ -65,6 +65,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'tests/lint/**/*.test.ts'],
+    // `tests/sweep/**/*.test.ts` is the sweep harness's own tests, not a sweep: the sweeps are
+    // `*.sweep.ts` and run under their own configs. The harness decides what a player buys and
+    // grows, which is a behaviour like any other and belongs in the suite that runs on every
+    // change — the minutes-long runs on top of it are no place to find out it stopped growing.
+    include: ['src/**/*.test.{ts,tsx}', 'tests/lint/**/*.test.ts', 'tests/sweep/**/*.test.ts'],
   },
 });

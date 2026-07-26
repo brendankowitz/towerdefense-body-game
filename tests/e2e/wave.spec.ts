@@ -55,8 +55,8 @@ test('wave 1 of the first case is held by starter cells alone', async ({ page })
  * `progression.test.ts` covers the transition and `persistence.spec.ts` covers the storage
  * boundary, each with the other half assumed.
  *
- * It was `test.fixme` for as long as no case was winnable. It is not any more: the 2026-07-26
- * tuning clears forearm on 407 of its 3125 affordable boards, and this is one of them —
+ * It was `test.fixme` for as long as no case was winnable. It is not any more: forearm clears on
+ * 283 of its 3125 affordable boards, and this is one of them —
  * `anti` on 0, `mast` on 1, phagocytes on 2, 3 and 4, finishing on all five pips with nothing
  * through. Listed cheapest-first, and bought that way, because that is the policy the sweep
  * measured: the board is an intent the economy fills in over the first three waves, not a

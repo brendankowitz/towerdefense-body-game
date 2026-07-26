@@ -52,9 +52,10 @@ npm run dev        # http://localhost:5173
 ```
 
 ```bash
-npm run verify     # lint, both typechecks, 710 unit tests, production build
+npm run verify     # lint, both typechecks, 726 unit tests, production build
 npm run test:e2e   # 26 Playwright specs against the built app
-npm run sweep      # plays every affordable board through the real simulation
+npm run sweep      # plays every affordable board through the real simulation (~2 min)
+npm run sweep:maturation   # the same boards again under three maturation policies (~6 min)
 ```
 
 ## How it is built
@@ -87,6 +88,13 @@ stomach  6 cells  |  424/7776 clear (5.5%)  |  best: anti,phago,anti,phago,anti
 ```
 
 It fails if a tuning makes a case unwinnable or breaks the difficulty curve.
+
+That player buys cells and never grows one. `npm run sweep:maturation` plays the same boards
+again under two policies that do, and the answer is not the one the harness used to assume:
+growing every cell you can afford takes forearm from 9.1% to 13.5% and throat from 6.3% to
+**0.4%**. It is not starvation — the policy that only grows once the whole board is standing
+still loses 461 of throat's 486 winning boards. A matured form is a trade, the trade is
+case-shaped, and there is no policy here that is simply "playing better".
 
 <div align="center">
 <img src="docs/screenshots/fight-build.png" width="30%" alt="The build phase, with a cell selected and its reach previewed at every open junction" />
@@ -127,8 +135,10 @@ finished codebase, and a proposal for the next seven cases.
 
 - **Poison stacks per enemy in range**, and that was never a decision — it is emergent from a
   loop rather than chosen. Stomach sits at the bottom of the band largely because of it.
-- **The balance sweep never matures a cell.** Its floor claim ("maturing can only help") is an
-  argument, not a measurement.
+- **Maturing is worth measuring per case, and nobody has.** `npm run sweep:maturation` says
+  growing everything wins on forearm and loses on throat and stomach, which is a trade working as
+  designed — but it does not say which of the three forms is carrying that, and the gate still
+  measures a player who never grows.
 - **iOS is configured but unverified** — see below.
 
 ## Prerequisites
