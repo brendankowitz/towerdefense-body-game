@@ -14,7 +14,7 @@ export default defineConfig([
   // lint and reached only by tests/lint/boundaries.test.ts, which lints them with
   // `ignore: false` precisely to assert that they are rejected.
   globalIgnores([
-    'dist', 'coverage', 'playwright-report', 'test-results', 'ios', 'android', 'design',
+    'dist', 'build', 'coverage', 'playwright-report', 'test-results', 'ios', 'android', 'design',
     'src/game/__fixtures__/**',
   ]),
 

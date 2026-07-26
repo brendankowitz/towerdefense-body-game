@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { MapPage } from './MapPage';
 import { BODY_NODES } from '@game/content/body';
-import { createFreshProfile, nextCaseId } from '@game/progression';
+import { createFreshProfile, nextCaseId, strainRows } from '@game/progression';
 import { CASE_BY_ID } from '@game/content/cases';
 import { ProfileProvider } from '@app/state/ProfileProvider';
 
@@ -75,5 +75,22 @@ describe('MapPage', () => {
     await renderMap();
     fireEvent.click(screen.getByText('Season'));
     expect(screen.getByTestId('location').textContent).toBe('/season');
+  });
+
+  it('shows one immunity chip per strain from strainRows, with its exact progress', async () => {
+    await renderMap();
+    const rows = strainRows(PROFILE);
+    expect(screen.getAllByTestId(/^map-strain-/)).toHaveLength(rows.length);
+    for (const row of rows) {
+      const chip = screen.getByTestId(`map-strain-${row.key}`);
+      expect(chip).toHaveAttribute('data-held', String(row.held));
+      expect(chip.querySelector('.map-progress-value')?.textContent).toBe(row.progress);
+    }
+  });
+
+  it('navigates to the immunity screen when the progress card is tapped', async () => {
+    await renderMap();
+    fireEvent.click(screen.getByTestId('map-progress'));
+    expect(screen.getByTestId('location').textContent).toBe('/immunity');
   });
 });

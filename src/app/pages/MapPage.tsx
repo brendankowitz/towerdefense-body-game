@@ -2,9 +2,10 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { BODY_NODES } from '@game/content/body';
 import { CASE_BY_ID } from '@game/content/cases';
-import { nextCaseId } from '@game/progression';
+import { nextCaseId, strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
 import { BodyMap } from '@app/components/BodyMap';
+import { MapProgress } from '@app/components/MapProgress';
 import { useProfile } from '@app/state/ProfileProvider';
 import '../screens.css';
 
@@ -44,12 +45,12 @@ export function MapPage() {
               <span><i style={{ background: palette.frontline.css }} />HELD</span>
               <span><i style={{ background: palette.notReached.css }} />NOT REACHED</span>
             </div>
-            <div className="map-held">
-              <span className="mono kicker">REGIONS HELD</span>
-              <span className="mono map-held-count" data-testid="held-count">
-                {`${String(profile.cleared.length)} / ${String(BODY_NODES.filter((n) => n.core !== true).length)}`}
-              </span>
-            </div>
+            <MapProgress
+              regionsHeld={profile.cleared.length}
+              regionsTotal={BODY_NODES.filter((n) => n.core !== true).length}
+              strains={strainRows(profile)}
+              onClick={() => { history.push('/immunity'); }}
+            />
           </div>
 
           <footer className="screen-footer">
