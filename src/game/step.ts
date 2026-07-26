@@ -74,6 +74,11 @@ export function step(state: SimState, dt: number): void {
   if (state.tissue <= 0) {
     state.phase = 'done';
     state.result = 'lost';
+    // The region has fallen, so everything still in the vessel is through. Leaving them frozen
+    // mid-stride under the result sheet reads as a wave that stopped early rather than a case
+    // that ended — which is exactly how it was reported from play.
+    state.enemies = [];
+    state.beams = [];
     return;
   }
   if (state.queue.length === 0 && state.enemies.length === 0) endWave(state);

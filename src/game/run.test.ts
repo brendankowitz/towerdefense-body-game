@@ -165,6 +165,29 @@ describe('tissue', () => {
     expect(state.phase).toBe('done');
   });
 
+  /**
+   * Reported from play: the result sheet said one got through while sprites were still walking.
+   * The case ends the instant the last pip goes, so anything still in the vessel was left frozen
+   * mid-stride underneath the sheet — which reads as a wave that stopped early.
+   */
+  it('clears the vessel when the region falls, rather than freezing it mid-stride', () => {
+    const state = runFor();
+    startWave(state);
+    state.queue = [];
+    for (let leak = 0; leak < TISSUE_PIPS; leak += 1) {
+      addEnemy(state, 'staph', { distance: state.path.total - 1 });
+    }
+    // Still a long way from the end, and so still on screen when the pips run out.
+    const survivor = addEnemy(state, 'staph', { distance: 0 });
+    expect(state.enemies).toContain(survivor);
+
+    step(state, 1);
+
+    expect(state.result).toBe('lost');
+    expect(state.enemies, 'nothing may be left walking once the region is lost').toHaveLength(0);
+    expect(state.beams).toHaveLength(0);
+  });
+
   it('holds the case open while a single pip is left', () => {
     const state = runFor();
     startWave(state);
