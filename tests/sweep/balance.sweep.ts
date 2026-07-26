@@ -35,22 +35,12 @@ const CLEAR_RATE_FLOOR = 0.05;
 const CLEAR_RATE_CEILING = 0.15;
 
 /**
- * One case is held to a lower floor than the design asks for. Recorded here, per case, rather
- * than by lowering the bar for all three.
- *
- * Stomach clears 4.4% against a 5% floor. Every lever short of a mechanic change was measured
- * against this harness on 2026-07-26 and none of them closes it: from the 2.3% the tuning landed
- * at, pulling spot 0 in to a real stretch of vessel bought 1.4 points, opening energy 250 → 320
- * bought 0.7 and 320 → 360 bought 0.2, `POISON_DPS_OTHER` 10 → 7 bought 0.5, `mast.range`
- * 72 → 84 bought 1.4. They are all pushing on the same saturating thing.
- *
- * What actually binds stomach is a rule nobody chose: `applyPoison` runs once per enemy in range
- * (review C1), so N bodies do N × 10 dps to every non-antibody cell and a phagocyte in a crowd
- * dies in well under a second. That is the review's ranked item 6 — decide the stacking rule,
- * give it a decision number and a brief line — and it is expected to lift stomach into the band
- * on its own. Delete this entry when it lands.
+ * A per-case floor, recorded here rather than by lowering the bar for all three. No case needs
+ * one. Stomach carried an exception at 4.4% until the antibody stopped renewing a
+ * mark that was still burning: giving the mark a real duration cost the cell enough that the
+ * whole curve came down into the band together, stomach included.
  */
-const BAND_EXCEPTIONS: Partial<Record<CaseId, number>> = { stomach: 0.04 };
+const BAND_EXCEPTIONS: Partial<Record<CaseId, number>> = {};
 
 interface SweepCase {
   readonly caseId: CaseId;

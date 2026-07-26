@@ -64,7 +64,7 @@ export interface MaturedForm {
 export const MATURED_FORMS: { readonly [K in DefenderKind]?: MaturedForm } = {
   phago: { name: 'Macrophage', cost: 55, stats: { range: 92, dps: 26, rest: 7.2 } },
   clot: { name: 'Fibrin mesh', cost: 80, stats: { slow: 0.16, wear: 10 } },
-  anti: { name: 'High-affinity antibody', cost: 110, stats: { range: 78, rate: 3, tag: 9 } },
+  anti: { name: 'High-affinity antibody', cost: 110, stats: { range: 78, rate: 3, tag: 15 } },
 };
 
 /** The form this kind can be grown into. Null rather than undefined, stated once, here. */

@@ -20,7 +20,7 @@ export type DefenderStats =
 export const DEFENDERS: { readonly [K in DefenderKind]: Extract<DefenderStats, { kind: K }> } = {
   phago: { kind: 'phago', cost: 40, range: 74, dps: 15, gap: 0.7, streak: 4, rest: 3.4, label: 'Engulf', unlock: 0, token: 'frontline' },
   clot: { kind: 'clot', cost: 70, range: 76, slow: 0.28, wear: 6, label: 'Block', unlock: 0, token: 'control' },
-  anti: { kind: 'anti', cost: 95, range: 94, rate: 1.5, tag: 6, dot: 6, label: 'Tag', unlock: 0, token: 'support' },
+  anti: { kind: 'anti', cost: 95, range: 94, rate: 1.5, tag: 10, dot: 6, label: 'Tag', unlock: 0, token: 'support' },
   nk: { kind: 'nk', cost: 130, range: 78, rate: 2.4, dmg: 58, execute: 0.35, label: 'Execute', unlock: 0, token: 'execute' },
   mast: { kind: 'mast', cost: 150, range: 72, rate: 1.1, dmg: 11, label: 'Burst', unlock: 0, token: 'burst' },
   mem: { kind: 'mem', cost: 175, range: 82, rate: 1.3, dmg: 12, learn: 2.5, cap: 46, label: 'Learn', unlock: 1, token: 'learn' },

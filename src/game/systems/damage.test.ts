@@ -173,6 +173,40 @@ describe('clot — block', () => {
 });
 
 describe('antibody — tag', () => {
+  /**
+   * The mark used to be rewritten on every pulse, so anything standing in reach carried one
+   * forever and `tag` — how long a mark lasts — never came into it. It runs down now.
+   */
+  it('does not renew a mark that is still burning', () => {
+    const state = simFor();
+    const tower = addTower(state, 'anti', 0, 0, 0);
+    const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, 0, new Set());
+    const fresh = prey.tag;
+    expect(fresh).toBeGreaterThan(0);
+
+    // Burn most of it off, then let the cell pulse again.
+    prey.tag = fresh / 3;
+    tower.cooldown = 0;
+    runDefenders(state, 0, new Set());
+
+    expect(prey.tag, 'a mark still burning is left alone').toBeCloseTo(fresh / 3, 6);
+  });
+
+  it('marks it again once the mark has run out', () => {
+    const state = simFor();
+    const tower = addTower(state, 'anti', 0, 0, 0);
+    const prey = addEnemy(state, 'staph', { x: 10, y: 0 });
+
+    runDefenders(state, 0, new Set());
+    prey.tag = 0;
+    tower.cooldown = 0;
+    runDefenders(state, 0, new Set());
+
+    expect(prey.tag).toBeGreaterThan(0);
+  });
+
   it('tags everything inside its reach at once and nothing beyond it', () => {
     const state = simFor();
     addTower(state, 'anti', 0, 0, 0);

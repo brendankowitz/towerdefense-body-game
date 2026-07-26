@@ -54,6 +54,11 @@ function tag(state: SimState, tower: AntibodyTower, dt: number, dead: ReadonlySe
     if (!isAlive(enemy, dead)) continue;
     if (!inRange(tower, enemy, stats.range)) continue;
     if (PATHOGENS[enemy.kind].noTag === true) continue;
+    // A mark that is still burning is not renewed. Refreshing it every pulse made the mark
+    // permanent for anything standing in reach, which left `tag` — how long a mark lasts —
+    // doing nothing at all in the ordinary case. Now it runs down, armour comes back for the
+    // gap before the next pulse, and the cell is free to mark something that carries no mark.
+    if (enemy.tag > 0) continue;
 
     enemy.tag = stats.tag;
     tagged = true;
