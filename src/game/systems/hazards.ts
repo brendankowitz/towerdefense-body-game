@@ -49,7 +49,21 @@ export function applyToxinStun(state: SimState, enemy: Enemy): void {
  * Decision D8, deliberate asymmetry: the memory cell escapes `applyToxinStun` but is damaged
  * here. Stun resistance is its stated perk — "toxins cannot stun it" — whereas the poison case
  * rule harms every living cell. Exempting it from poison too would make Learn strictly dominant
- * in the stomach case, which is the one case built to punish standing in the wrong place.
+ * in the stomach case.
+ *
+ * Decision D25: this runs once per enemy in range, so a crowd poisons proportionally — the same
+ * shape as D10's clot wear, in the same step loop, and kept for the same reason. Two case rules
+ * pricing a crowd differently would be the real inconsistency.
+ *
+ * It is kept on measurement rather than on principle. Repricing it flat moves stomach's clear
+ * rate from 5.5% to 6.5% — past throat's 6.3%, which inverts the season's difficulty curve and
+ * fails the sweep's monotonic assertion. Capping the crowd buys nothing, because the crowd never
+ * gets large: across the whole board space a cell is inside `POISON_RADIUS` on 3.7% of
+ * cell-steps, the mean crowd when exposed is 1.16, and the largest ever observed is 4.
+ *
+ * Unlike D10 this earns no brief copy. Every clot in the stomach case dies to wear, so the crowd
+ * is that cell's whole story; poison at a mean crowd of 1.16 is not, and the rule line already
+ * says what matters — antibodies survive toxins far better than phagocytes.
  */
 export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
   if (state.rule !== 'poison') return;

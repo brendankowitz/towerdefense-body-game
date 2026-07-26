@@ -195,3 +195,56 @@ describe('applyMovement', () => {
     expect(state.tissue).toBe(TISSUE_PIPS);
   });
 });
+
+/**
+ * Decision D25. `applyMovement` calls `applyPoison` once per enemy, so a crowd poisons
+ * proportionally — the same shape as D10's clot wear, in the same loop, kept for the same reason.
+ *
+ * These drive `applyMovement` rather than `applyPoison` directly, because the stacking is a
+ * property of the call site and not of the function. An earlier pair called `applyPoison` in a
+ * loop and asserted it accumulated, which is true however the caller behaves: removing the
+ * stacking from this file left both of them green.
+ */
+describe('poison and the crowd — decision D25', () => {
+  function phagoAtStart(state: SimState): void {
+    const [x, y] = positionAt(state.path, 0);
+    state.towers.push({
+      kind: 'phago', spotIndex: 0, x, y, hp: TOWER_MAX_HP, stun: 0, matured: false,
+      holdingEnemyId: null, digested: 0, rest: 0,
+    });
+  }
+
+  /** Held, so they stay on top of the cell and the comparison measures poison, not walking. */
+  function damageFrom(bodies: number): number {
+    const state = fresh('stomach');
+    const held = new Set<number>();
+    for (let i = 0; i < bodies; i += 1) held.add(spawn(state, 'staph').id);
+    phagoAtStart(state);
+
+    applyMovement(state, 1, held, new Set());
+    return TOWER_MAX_HP - (state.towers[0]?.hp ?? 0);
+  }
+
+  it('costs a cell once for every body standing on it', () => {
+    const one = damageFrom(1);
+    expect(one).toBeGreaterThan(0);
+    expect(damageFrom(3), 'three bodies cost three times one').toBeCloseTo(one * 3, 6);
+  });
+
+  it('kills a cell far sooner under a crowd than under a single body', () => {
+    function secondsToFail(bodies: number): number {
+      const state = fresh('stomach');
+      const held = new Set<number>();
+      for (let i = 0; i < bodies; i += 1) held.add(spawn(state, 'staph').id);
+      phagoAtStart(state);
+
+      for (let elapsed = 1; elapsed <= 600; elapsed += 1) {
+        applyMovement(state, 1, held, new Set());
+        if ((state.towers[0]?.hp ?? 0) <= 0) return elapsed;
+      }
+      throw new Error(`a cell under ${String(bodies)} bodies never died`);
+    }
+
+    expect(secondsToFail(4)).toBeLessThan(secondsToFail(1));
+  });
+});

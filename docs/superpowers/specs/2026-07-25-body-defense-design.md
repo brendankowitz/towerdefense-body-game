@@ -249,6 +249,24 @@ A fresh profile and "Start a new body" produce the *same* state — day 1, 240
 banked, no immunity — from one shared factory. The prototype's day-4 opening was
 demo staging.
 
+### 5.0 Reach is the primary stat
+
+Nothing had said so, and it decides more than any other number in the game.
+
+Every defender's range sits in a 72–94 band. Every build spot sits 39.9–78.0 from its vessel.
+So every cell is a few units from a cliff where its coverage of the path collapses from a chord
+to a point — reach is not a gradient here, it is a threshold. Measured dwell for the slowest
+pathogen at throat spot 3: a cell reaching 94 gets 5.30 seconds, one reaching 78 gets **zero**.
+
+Two consequences, both load-bearing:
+
+- **A matured form may never drop its reach below the build-spot offsets.** The high-affinity
+  antibody traded 94 → 78 as a bare literal nobody checked against the geometry, and growing one
+  cost 485 of the throat case's 486 winnable boards — a purchase the game offered for 110 energy
+  that was almost always wrong. The invariant that should have caught it only knew base ranges.
+- **Reach is a poor balance dial.** Because it is a cliff, small moves do nothing and slightly
+  larger ones remove a cell from the case entirely. Tune cost, rate or recovery instead.
+
 ### 5.1 Where the prototype is wrong
 
 Each quirk is judged on whether it makes a better game. Every decision is
