@@ -39,11 +39,22 @@ describe('MapPage', () => {
     expect(screen.getByTestId('bank').textContent).toBe(String(PROFILE.bank));
   });
 
-  it('reports regions held against the total number of non-core body nodes', async () => {
+  /**
+   * The denominator is the promise the map makes, so it counts the regions a case can be fought
+   * over and not every circle drawn: a joint is pass-through and no season will ever hold one.
+   *
+   * Counted here from `BODY_NODES` rather than read off `CASE_REGIONS`, which is what the page
+   * itself uses. Reading the same derived list would make this move whenever that list did — the
+   * expectation would follow the code it is meant to hold, and a `CASE_REGIONS` that quietly went
+   * back to counting joints would still pass. Two independent counts is the whole of the check.
+   */
+  it('reports regions held against the regions a case can be fought over', async () => {
     await renderMap();
-    const nonCoreCount = BODY_NODES.filter((n) => n.core !== true).length;
+    const regions = BODY_NODES.filter((n) => n.core !== true && n.connective !== true);
+
+    expect(regions.length).toBeLessThan(BODY_NODES.length);
     expect(screen.getByTestId('held-count').textContent).toBe(
-      `${String(PROFILE.cleared.length)} / ${String(nonCoreCount)}`,
+      `${String(PROFILE.cleared.length)} / ${String(regions.length)}`,
     );
   });
 

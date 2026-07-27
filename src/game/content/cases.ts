@@ -79,6 +79,45 @@ export const CASES: readonly CaseDefinition[] = [
     // parking space.
     spots: [[70, 158], [212, 132], [292, 216], [46, 264], [234, 341]],
   },
+  {
+    // Credits film, not staph, and the reason is a promise the brief would otherwise break. The
+    // brief shows the held copy of whichever strain a case credits, and Tetanus's is "the first
+    // Staph of every wave bounces off" — but `applySpawn` only bounces one in a `wound` case. A
+    // non-wound case crediting staph therefore tells a player with the vaccine that something will
+    // happen which will not. Biofilm's serum drops armour wherever it is met, so its copy is true
+    // here, and a splinter site is where a biofilm belongs anyway. See the note to the team lead:
+    // the gate and the copy disagree, and one of them is wrong.
+    id: 'hand', node: 'handR', region: 'HAND · CASE 07', title: 'Splinter', rule: 'dormant', credits: 'film',
+    story: 'You pulled the splinter out last week. Something came in with it and stayed.',
+    ruleLabel: 'Relapsing', ruleSub: 'Some of what you kill goes down instead of away, and gets back up where it fell',
+    // Fifteen measured passes to land inside the band and under the case before it, and two
+    // things about the shape of that search are worth the next author's time.
+    //
+    // **Where mass sits matters more than how much there is.** Moving one staph out of wave 4 and
+    // into wave 5 — no change at all to the total — took this case from 5.3% of boards clearing to
+    // 4.5%, straight through the floor. Late waves are where runs die, so a body added there is
+    // worth several added to wave 1. Retune by moving whole waves, not by counting bodies.
+    //
+    // **Wave counts are the coarse dial and starting energy is the fine one.** One staph is worth
+    // roughly three to four tenths of a percentage point and the whole target window is half a
+    // point wide, so counts alone cannot land a case. Ten energy is worth about a tenth, which is
+    // what the odd-looking 355 is doing: it is the last 0.8 points, bought back after wave 5 got
+    // the staph that makes this table escalate the way a wave table should read.
+    startingEnergy: 355,
+    waves: [
+      [{ kind: 'staph', count: 10 }, { kind: 'spore', count: 3 }],
+      [{ kind: 'staph', count: 13 }, { kind: 'spore', count: 4 }, { kind: 'film', count: 3 }],
+      [{ kind: 'staph', count: 14 }, { kind: 'spore', count: 5 }, { kind: 'film', count: 4 }],
+      [{ kind: 'staph', count: 18 }, { kind: 'spore', count: 6 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 2 }],
+      [{ kind: 'staph', count: 19 }, { kind: 'spore', count: 8 }, { kind: 'film', count: 6 }, { kind: 'mrsa', count: 3 }],
+    ],
+    // A splinter track: in at the wrist, folded back on itself twice, out through the palm. No
+    // spot here is one of the antibody-only parking spaces the first three cases each had to have
+    // pulled in — the closest is 73.4 against the phagocyte's 74, so the cheapest cell in the dock
+    // can fight from four of the five and the fifth is a real reach demand rather than a wall.
+    path: [[-24, 74], [96, 88], [188, 52], [268, 118], [214, 200], [104, 232], [140, 330], [214, 386], [214, 430]],
+    spots: [[76, 158], [196, 132], [300, 190], [52, 296], [186, 292]],
+  },
 ];
 
 export const CASE_BY_ID: Readonly<Record<CaseId, CaseDefinition>> = Object.fromEntries(

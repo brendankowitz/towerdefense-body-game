@@ -19,7 +19,11 @@ import { onScreen, screen, seedProfile } from './helpers';
  * whether or not anything was ever written.
  */
 
-const REGION_COUNT = BODY_NODES.filter((node) => node.core !== true).length;
+// The regions a season can hold: not the core, and not the joints the body only routes
+// through. Counted from `BODY_NODES` rather than read off `CASE_REGIONS`, which is what the
+// page uses — reading the same list would make this follow the code it is meant to hold.
+const REGION_COUNT = BODY_NODES
+  .filter((node) => node.core !== true && node.connective !== true).length;
 
 const SAVED: Profile = {
   cleared: ['forearm'],

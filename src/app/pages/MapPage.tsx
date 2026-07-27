@@ -1,6 +1,6 @@
 import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { BODY_NODES } from '@game/content/body';
+import { CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID } from '@game/content/cases';
 import { nextCaseId, strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
@@ -47,7 +47,7 @@ export function MapPage() {
             </div>
             <MapProgress
               regionsHeld={profile.cleared.length}
-              regionsTotal={BODY_NODES.filter((n) => n.core !== true).length}
+              regionsTotal={CASE_REGIONS.length}
               strains={strainRows(profile)}
               onClick={() => { history.push('/immunity'); }}
             />

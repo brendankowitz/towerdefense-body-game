@@ -2,13 +2,18 @@ import { PATHOGENS } from '../content/pathogens';
 import {
   BLEED_AMOUNT,
   BLEED_INTERVAL,
+  DORMANT_CHANCE,
+  DORMANT_DELAY,
+  DORMANT_HP_FRACTION,
   POISON_DPS_ANTIBODY,
   POISON_DPS_OTHER,
   POISON_RADIUS,
   TOXIN_STUN_RADIUS,
 } from '../content/rules';
+import { positionAt } from '../path';
+import { createRng } from '../rng';
 import { distance } from '../state';
-import type { Enemy, SimState } from '../types';
+import type { Dormant, Enemy, SimState } from '../types';
 
 /**
  * Wound cases bleed energy every second until a clot exists. Clamped here rather than in the
@@ -74,4 +79,72 @@ export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
       tower.hp -= (tower.kind === 'anti' ? POISON_DPS_ANTIBODY : POISON_DPS_OTHER) * dt;
     }
   }
+}
+
+/**
+ * Dormancy cases do not finish with everything they kill. A share of it goes down where it stood
+ * and wakes once, weaker, from that same place — so a stretch of vessel the player fought clear is
+ * not a stretch they hold.
+ *
+ * Only an original is ever scheduled. A split child is already a second life and a revenant is
+ * already a second life, so keying on `generation === 0` is what bounds the whole thing at one
+ * extra body per body — without it a case with a splitter in it compounds.
+ *
+ * Called from `resolveDeaths`, at the same point and under the same guard as splitting, so a leak
+ * is never scheduled: something that reached the end is through, not killed (decision D11).
+ *
+ * The draw runs off the sim's own generator and writes the counter back, the way `buildQueue`
+ * does, so a run is reproducible from its seed and the sweep measures a case rather than a shuffle.
+ */
+export function scheduleDormancy(state: SimState, enemy: Enemy): void {
+  if (state.rule !== 'dormant') return;
+  if (enemy.generation !== 0) return;
+
+  const rng = createRng(state.rngState);
+  const roll = rng.next();
+  state.rngState = rng.state;
+  if (roll >= DORMANT_CHANCE) return;
+
+  state.dormant.push({
+    kind: enemy.kind,
+    distance: enemy.distance,
+    hp: PATHOGENS[enemy.kind].hp * DORMANT_HP_FRACTION,
+    delay: DORMANT_DELAY,
+  });
+}
+
+/**
+ * Wakes whatever is due. Runs beside spawning rather than after movement, so a revenant is on the
+ * board for the whole of the step it appears on and is moved and shot at like anything else.
+ *
+ * A woken body carries the reduced health as its *maximum* as well as its current, because a share
+ * of it is what came back — a killer cell that finishes anything under its threshold has to mean a
+ * share of the body in front of it, not of the body that died five seconds ago.
+ */
+export function applyDormantWake(state: SimState, dt: number): void {
+  if (state.dormant.length === 0) return;
+
+  const stillDown: Dormant[] = [];
+  for (const entry of state.dormant) {
+    entry.delay -= dt;
+    if (entry.delay > 0) {
+      stillDown.push(entry);
+      continue;
+    }
+
+    const [x, y] = positionAt(state.path, entry.distance);
+    state.enemies.push({
+      id: state.nextEnemyId,
+      kind: entry.kind,
+      distance: entry.distance,
+      x,
+      y,
+      hp: entry.hp,
+      maxHp: entry.hp,
+      tag: 0,
+      generation: 2,
+    });
+    state.nextEnemyId += 1;
+  }
+  state.dormant = stillDown;
 }

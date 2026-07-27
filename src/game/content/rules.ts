@@ -40,6 +40,20 @@ export const POISON_DPS_OTHER = 10;
 export const TAG_REWARD_MULTIPLIER = 1.5;
 export const TAGGED_BURST_MULTIPLIER = 2;
 
+/**
+ * The dormancy rule. A share of what dies goes back down rather than away, and comes back once,
+ * weaker, where it fell.
+ *
+ * `DORMANT_DELAY` is the only one of these that is a feel decision rather than a magnitude. It has
+ * to outlast the fight over the body that just died — otherwise the revenant arrives into the same
+ * guns that killed it and the rule is a health bar, not a relapse — and it has to be shorter than
+ * the tail of a wave, or every wave ends with the player watching an empty vessel. A little over
+ * the spawn interval, so a revenant lands among the bodies still arriving, is both.
+ */
+export const DORMANT_CHANCE = 0.35;
+export const DORMANT_DELAY = 5;
+export const DORMANT_HP_FRACTION = 0.5;
+
 export const SPLIT_COUNT = 2;
 export const SPLIT_HP_FRACTION = 0.5;
 export const SPLIT_BACK_OFFSET = 14;

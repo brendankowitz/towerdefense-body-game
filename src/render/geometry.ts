@@ -1,5 +1,5 @@
 import { SPLIT_RADIUS_FACTOR } from '@game/content/rules';
-import type { Point } from '@game/types';
+import type { Enemy, Point } from '@game/types';
 
 const TAU = Math.PI * 2;
 
@@ -60,8 +60,17 @@ export function squareToDiamondHalf(halfSide: number): number {
   return halfSide * Math.SQRT2;
 }
 
-/** Split children are drawn smaller, so a divided pathogen reads as two lesser threats. */
-export function enemyRadius(baseRadius: number, generation: 0 | 1): number {
+/**
+ * Split children are drawn smaller, so a divided pathogen reads as two lesser threats.
+ *
+ * Only children. A dormancy case's revenant comes back weakened and full size on purpose: it is
+ * the same body got back up, not a body divided, and shrinking it would spell one mechanic with
+ * the other's vocabulary. What says it is a revenant is that it appears in the middle of the
+ * vessel out of nothing, and the health bar over it.
+ *
+ * Typed off `Enemy` rather than restating the union, because the union has grown once already.
+ */
+export function enemyRadius(baseRadius: number, generation: Enemy['generation']): number {
   return generation === 1 ? baseRadius * SPLIT_RADIUS_FACTOR : baseRadius;
 }
 

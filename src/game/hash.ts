@@ -69,5 +69,15 @@ export function hashState(state: SimState): string {
     mix(enemy.generation);
   }
 
+  // What a dormancy case has killed and is not finished with. Hashed for the same reason the
+  // board is: a wave with something still down there is a different run from one without, and it
+  // is a state the trajectory passes through with an empty vessel and nothing else to show for it.
+  for (const entry of state.dormant) {
+    mixText(entry.kind);
+    mix(entry.distance);
+    mix(entry.hp);
+    mix(entry.delay);
+  }
+
   return (hash >>> 0).toString(16).padStart(8, '0');
 }

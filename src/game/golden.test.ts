@@ -40,9 +40,8 @@ interface Scenario {
   readonly board: readonly (readonly [DefenderKind, number])[];
   /**
    * One cell per case is grown before the wave starts, so matured stats are inside the net rather
-   * than beside it. Content offers two forms, and both are exercised: the macrophage on the two
-   * cases whose streams are mostly small bodies, the high-affinity antibody on the one whose rule
-   * makes marks matter most.
+   * than beside it. Every form content offers is grown by more than one scenario, so a form that
+   * stops being honoured cannot hide behind a single board's noise.
    */
   readonly matureKind?: DefenderKind;
   /** Step at which fever is called, for the scenario that covers the slow. */
@@ -73,6 +72,16 @@ const SCENARIOS: readonly Scenario[] = [
     waveIndex: 4,
     immunity: { staph: 0, film: IMMUNITY_MAX, virus: 0 },
     board: [['clot', 0], ['anti', 1], ['phago', 2], ['mast', 3], ['nk', 4]],
+    matureKind: 'anti',
+  },
+  // Relapse: bodies scheduled back onto a stretch of vessel that was cleared, alongside spore
+  // regeneration and biofilm armour. The wave it runs on is long enough for the delay to elapse
+  // and for what comes back to be fought, which is the part a shorter sample would miss.
+  {
+    caseId: 'hand',
+    waveIndex: 4,
+    immunity: { staph: 0, film: 0, virus: 0 },
+    board: [['phago', 0], ['mem', 1], ['anti', 2], ['nk', 3], ['mast', 4]],
     matureKind: 'anti',
   },
 ];

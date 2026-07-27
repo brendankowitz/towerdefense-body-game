@@ -4,7 +4,7 @@ import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
 import { STRAIN_ROWS, VACCINES } from './vaccines';
-import { BODY_LINKS, BODY_NODES } from './body';
+import { BODY_LINKS, BODY_NODES, CASE_REGIONS } from './body';
 import { BOARD_HEIGHT, BOARD_WIDTH, TAG_REWARD_MULTIPLIER } from './rules';
 
 // Structural invariants only — never gameplay values. A balance pass must be able to change
@@ -70,6 +70,30 @@ describe('case coherence', () => {
   it('anchors every case to a body node that exists', () => {
     const nodeIds = new Set(BODY_NODES.map((n) => n.id));
     for (const c of CASES) expect(nodeIds.has(c.node)).toBe(true);
+  });
+
+  /**
+   * The map counts held regions against `CASE_REGIONS`, so a case anchored anywhere else is a
+   * region the player can hold and the counter will never credit — the numerator and the
+   * denominator would be measuring different things. The core is the thing being defended and a
+   * joint is pass-through; neither is somewhere illness settles.
+   */
+  it('anchors every case to a region a case can be fought over, never the core or a joint', () => {
+    const regions = new Set(CASE_REGIONS.map((n) => n.id));
+    for (const c of CASES) {
+      expect(regions, `case ${c.id} sits on ${c.node}, which is not a region to hold`)
+        .toContain(c.node);
+    }
+  });
+
+  it('gives every case a region of its own, so two cases never claim one node', () => {
+    const nodes = CASES.map((c) => c.node);
+    expect(new Set(nodes).size).toBe(nodes.length);
+  });
+
+  /** A season cannot promise more regions than the body has to give. */
+  it('never lists more cases than there are regions to fight them over', () => {
+    expect(CASES.length).toBeLessThanOrEqual(CASE_REGIONS.length);
   });
 });
 
@@ -137,6 +161,34 @@ describe('body graph coherence', () => {
 
   it('has exactly one core node', () => {
     expect(BODY_NODES.filter((n) => n.core === true)).toHaveLength(1);
+  });
+
+  /**
+   * The joints, named rather than derived, and this is the one place in the suite that names
+   * content on purpose.
+   *
+   * `CASE_REGIONS` is `BODY_NODES` minus the core minus these, and the map's denominator is its
+   * length — so every check written against `CASE_REGIONS` moves when the flags move, and a joint
+   * quietly promoted back to a region passes all of them. Naming the four here is what makes the
+   * denominator a decision the season answers to instead of whatever the table currently says.
+   * Changing this list is allowed; changing it by accident is what this stops.
+   */
+  it('routes through four joints, and gives a case to everything else', () => {
+    const joints = BODY_NODES.filter((n) => n.connective === true).map((n) => n.id).sort();
+    expect(joints).toEqual(['kneeL', 'kneeR', 'shoulder', 'shoulderR']);
+  });
+
+  it('sorts every node into exactly one of the core, a joint, and a region to hold', () => {
+    for (const node of BODY_NODES) {
+      const roles = [node.core === true, node.connective === true].filter(Boolean).length;
+      expect(roles, `${node.id} is both the core and a joint`).toBeLessThanOrEqual(1);
+    }
+    expect(CASE_REGIONS.map((n) => n.id).sort()).toEqual(
+      BODY_NODES
+        .filter((n) => n.core !== true && n.connective !== true)
+        .map((n) => n.id)
+        .sort(),
+    );
   });
 
   it('is connected — every node is reachable from the core', () => {

@@ -27,7 +27,10 @@ export function simFor(
 export function addEnemy(
   state: SimState,
   kind: PathogenKind,
-  opts: { x?: number; y?: number; hp?: number; tag?: number; distance?: number; generation?: 0 | 1 } = {},
+  opts: {
+    x?: number; y?: number; hp?: number; tag?: number; distance?: number;
+    generation?: Enemy['generation'];
+  } = {},
 ): Enemy {
   const stats = PATHOGENS[kind];
   const travelled = opts.distance ?? 0;

@@ -15,7 +15,11 @@ import { onScreen, screen } from './helpers';
  */
 
 const FOREARM = CASE_BY_ID.forearm;
-const REGION_COUNT = BODY_NODES.filter((node) => node.core !== true).length;
+// The regions a season can hold: not the core, and not the joints the body only routes
+// through. Counted from `BODY_NODES` rather than read off `CASE_REGIONS`, which is what the
+// page uses — reading the same list would make this follow the code it is meant to hold.
+const REGION_COUNT = BODY_NODES
+  .filter((node) => node.core !== true && node.connective !== true).length;
 
 test('the map, the brief and the fight screen chain together', async ({ page }) => {
   await page.goto('/');

@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { applyPoison, applyToxinStun, applyWoundBleed } from './hazards';
+import {
+  applyDormantWake, applyPoison, applyToxinStun, applyWoundBleed, scheduleDormancy,
+} from './hazards';
+import { resolveDeaths } from './deaths';
 import { PATHOGENS } from '../content/pathogens';
 import {
   BLEED_AMOUNT,
   BLEED_INTERVAL,
+  DORMANT_CHANCE,
+  DORMANT_DELAY,
+  DORMANT_HP_FRACTION,
   POISON_DPS_ANTIBODY,
   POISON_DPS_OTHER,
   POISON_RADIUS,
@@ -11,10 +17,11 @@ import {
   TOWER_MAX_HP,
   TOXIN_STUN_RADIUS,
 } from '../content/rules';
+import { positionAt } from '../path';
 import { distance } from '../state';
 import { step } from '../step';
 import { addEnemy, addTower, addTowerOnPath, simFor } from '../testing';
-import type { SimState } from '../types';
+import type { Enemy, SimState } from '../types';
 
 /** The wound rule is the bleed's precondition, so a case reshuffle fails here rather than silently. */
 function wound(): SimState {
@@ -28,6 +35,29 @@ function poisoned(): SimState {
   const state = simFor('stomach');
   expect(state.rule).toBe('poison');
   return state;
+}
+
+/** And for dormancy. */
+function relapsing(): SimState {
+  const state = simFor('hand');
+  expect(state.rule).toBe('dormant');
+  return state;
+}
+
+/**
+ * Schedules from a fixed seed until one takes, and reports how many draws it cost.
+ *
+ * The rule is a *share* of what dies, so a single kill proves nothing either way — it can miss
+ * legitimately. Walking the generator until it lands tests the mechanism without asserting the
+ * share, which is a balance number and not this suite's business. Bounded, so a chance that has
+ * been wired to zero fails here instead of hanging.
+ */
+function scheduleUntilItTakes(state: SimState, enemy: Enemy, maxDraws = 200): number {
+  for (let draw = 1; draw <= maxDraws; draw += 1) {
+    scheduleDormancy(state, enemy);
+    if (state.dormant.length > 0) return draw;
+  }
+  throw new Error(`nothing went dormant in ${String(maxDraws)} draws`);
 }
 
 describe('wound — bleeding', () => {
@@ -349,5 +379,150 @@ describe('poison — pathogens damage your defenders', () => {
 
     expect(state.towers).toEqual([tower]);
     expect(tower.hp).toBeCloseTo(POISON_DPS_OTHER * STEP_SECONDS, 6);
+  });
+});
+
+describe('dormancy — some of what you kill gets back up', () => {
+  it('schedules a killed body to come back, weaker and where it fell', () => {
+    const state = relapsing();
+    const enemy = addEnemy(state, 'staph', { distance: 210 });
+
+    scheduleUntilItTakes(state, enemy);
+
+    expect(state.dormant).toEqual([{
+      kind: 'staph',
+      distance: 210,
+      hp: PATHOGENS.staph.hp * DORMANT_HP_FRACTION,
+      delay: DORMANT_DELAY,
+    }]);
+  });
+
+  it('does not schedule anything outside a dormancy case', () => {
+    for (const state of [wound(), poisoned()]) {
+      const enemy = addEnemy(state, 'staph', { distance: 100 });
+      for (let draw = 0; draw < 200; draw += 1) scheduleDormancy(state, enemy);
+      expect(state.dormant, `${state.caseId} scheduled a relapse`).toEqual([]);
+    }
+  });
+
+  /**
+   * What bounds the whole rule at one extra body per body. A split child is already a second life
+   * and a revenant is already a second life, so neither is allowed a third — without this a case
+   * carrying a splitter compounds, and a revenant that could go dormant again never ends.
+   */
+  it('never schedules a body that is already something else coming back', () => {
+    for (const generation of [1, 2] as const) {
+      const state = relapsing();
+      const enemy = addEnemy(state, 'staph', { distance: 100, generation });
+      for (let draw = 0; draw < 200; draw += 1) scheduleDormancy(state, enemy);
+      expect(state.dormant, `generation ${String(generation)} was scheduled`).toEqual([]);
+    }
+  });
+
+  /**
+   * The draw comes off the sim's own generator and the counter is written back, so a run is
+   * reproducible from its seed. Two states at the same seed have to make the same decisions, and
+   * one draw has to move the counter — a generator that is read without being advanced returns
+   * the same number forever, which is a fixed outcome wearing a probability.
+   */
+  it('draws from the run seed and advances it, so a run is reproducible', () => {
+    const first = relapsing();
+    const second = relapsing();
+    expect(first.rngState).toBe(second.rngState);
+
+    const cost = scheduleUntilItTakes(first, addEnemy(first, 'staph', { distance: 40 }));
+    expect(first.rngState).not.toBe(second.rngState);
+
+    expect(scheduleUntilItTakes(second, addEnemy(second, 'staph', { distance: 40 }))).toBe(cost);
+    expect(second.rngState).toBe(first.rngState);
+    expect(second.dormant).toEqual(first.dormant);
+  });
+
+  it('holds a body down for the delay, then puts it back on the vessel', () => {
+    const state = relapsing();
+    scheduleUntilItTakes(state, addEnemy(state, 'spore', { distance: 260 }));
+    state.enemies = [];
+
+    applyDormantWake(state, DORMANT_DELAY - STEP_SECONDS);
+    expect(state.enemies, 'it came back early').toHaveLength(0);
+    expect(state.dormant).toHaveLength(1);
+
+    applyDormantWake(state, STEP_SECONDS);
+
+    const [woken] = state.enemies;
+    expect(woken).toBeDefined();
+    expect(state.dormant).toEqual([]);
+    if (woken === undefined) return;
+    expect(woken.kind).toBe('spore');
+    expect(woken.distance).toBe(260);
+    expect([woken.x, woken.y]).toEqual(positionAt(state.path, 260));
+    expect(woken.generation).toBe(2);
+    expect(woken.tag).toBe(0);
+  });
+
+  /**
+   * Half of it is what came back, so half is all of it. A killer cell finishing anything under
+   * its threshold has to mean a share of the body in front of it, not of the body that died.
+   */
+  it('gives a revenant its reduced health as its whole health, not as a wound', () => {
+    const state = relapsing();
+    scheduleUntilItTakes(state, addEnemy(state, 'film', { distance: 120 }));
+    state.enemies = [];
+
+    applyDormantWake(state, DORMANT_DELAY);
+
+    const [woken] = state.enemies;
+    expect(woken).toBeDefined();
+    if (woken === undefined) return;
+    expect(woken.hp).toBe(PATHOGENS.film.hp * DORMANT_HP_FRACTION);
+    expect(woken.maxHp).toBe(woken.hp);
+  });
+
+  it('gives every revenant an id of its own, so the board can tell them apart', () => {
+    const state = relapsing();
+    scheduleUntilItTakes(state, addEnemy(state, 'staph', { distance: 60 }));
+    scheduleUntilItTakes(state, addEnemy(state, 'staph', { distance: 90 }));
+    state.enemies = [];
+    expect(state.dormant).toHaveLength(2);
+
+    applyDormantWake(state, DORMANT_DELAY);
+
+    const ids = state.enemies.map((enemy) => enemy.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(state.nextEnemyId).toBeGreaterThan(Math.max(...ids));
+  });
+
+  /**
+   * The rule runs off `resolveDeaths`, at the same point and under the same guard as splitting,
+   * which is what keeps a leak out of it: something that reached the end is through, not killed
+   * (decision D11). Asserted through the caller, because the guard is the caller's.
+   */
+  it('schedules from a kill and never from a leak', () => {
+    const killed = relapsing();
+    const leaked = relapsing();
+    const bodies = 200;
+
+    for (let n = 0; n < bodies; n += 1) addEnemy(killed, 'staph', { distance: 150, hp: 0 });
+    resolveDeaths(killed, new Set());
+    expect(killed.dormant.length).toBeGreaterThan(0);
+
+    const leaks = new Set<number>();
+    for (let n = 0; n < bodies; n += 1) {
+      leaks.add(addEnemy(leaked, 'staph', { distance: leaked.path.total, hp: 0 }).id);
+    }
+    resolveDeaths(leaked, leaks);
+    expect(leaked.dormant, 'a body that got through was scheduled to come back').toEqual([]);
+  });
+
+  it('is a share of what dies rather than all of it', () => {
+    const state = relapsing();
+    const bodies = 400;
+    for (let n = 0; n < bodies; n += 1) addEnemy(state, 'staph', { distance: 150, hp: 0 });
+
+    resolveDeaths(state, new Set());
+
+    expect(DORMANT_CHANCE).toBeLessThan(1);
+    expect(state.dormant.length).toBeGreaterThan(0);
+    expect(state.dormant.length).toBeLessThan(bodies);
   });
 });

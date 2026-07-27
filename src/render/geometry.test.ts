@@ -143,6 +143,17 @@ describe('enemyRadius', () => {
       expect(enemyRadius(stats.radius, 1)).toBeLessThan(enemyRadius(stats.radius, 0));
     }
   });
+
+  /**
+   * Only a child. A revenant comes back weakened and at full size: it is the same body got back
+   * up, not a body divided, and drawing it small would spell one mechanic with the other's
+   * vocabulary. What its health is, the bar above it says.
+   */
+  it('draws a revenant at full size, because it was never divided', () => {
+    for (const stats of Object.values(PATHOGENS)) {
+      expect(enemyRadius(stats.radius, 2)).toBe(enemyRadius(stats.radius, 0));
+    }
+  });
 });
 
 describe('healthBarWidth', () => {

@@ -35,6 +35,34 @@ describe('BodyMap', () => {
     expect(screen.getByTestId('map-node-footR')).toHaveAttribute('data-state', 'cold');
   });
 
+  /**
+   * The legend beside this map reads NOT REACHED, and a joint is never going to be reached — it is
+   * not a region the season is failing to take you to. So a joint is drawn as part of the wiring
+   * and told apart from a region that is genuinely still cold. Read off the content flag rather
+   * than named here, so marking another node connective is covered without editing this.
+   */
+  it('draws a joint as wiring rather than as a region nobody has reached yet', () => {
+    render(<BodyMap {...base} />);
+    const joints = BODY_NODES.filter((node) => node.connective === true);
+
+    expect(joints.length, 'no node is connective, so this asserts nothing').toBeGreaterThan(0);
+    for (const joint of joints) {
+      expect(screen.getByTestId(`map-node-${joint.id}`)).toHaveAttribute('data-state', 'link');
+    }
+  });
+
+  /** A joint has no case, so it can never be the one under attack even if it is asked for. */
+  it('never lights a joint up as the region under attack', () => {
+    const joint = BODY_NODES.find((node) => node.connective === true);
+    expect(joint).toBeDefined();
+    if (joint === undefined) return;
+
+    render(<BodyMap {...base} activeNode={joint.id} />);
+
+    expect(screen.getByTestId(`map-node-${joint.id}`)).toHaveAttribute('data-state', 'link');
+    expect(document.querySelectorAll('.orbit')).toHaveLength(0);
+  });
+
   it('opens the brief when the region under attack is tapped', () => {
     const onSelectCase = vi.fn();
     render(<BodyMap {...base} onSelectCase={onSelectCase} />);

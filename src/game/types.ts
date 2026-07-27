@@ -1,7 +1,7 @@
 export type DefenderKind = 'phago' | 'clot' | 'anti' | 'nk' | 'mast' | 'mem';
 export type PathogenKind = 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa';
-export type CaseId = 'forearm' | 'throat' | 'stomach';
-export type CaseRuleKind = 'wound' | 'virus' | 'poison';
+export type CaseId = 'forearm' | 'throat' | 'stomach' | 'hand';
+export type CaseRuleKind = 'wound' | 'virus' | 'poison' | 'dormant';
 
 /** A strain the immunity screen tracks. Every member has exactly one vaccine and one case that credits it. */
 export type StrainId = 'staph' | 'virus' | 'film';
@@ -112,8 +112,27 @@ export interface Enemy {
   readonly maxHp: number;
   /** Seconds of tag remaining. Zero or less means untagged. */
   tag: number;
-  /** 0 for an original, 1 for a split child. Children never split. */
-  readonly generation: 0 | 1;
+  /**
+   * 0 for an original, 1 for a split child, 2 for something a dormancy case woke back up.
+   *
+   * Both of the things that put a body back on the vessel are keyed off this, and both only ever
+   * act on a 0 — so a child never splits, a revenant never wakes twice, and neither chain can run
+   * away. It is also what tells a split child from a revenant, which move at different speeds.
+   */
+  readonly generation: 0 | 1 | 2;
+}
+
+/**
+ * Something a dormancy case killed that is coming back. Scheduled where it fell rather than at the
+ * entry, which is the whole of what the rule does to a board: ground you cleared is not held.
+ */
+export interface Dormant {
+  readonly kind: PathogenKind;
+  /** Arc length along the path where it died, and where it will wake. */
+  readonly distance: number;
+  readonly hp: number;
+  /** Seconds left before it wakes. */
+  delay: number;
 }
 
 export interface Beam {
@@ -157,6 +176,12 @@ export interface SimState {
 
   towers: Tower[];
   enemies: Enemy[];
+  /**
+   * What the dormancy rule has killed and not finished with. Empty on every other case, and empty
+   * at the end of every wave — `step` will not hold a wave as over while anything is still down
+   * there, which is the difference between a relapse and a spawn in the next wave.
+   */
+  dormant: Dormant[];
   beams: Beam[];
   nextEnemyId: number;
   rngState: number;

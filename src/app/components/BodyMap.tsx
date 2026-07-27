@@ -4,7 +4,7 @@ import { NEUTRALS, palette } from '@theme/tokens';
 import type { BodyNodeId, CaseId } from '@game/types';
 import { ORBIT_KEYFRAMES } from './orbit';
 
-type NodeState = 'held' | 'hot' | 'core' | 'cold';
+type NodeState = 'held' | 'hot' | 'core' | 'link' | 'cold';
 
 interface BodyMapProps {
   readonly cleared: readonly CaseId[];
@@ -16,18 +16,28 @@ const STATE_TOKEN: Record<NodeState, string> = {
   held: palette.frontline.css,
   hot: palette.threat.css,
   core: palette.core.css,
+  link: palette.notReached.css,
   cold: palette.notReached.css,
 };
 
-/** The body graph: fifteen regions, fourteen links, the core, the case under attack circling. */
+/**
+ * The body graph: every node, every link, the core, and the case under attack circling.
+ *
+ * Most nodes are regions a case can be fought over; the rest are the heart and the joints the body
+ * only routes through. A joint is drawn faintly and without the ring a region carries, because the
+ * legend beside this reads NOT REACHED and a joint is never going to be reached — it is not
+ * somewhere the season is failing to take you. Which nodes those are is content's to say.
+ */
 export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
   const clearedNodes = new Set(
     CASES.filter((c) => cleared.includes(c.id)).map((c) => c.node),
   );
+  const joints = new Set(BODY_NODES.filter((node) => node.connective === true).map((n) => n.id));
 
   const stateOf = (id: BodyNodeId): NodeState => {
     if (clearedNodes.has(id)) return 'held';
     if (id === 'heart') return 'core';
+    if (joints.has(id)) return 'link';
     if (id === activeNode) return 'hot';
     return 'cold';
   };
@@ -88,12 +98,13 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
               cy={node.y}
               r={node.r}
               fill={STATE_TOKEN[state]}
-              stroke={NEUTRALS.screenPaper}
+              fillOpacity={state === 'link' ? 0.5 : 1}
+              stroke={state === 'link' ? 'none' : NEUTRALS.screenPaper}
               strokeWidth={state === 'core' ? 5 : 4}
               style={{ cursor: interactive ? 'pointer' : 'default' }}
               onClick={interactive ? onSelectCase : undefined}
             />
-            {state !== 'cold' && (
+            {(state === 'held' || state === 'hot' || state === 'core') && (
               <circle
                 cx={node.x}
                 cy={node.y}

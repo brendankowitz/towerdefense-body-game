@@ -1,7 +1,7 @@
 import { WAVE_CLEAR_ENERGY } from './content/rules';
 import { acquireHolds, runDefenders } from './systems/damage';
 import { resolveDeaths } from './systems/deaths';
-import { applyWoundBleed } from './systems/hazards';
+import { applyDormantWake, applyWoundBleed } from './systems/hazards';
 import { applyMovement } from './systems/movement';
 import { applySpawn } from './systems/spawn';
 import type { SimState } from './types';
@@ -23,9 +23,10 @@ function collectHeld(state: SimState): Set<number> {
 }
 
 /**
- * The wave is held: nothing is queued and nothing is left on the board. The last wave of a case
- * ends the case instead of paying a wave bonus — the reward for that is banked by `clearCase`,
- * and reporting the one that was actually awarded is decision D5.
+ * The wave is held: nothing is queued, nothing is left on the board, and nothing is still lying
+ * dormant waiting to get back up. The last wave of a case ends the case instead of paying a wave
+ * bonus — the reward for that is banked by `clearCase`, and reporting the one that was actually
+ * awarded is decision D5.
  */
 function endWave(state: SimState): void {
   if (state.waveIndex >= state.waveCount - 1) {
@@ -46,6 +47,9 @@ function endWave(state: SimState): void {
  */
 export function step(state: SimState, dt: number): void {
   applySpawn(state, dt);
+  // Beside spawning, not after movement: a revenant is on the board for the whole of the step it
+  // wakes on, and is moved and shot at on that step like anything the queue put there.
+  applyDormantWake(state, dt);
   applyWoundBleed(state, dt);
 
   const dead = new Set<number>();
@@ -78,8 +82,11 @@ export function step(state: SimState, dt: number): void {
     // mid-stride under the result sheet reads as a wave that stopped early rather than a case
     // that ended — which is exactly how it was reported from play.
     state.enemies = [];
+    state.dormant = [];
     state.beams = [];
     return;
   }
-  if (state.queue.length === 0 && state.enemies.length === 0) endWave(state);
+  if (state.queue.length === 0 && state.enemies.length === 0 && state.dormant.length === 0) {
+    endWave(state);
+  }
 }

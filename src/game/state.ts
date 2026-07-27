@@ -42,6 +42,7 @@ export function createSimState(input: SimInput): SimState {
 
     towers: [],
     enemies: [],
+    dormant: [],
     beams: [],
     nextEnemyId: 1,
     rngState: 0,

@@ -9,6 +9,7 @@ import {
 import { positionAt } from '../path';
 import type { Enemy, SimState } from '../types';
 import { awardKill, grantMemoryXp } from './economy';
+import { scheduleDormancy } from './hazards';
 import { statsFor } from './stats';
 
 /**
@@ -62,6 +63,7 @@ export function resolveDeaths(state: SimState, dead: Set<number>): void {
     awardKill(state, enemy);
     grantMemoryXp(state, enemy);
     splitOnDeath(state, enemy);
+    scheduleDormancy(state, enemy);
   }
 
   if (dead.size === 0) return;

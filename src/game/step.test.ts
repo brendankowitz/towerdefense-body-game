@@ -5,6 +5,7 @@ import { startWave } from './commands';
 import { DEFENDERS } from './content/defenders';
 import { PATHOGENS } from './content/pathogens';
 import { STEP_SECONDS, TAG_REWARD_MULTIPLIER, TISSUE_PIPS } from './content/rules';
+import { scheduleDormancy } from './systems/hazards';
 import { addEnemy, addTowerOnPath, simFor } from './testing';
 import type { CaseId, Enemy, PathogenKind, PhagocyteTower, SimState } from './types';
 
@@ -224,5 +225,60 @@ describe('step — run state', () => {
     step(state, STEP_SECONDS);
 
     expect(state.beams).toHaveLength(0);
+  });
+});
+
+/**
+ * The dormancy rule's one claim on `step`: a wave is not over while something it killed is still
+ * lying there waiting to get back up. Without this the board empties, the wave is called held, and
+ * the relapse either never happens or arrives in the middle of the next wave — which is a spawn,
+ * not a relapse.
+ */
+describe('step — a wave is not over while something is still down', () => {
+  function withSomethingDown(): SimState {
+    const state = fighting('hand');
+    const enemy = addEnemy(state, 'staph', { distance: 150 });
+    for (let draw = 0; draw < 200 && state.dormant.length === 0; draw += 1) {
+      scheduleDormancy(state, enemy);
+    }
+    expect(state.dormant, 'nothing went dormant, so this asserts nothing').toHaveLength(1);
+    state.enemies = [];
+    state.queue = [];
+    return state;
+  }
+
+  it('keeps the wave running on an empty board and an empty queue', () => {
+    const state = withSomethingDown();
+
+    step(state, STEP_SECONDS);
+
+    expect(state.enemies).toHaveLength(0);
+    expect(state.queue).toHaveLength(0);
+    expect(state.phase).toBe('wave');
+  });
+
+  it('holds it open until the revenant is up, and calls it once that body is gone', () => {
+    const state = withSomethingDown();
+
+    advanceUntil(state, () => state.enemies.length > 0);
+    expect(state.phase).toBe('wave');
+    expect(state.dormant).toEqual([]);
+
+    state.enemies = [];
+    step(state, STEP_SECONDS);
+
+    expect(state.phase).toBe('built');
+  });
+
+  /** A region that has fallen is finished with. Nothing is left queued to wake into it. */
+  it('drops what is still down when the last tissue pip goes', () => {
+    const state = withSomethingDown();
+    state.tissue = 1;
+    spawnAt(state, 'staph', state.path.total);
+
+    step(state, STEP_SECONDS);
+
+    expect(state.result).toBe('lost');
+    expect(state.dormant).toEqual([]);
   });
 });
