@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { matureDefender, placeDefender, startWave, triggerFever } from './commands';
+import { CASES } from './content/cases';
 import { DEFENDERS } from './content/defenders';
 import { maturedFormOf } from './content/maturation';
 import { IMMUNITY_MAX, STEP_SECONDS } from './content/rules';
@@ -84,6 +85,35 @@ const SCENARIOS: readonly Scenario[] = [
     board: [['phago', 0], ['mem', 1], ['anti', 2], ['nk', 3], ['mast', 4]],
     matureKind: 'anti',
   },
+  // The wound rule on its second geometry, with the shield live again: this is the only other
+  // case a tetanus bounce can happen in, so a change that made the bounce case-specific in the
+  // wrong direction shows up here rather than only on forearm.
+  {
+    caseId: 'blister',
+    waveIndex: 4,
+    immunity: { staph: IMMUNITY_MAX, film: 0, virus: 0 },
+    board: [['nk', 0], ['phago', 1], ['anti', 2], ['mem', 3], ['mast', 4]],
+    matureKind: 'phago',
+  },
+  // Amnesia, and the profile is holding exactly the serum this case wipes. The trajectory is
+  // therefore the one where biofilm keeps its armour with the vaccine earned — if the mask ever
+  // stops being applied, this scenario is the one that moves and the stomach one is not.
+  {
+    caseId: 'measles',
+    waveIndex: 4,
+    immunity: { staph: 0, film: IMMUNITY_MAX, virus: 0 },
+    board: [['anti', 0], ['nk', 1], ['mem', 2], ['phago', 3], ['mast', 4]],
+    matureKind: 'anti',
+  },
+  // Overreaction, on a board deliberately stacked with the cells that kill fastest: the wave has
+  // to cross several inflammation pips for the counter to be inside the net rather than beside it.
+  {
+    caseId: 'sinus',
+    waveIndex: 4,
+    immunity: { staph: 0, film: 0, virus: 0 },
+    board: [['mast', 0], ['nk', 1], ['phago', 2], ['mem', 3], ['anti', 4]],
+    matureKind: 'phago',
+  },
 ];
 
 function armBoard(scenario: Scenario): SimState {
@@ -136,6 +166,16 @@ function goldenRun(): Record<CaseId, string> {
 }
 
 describe('golden run', () => {
+  /**
+   * The docstring above claims this net runs every case. It said so while the record it hashes was
+   * keyed by `CaseId` and filled from whatever scenarios happened to be listed — so a case added
+   * without a scenario would have left a smaller snapshot, blessed silently, and no case in the net.
+   */
+  it('covers every case the season ships', () => {
+    expect([...new Set(SCENARIOS.map((scenario) => scenario.caseId))].sort())
+      .toEqual(CASES.map((definition) => definition.id).sort());
+  });
+
   it('reproduces byte-identically across executions', () => {
     expect(goldenRun()).toEqual(goldenRun());
   });

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createSimState, distance } from './state';
 import { CASES, CASE_BY_ID } from './content/cases';
-import { TISSUE_PIPS } from './content/rules';
+import { PATHOGENS } from './content/pathogens';
+import { IMMUNITY_MAX, TISSUE_PIPS } from './content/rules';
 import { compilePath } from './path';
+import { armourMultiplier } from './systems/targeting';
+import { addEnemy } from './testing';
 import type { SimInput } from './state';
 
 const input: SimInput = {
@@ -56,6 +59,78 @@ describe('createSimState', () => {
     const first = createSimState(input);
     first.shieldedWave = 4;
     expect(createSimState(input).shieldedWave).toBeNull();
+  });
+
+  it('starts with no inflammation banked', () => {
+    expect(createSimState(input).inflammation).toBe(0);
+  });
+});
+
+/**
+ * The amnesia rule lives here and only here: a case names a strain, and the state it is built with
+ * reads that strain as zero. Everything downstream — the bounce, the suppressed split, the dropped
+ * armour — is written against `state.immunity` and needs to know nothing about the rule.
+ *
+ * The case is found by rule rather than named, so this suite follows the season rather than a case
+ * id, and says so loudly if no case carries the rule any more.
+ */
+describe('amnesia — one immunity does not work here', () => {
+  const wiping = CASES.find((definition) => definition.rule === 'amnesia');
+  const held = { staph: IMMUNITY_MAX, film: IMMUNITY_MAX, virus: IMMUNITY_MAX };
+
+  it('has a case that carries the rule, naming the strain it takes', () => {
+    expect(wiping, 'no amnesia case in the season').toBeDefined();
+    expect(wiping?.wipes, `${wiping?.id ?? 'the amnesia case'} wipes nothing`).toBeDefined();
+  });
+
+  it('reads the named strain as zero while leaving the rest of the profile alone', () => {
+    if (wiping?.wipes === undefined) return;
+
+    const state = createSimState({ ...input, caseId: wiping.id, immunity: held });
+
+    expect(state.immunity[wiping.wipes]).toBe(0);
+    for (const strain of ['staph', 'film', 'virus'] as const) {
+      if (strain === wiping.wipes) continue;
+      expect(state.immunity[strain], `${strain} was wiped as well`).toBe(IMMUNITY_MAX);
+    }
+  });
+
+  it('never touches the profile object it was handed', () => {
+    if (wiping === undefined) return;
+
+    const profileImmunity = { ...held };
+    createSimState({ ...input, caseId: wiping.id, immunity: profileImmunity });
+
+    expect(profileImmunity, 'the wipe was written back onto the profile').toEqual(held);
+  });
+
+  it('leaves every other case holding everything the profile earned', () => {
+    for (const definition of CASES) {
+      if (definition.rule === 'amnesia') continue;
+      const state = createSimState({ ...input, caseId: definition.id, immunity: held });
+      expect(state.immunity, `${definition.id} lost an immunity it was not meant to`).toEqual(held);
+    }
+  });
+
+  /**
+   * The mask is only worth having if the simulation feels it, so this asserts the effect rather
+   * than the field: armour is dropped for a player holding the Biofilm serum, and an amnesia case
+   * that wipes film is a case where it is not.
+   *
+   * Written against the same board twice — one state built with the serum held, one with it not —
+   * so what is compared is the rule and not the pathogen table.
+   */
+  it('puts the armour back on a body the held vaccine would have stripped', () => {
+    if (wiping?.wipes !== 'film') return;
+
+    const wiped = createSimState({ ...input, caseId: wiping.id, immunity: held });
+    const ordinary = createSimState({ ...input, caseId: 'stomach', immunity: held });
+
+    expect(
+      armourMultiplier(ordinary, addEnemy(ordinary, 'film')),
+      'the serum did nothing on an ordinary case',
+    ).toBe(1);
+    expect(armourMultiplier(wiped, addEnemy(wiped, 'film'))).toBe(PATHOGENS.film.armour);
   });
 });
 

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { dwellSeconds } from '../coverage';
 import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from './defenders';
 import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
-import { STRAIN_ROWS, VACCINES } from './vaccines';
+import { STRAIN_NAME, STRAIN_ROWS, VACCINES } from './vaccines';
 import { BODY_LINKS, BODY_NODES, CASE_REGIONS } from './body';
-import { BOARD_HEIGHT, BOARD_WIDTH, TAG_REWARD_MULTIPLIER } from './rules';
+import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TAG_REWARD_MULTIPLIER } from './rules';
 
 // Structural invariants only — never gameplay values. A balance pass must be able to change
 // every number in content/ without turning this suite red (spec §4, §9).
@@ -95,6 +96,68 @@ describe('case coherence', () => {
   it('never lists more cases than there are regions to fight them over', () => {
     expect(CASES.length).toBeLessThanOrEqual(CASE_REGIONS.length);
   });
+
+  /**
+   * A case credits a strain, and the brief shows that strain's held copy over the wave table. So a
+   * case crediting something it never sends tells a vaccinated player their serum is working on a
+   * board where nothing it applies to turns up — the same shape of broken promise as the Tetanus
+   * caveat in `vaccines.ts`, one step further out.
+   *
+   * Every `StrainId` is the name of a pathogen as well as of a vaccine, which is what makes this
+   * checkable without a second table mapping one to the other.
+   */
+  it('credits every case to a strain it actually fights', () => {
+    for (const c of CASES) {
+      const sent = new Set(c.waves.flat().map((entry) => entry.kind));
+      expect(sent, `case ${c.id} credits ${c.credits} and never sends one`).toContain(c.credits);
+    }
+  });
+});
+
+/**
+ * The amnesia rule's data, held to the two things that make it a rule rather than a field.
+ *
+ * Neither is a gameplay value. What they rule out is a case that carries the label and takes
+ * nothing, and a case that takes an immunity while telling the player it is holding.
+ */
+describe('the amnesia wipe', () => {
+  it('is carried by every amnesia case and by no other', () => {
+    for (const c of CASES) {
+      if (c.rule === 'amnesia') {
+        expect(c.wipes, `${c.id} is an amnesia case that wipes nothing`).toBeDefined();
+      } else {
+        expect(c.wipes, `${c.id} wipes an immunity without being an amnesia case`).toBeUndefined();
+      }
+    }
+  });
+
+  it('never wipes the strain its own case credits', () => {
+    for (const c of CASES) {
+      if (c.wipes === undefined) continue;
+      expect(c.wipes, `${c.id} credits ${c.credits} and wipes it in the same breath`)
+        .not.toBe(c.credits);
+    }
+  });
+
+  /**
+   * A wipe of something the player cannot have earned yet is a rule that does nothing on a first
+   * run. A strain needs `IMMUNITY_MAX` clears, one per case that credits it, so this counts the
+   * cases before the wipe and asks whether the season has actually handed the immunity over.
+   *
+   * It is a claim about ordering, not about difficulty: move the amnesia case earlier, or credit
+   * its strain less often, and the rule quietly becomes inert. That is exactly the failure the
+   * design predicted for putting this rule too early, and nothing else would catch it.
+   */
+  it('takes an immunity the season has already given the player', () => {
+    CASES.forEach((c, index) => {
+      if (c.wipes === undefined) return;
+      const earned = CASES.slice(0, index).filter((earlier) => earlier.credits === c.wipes).length;
+      expect(
+        earned,
+        `${c.id} wipes ${c.wipes}, which only ${String(earned)} of the ${String(index)} cases before it credit — the player cannot hold it yet`,
+      ).toBeGreaterThanOrEqual(IMMUNITY_MAX);
+    });
+  });
 });
 
 describe('vaccine reachability', () => {
@@ -143,6 +206,50 @@ describe('vaccine reachability', () => {
   it('lists a strain row for every earnable vaccine, one to one', () => {
     const strains = VACCINES.map((v) => v.strain).filter((strain) => strain !== undefined).sort();
     expect(STRAIN_ROWS.map((r) => r.key).sort()).toEqual(strains);
+  });
+
+  /**
+   * `STRAIN_NAME` is built by folding `STRAIN_ROWS` and asserted to be total by a cast, which the
+   * compiler takes on trust. Copy interpolates it — the amnesia case's rule line names the vaccine
+   * it takes away — so a missing entry does not throw, it prints the word "undefined" onto the
+   * brief screen.
+   *
+   * The keys are compared against the rows rather than against the lookup's own values, because a
+   * check that read the lookup would agree with whatever the fold produced. That is the vacuous
+   * shape this repo has now found sixteen times.
+   */
+  it('names every strain a row exists for, so interpolated copy cannot print undefined', () => {
+    expect(Object.keys(STRAIN_NAME).sort()).toEqual(STRAIN_ROWS.map((r) => r.key).sort());
+    for (const [key, name] of Object.entries(STRAIN_NAME)) {
+      expect(name, `${key} has an empty name`).not.toBe('');
+    }
+  });
+});
+
+/**
+ * The last line of defence for copy assembled from a lookup. Every sentence the player reads off a
+ * case is checked for the two words a failed interpolation leaves behind — this is cheap, it holds
+ * copy that has not been written yet, and it does not know or care which field went missing.
+ */
+describe('case copy is assembled, never half-assembled', () => {
+  it('never shows the player a hole where a value should be', () => {
+    for (const c of CASES) {
+      for (const [field, line] of Object.entries({
+        region: c.region, title: c.title, story: c.story,
+        ruleLabel: c.ruleLabel, ruleSub: c.ruleSub,
+      })) {
+        expect(line, `${c.id}.${field} reads "${line}"`).not.toMatch(/undefined|NaN/);
+      }
+    }
+  });
+
+  it('never scolds, exclaims, or uses an emoji — spec copy rules', () => {
+    for (const c of CASES) {
+      for (const line of [c.story, c.ruleSub]) {
+        expect(line, `${c.id}: "${line}"`).not.toContain('!');
+        expect(line).not.toMatch(/\p{Extended_Pictographic}/u);
+      }
+    }
   });
 });
 
@@ -316,6 +423,11 @@ describe('brief copy stays true to the stats it describes', () => {
  *
  * None of this asserts a particular range or a particular geometry. It says that whatever those
  * are, every spot the case offers is a place a player can fight from.
+ *
+ * The geometry itself is `src/game/coverage.ts` rather than a local function, because it was a
+ * local function and a second copy of it in a scratch script is where an authoring problem was
+ * eventually found. This suite owns the *floor*; the same measurement read as a number rather than
+ * as a bar is printed by `tests/sweep/balance.sweep.ts`.
  */
 describe('build spots are usable', () => {
   /**
@@ -324,59 +436,6 @@ describe('build spots are usable', () => {
    * host that cell at all. It is a dead-content detector, not a balance target.
    */
   const MIN_DWELL_SECONDS = 1;
-
-  /**
-   * Measured at the *slowest* pathogen, which is the most generous reading: the slowest thing on
-   * the board dwells the longest, so a spot that fails even here fails for everything. Using the
-   * fastest would make this a balance assertion, and content values are not asserted (spec §4).
-   */
-  const SLOWEST_SPEED = Math.min(...Object.values(PATHOGENS).map((p) => p.speed));
-
-  /**
-   * Arc length of `path` lying within `range` of `spot`. Solved per segment rather than sampled:
-   * a point on segment A + t·d is inside the circle when |A + t·d − S|² ≤ r², a quadratic in t
-   * whose roots clamped to [0, 1] bound exactly the covered stretch. Segments partition the path,
-   * so summing them double-counts nothing.
-   */
-  function coveredArc(
-    spot: readonly [number, number],
-    path: readonly (readonly [number, number])[],
-    range: number,
-  ): number {
-    let covered = 0;
-    for (let i = 0; i < path.length - 1; i += 1) {
-      const a = path[i];
-      const b = path[i + 1];
-      if (a === undefined || b === undefined) continue;
-
-      const dx = b[0] - a[0];
-      const dy = b[1] - a[1];
-      const fx = a[0] - spot[0];
-      const fy = a[1] - spot[1];
-
-      const qa = dx * dx + dy * dy;
-      if (qa === 0) continue;
-      const qb = 2 * (fx * dx + fy * dy);
-      const qc = fx * fx + fy * fy - range * range;
-
-      const discriminant = qb * qb - 4 * qa * qc;
-      if (discriminant <= 0) continue;
-
-      const root = Math.sqrt(discriminant);
-      const enter = Math.max(0, (-qb - root) / (2 * qa));
-      const leave = Math.min(1, (-qb + root) / (2 * qa));
-      if (leave > enter) covered += (leave - enter) * Math.sqrt(qa);
-    }
-    return covered;
-  }
-
-  function dwellSeconds(
-    spot: readonly [number, number],
-    path: readonly (readonly [number, number])[],
-    range: number,
-  ): number {
-    return coveredArc(spot, path, range) / SLOWEST_SPEED;
-  }
 
   /**
    * Distance is meant to be a trade-off — a spot far from the vessel should demand range — so a

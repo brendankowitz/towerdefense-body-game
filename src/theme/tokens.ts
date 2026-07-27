@@ -19,6 +19,9 @@ const OKLCH: Record<PaletteToken, string> = {
   fungal: 'oklch(0.6 0.11 115)',
   chemical: 'oklch(0.52 0.13 45)',
   resistant: 'oklch(0.42 0.13 10)',
+  // Pollen. The one threat token that is not a warning: pale and warm, so the board reads it as
+  // something drifting past rather than as something to shoot.
+  inert: 'oklch(0.8 0.09 95)',
   fever: 'oklch(0.58 0.16 15)',
   notReached: 'oklch(0.9 0.014 60)',
   vesselCasing: 'oklch(0.87 0.05 20)',

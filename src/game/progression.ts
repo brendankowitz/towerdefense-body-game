@@ -146,7 +146,7 @@ export function seasonRows(profile: Profile): readonly SeasonRow[] {
       name: definition.title,
       region: regionName(definition.region),
       note: done ? 'Cleared — this region is holding' : '',
-      tier: 1,
+      tier: definition.tier,
       state: done ? 'done' : index === nextIndex ? 'now' : 'next',
     };
   });

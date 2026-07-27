@@ -54,6 +54,21 @@ export const DORMANT_CHANCE = 0.35;
 export const DORMANT_DELAY = 5;
 export const DORMANT_HP_FRACTION = 0.5;
 
+/**
+ * The overreaction rule. Every kill inflames the tissue, and the inflammation is what costs the
+ * player — so the dial is how many kills buy a pip.
+ *
+ * Counted in **bodies rather than in health**, which is the whole reason the rule reads as a rule
+ * and not as a second health bar. Priced by mass, a cell that kills many small things would be
+ * cheap and one that kills a few heavy things expensive, which is the ordinary economy inverted
+ * and nothing more. Priced per body, area damage is the expensive answer and a single heavy hit is
+ * the cheap one — so *which* cell the player picks is the decision, not merely how many.
+ *
+ * The threat's own half of the rule is not here: it is `PathogenStats.leak`, because "this does no
+ * harm when it gets through" is a fact about pollen and not about the case it turns up in.
+ */
+export const INFLAMMATION_PER_PIP = 12;
+
 export const SPLIT_COUNT = 2;
 export const SPLIT_HP_FRACTION = 0.5;
 export const SPLIT_BACK_OFFSET = 14;

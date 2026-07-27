@@ -9,7 +9,7 @@ import {
 import { positionAt } from '../path';
 import type { Enemy, SimState } from '../types';
 import { awardKill, grantMemoryXp } from './economy';
-import { scheduleDormancy } from './hazards';
+import { applyInflammation, scheduleDormancy } from './hazards';
 import { statsFor } from './stats';
 
 /**
@@ -50,7 +50,8 @@ function splitOnDeath(state: SimState, enemy: Enemy): void {
 
 /**
  * Pays out and clears the dead. Anything already in `dead` on entry leaked rather than died: it
- * is swept off the board but pays no bounty, adds no kill and leaves no children (decision D11).
+ * is swept off the board but pays no bounty, adds no kill, leaves no children and — on an allergy
+ * case, where that is the difference between winning and losing — inflames nothing (decision D11).
  *
  * `for...of` over `state.enemies` visits elements appended during the loop, which is what lets
  * split children join the board here without escaping the filter below.
@@ -64,6 +65,7 @@ export function resolveDeaths(state: SimState, dead: Set<number>): void {
     grantMemoryXp(state, enemy);
     splitOnDeath(state, enemy);
     scheduleDormancy(state, enemy);
+    applyInflammation(state);
   }
 
   if (dead.size === 0) return;

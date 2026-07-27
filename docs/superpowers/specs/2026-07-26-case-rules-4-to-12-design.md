@@ -1,8 +1,9 @@
 # Case rules 4–12 — content design
 
 **Date:** 2026-07-26
-**Status:** Proposal. Day 7 has since shipped — the hand case, carrying Dormancy — so the
-sections describing that rule are records rather than proposals and say so.
+**Status:** Partly shipped. Dormancy landed with the hand case; **Amnesia and Overreaction have
+since landed too**, alongside a third case that reuses Bleeding. Sections describing a shipped rule
+are records rather than proposals and say so. Only **Novel** is still a proposal.
 **Depends on:** the shipped ruleset in `src/game/content/`, spec §5
 
 ---
@@ -68,7 +69,7 @@ always good, that a placed cell stays placed, and that progress only runs one wa
 
 ## Four rules, of which one has since shipped
 
-### 4. Overreaction — the allergy rule
+### 4. Overreaction — the allergy rule — SHIPPED
 
 **The threat is harmless. Your response is the problem.**
 
@@ -88,7 +89,28 @@ to be remembered and the one most likely to confuse if met early.
 
 *Fiction:* hay fever in the sinus, asthma in a lung. Real, everyday, tier 1.
 
-### 5. Amnesia — the immune-wipe rule
+**Shipped** as the last case of the current season: `sinus` on the `sinus` node, rule `allergy`,
+governed by `INFLAMMATION_PER_PIP` in `rules.ts` and a new `pollen` pathogen.
+
+One thing the proposal above got wrong, and it cost a measured pass. "Pollen carries almost no
+damage" was written as *flimsy*, and flimsy pollen makes the rule degenerate. Defenders pick a
+target by position or by wound, never by kind, so what a board kills is roughly what a board meets
+— which collapses the case to `pips = leaks + kills / threshold`, both terms linear in one dial,
+with the best play always at an end. Measured, that was **0 of 7776 boards**.
+
+Pollen therefore ships *tough* — heavier than a spore. Damage lands on it in proportion to how
+often it is the target, but kills divide that by health, so a stream that is nine parts pollen
+still yields more staph deaths per unit of firepower than pollen deaths. "Enough firepower to clear
+the real threat and no more" becomes the interior optimum, which is what the rule needed and what
+the first tuning had no way to express. The fiction is better for it: pollen is not fragile, it is
+inert, and your cells wear themselves out on something that was never going to hurt you.
+
+The proposal's open question — whether the rule needs a defender that suppresses rather than kills
+— stayed open and stayed unbuilt. It is not needed for the rule to work: the decision the case asks
+is which cells and how many, and the answer it rewards is few and single-target. A suppressor would
+make it a cleaner puzzle and a smaller one.
+
+### 5. Amnesia — the immune-wipe rule — SHIPPED
 
 **One immunity you earned does not work here.**
 
@@ -104,6 +126,30 @@ and costs a day not spent fighting: the first real strategic trade in the season
 
 *Fiction:* Measles, whole body. Tier 2 — named because immune amnesia is genuinely
 what it does, per the naming policy.
+
+**Shipped**, and two things about it were decided rather than followed.
+
+**There is no whole-body node, and this table is one region short of its own ten cases.** Count
+them: nine of the ten rows name a body node and one names "whole body", against ten case-bearing
+regions — so either measles takes the leftover second foot, or the table doubles up. A systemic
+illness lighting up a foot on the map is nonsense, so measles ships on **`lungR`**: measles
+pneumonia is what actually endangers the body, and anchoring it there costs the map nothing. It
+takes the region this table had pencilled for the finale, because an invented strain is the one
+case in the season with no tie to any organ and is therefore the cheapest thing to move. What is in
+its waves is *not* measles — it is the opportunists that walk in behind the wipe, which is what
+immune amnesia does in life.
+
+**The rule has to bite on a first run, and that constrains what earlier cases credit.** A wipe of
+an immunity the player has not earned does nothing, and a strain needs three clears. Stomach and
+hand credit film; the blister case was therefore given film as its third, so film reads DONE one
+case before measles takes it away. Crediting staph there instead — the obvious choice for a wound —
+would have left every immunity under three at that point and the rule inert on every first
+playthrough. `content.invariants.test.ts` now asserts the ordering, so moving the amnesia case
+earlier, or re-crediting a case, fails rather than quietly emptying the rule.
+
+The MMR row on the season screen still says it blocks the wipe, and still cannot be taken: nothing
+in the game buys a vaccine. That promise is older than this rule and is now less broken than it was
+— it used to describe a rule that did not exist — but it is not kept.
 
 ### 6. Dormancy — the relapse rule — SHIPPED
 
@@ -152,28 +198,35 @@ No vaccine exists, and `vaccines.ts` already says so. The one case fought raw.
 
 ## Ten cases
 
-| Day | Region | Case | Rule | What the player learns |
-|---|---|---|---|---|
-| 1 | Forearm | Deep cut | Bleeding | Energy can fall. Buy the thing that does no damage. |
-| 2 | Throat | Flu | Multiplying | Killing has an order. |
-| 3 | Stomach | Food poisoning | Toxic | Your cells die too. Position is a liability. |
-| 4 | Foot | Blister | Bleeding | The rule again, with less room and a longer path. |
-| 5 | Whole body | Measles | Amnesia | Breadth beats depth. MMR becomes worth a day. |
-| 6 | Sinus | Hay fever | Overreaction | Sometimes do less. |
-| 7 | Hand | Splinter | Dormancy | Cleared is not clear. Memory cells earn their place. **Shipped.** |
-| 8 | Left lung | Bronchitis | Multiplying | Splitting under a real time limit. |
-| 9 | Gut | Relapse | Dormancy + Toxic | Two rules at once — the first compound case. |
-| 10 | Right lung | Strain Vesper | Novel | Everything, unannounced. |
+Seven have shipped, in this order. Days are the day of a fresh run, so they are the play order and
+not the numbers this table originally carried — the hand case landed ahead of days 4 to 6, and the
+three after it were authored around it. Relative order is what the rationale below is about, and
+that is intact.
 
-There is one hand node, `handR`, and day 7 has taken it — so the right hand is
-spoken for, not open. Of the two foot nodes, day 4 takes one and the other stays
-open for a second season, or becomes connective.
+| Day | Region | Case | Rule | What the player learns | |
+|---|---|---|---|---|---|
+| 1 | Forearm | Deep cut | Bleeding | Energy can fall. Buy the thing that does no damage. | **Shipped** |
+| 2 | Throat | Flu | Multiplying | Killing has an order. | **Shipped** |
+| 3 | Stomach | Food poisoning | Toxic | Your cells die too. Position is a liability. | **Shipped** |
+| 4 | Hand | Splinter | Dormancy | Cleared is not clear. Memory cells earn their place. | **Shipped** |
+| 5 | Foot | Blister | Bleeding | The rule again, with less room and a longer path. | **Shipped** |
+| 6 | Right lung | Measles | Amnesia | Breadth beats depth. A narrow build stops working. | **Shipped** |
+| 7 | Sinus | Hay fever | Overreaction | Sometimes do less. | **Shipped** |
+| — | Left lung | Bronchitis | Multiplying | Splitting under a real time limit. | |
+| — | Gut | Relapse | Dormancy + Toxic | Two rules at once — the first compound case. | |
+| — | Foot | Strain Vesper | Novel | Everything, unannounced. | |
 
-**Ordering rationale.** Each rule is met alone before it is combined. Day 4
-repeats bleeding on harder geometry so the rule is understood before day 5 takes
-a tool away. Overreaction lands at six, after five cases of killing-is-good.
-Day 9 is the first case that asks two questions at once, and it is deliberately
-one before the finale so the finale is not the first time.
+There is one hand node, `handR`, and day 4 has taken it. Of the two foot nodes, day 5 takes one and
+the other is where Vesper now goes — the right lung it was pencilled for went to measles, for the
+reason recorded in §5, and an invented strain is the case with the least to lose by moving.
+
+**Ordering rationale.** Each rule is met alone before it is combined. The bleeding repeat sits on
+harder geometry so the rule is understood before the next case takes a tool away. Overreaction
+lands last of the seven, after six cases of killing-is-good. The compound case is deliberately one
+before the finale, so the finale is not the first time two questions are asked at once.
+
+**What the seven measure**, buying and never growing, over every affordable board:
+13.2 / 6.3 / 5.5 / 5.3 / 7.2 / 7.2 / 6.3 per cent of boards clearing.
 
 ---
 
@@ -191,13 +244,20 @@ mistakes: every spot must offer a choice of at least two defenders, every case
 must credit a strain that has a vaccine, every wave must reference pathogens that
 exist, every path needs at least two points.
 
-**Overreaction needs one genuinely new thing:** a cost applied on kill rather than
-on leak. Everything else reuses machinery that exists.
+**Overreaction needed one genuinely new thing:** a cost applied on kill rather
+than on leak. Built as `applyInflammation`, called from `resolveDeaths` under the
+same leak guard as splitting — so something that walked past everything costs
+nothing, which is the half that makes the rule an inversion. It needed a second
+thing this section did not foresee: a *leak* cost that is the pathogen's rather
+than a constant (`PathogenStats.leak`), because a rule about over-defending is
+unplayable if the harmless thing still costs a pip on the way out.
 
-**Amnesia needs a suppression channel** — the case must be able to mask an earned
+**Amnesia needed a suppression channel** — the case must be able to mask an earned
 immunity for its duration. `SimState` already carries `immunity` as readonly
-profile data; this becomes a per-case mask applied when the state is built, which
-keeps the profile itself untouched.
+profile data; this became a per-case mask applied when the state is built, which
+keeps the profile itself untouched. Masking at the boundary rather than at each of
+the three places an immunity is read means the fourth one somebody adds is wiped
+too, without knowing the rule exists.
 
 **Dormancy needed a revival queue** — dead enemies scheduled to return once. Built
 and shipped; it did not reuse `generation` as this section guessed it would.
@@ -215,7 +275,13 @@ Carried from the asset sheet, plus one this document raises.
 - Six defenders is a full dock on a phone. Is a seventh a replacement rather than
   an addition? Maturation may have already answered this: three of the six now
   have a second form, which adds depth without adding a slot.
-- **New:** does Overreaction need its own defender? A cell that suppresses rather
-  than kills would make the rule playable rather than merely survivable. That may
-  be the seventh dock slot, and the argument for a replacement rather than an
-  addition.
+- **Answered no, for now:** does Overreaction need its own defender? The rule
+  shipped without one and is playable: the decision it asks is which cells and how
+  many, and the answer it rewards is few and single-target. A cell that suppresses
+  rather than kills would make it a cleaner puzzle and a smaller one, so it is a
+  design choice rather than a gap. The seventh-slot question stays open on its own
+  terms.
+- **New:** nothing in the game buys a vaccine. MMR has read AVAILABLE since two
+  clears, promising to block the amnesia wipe, and there is no purchase, no day to
+  spend and no effect wired to it. That predates the rule and is now the only
+  vaccine row describing something the player could act on if the screen let them.

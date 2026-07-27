@@ -65,8 +65,11 @@ export function applyMovement(
     if (enemy.distance >= state.path.total) {
       // Deliberate (D11): a leak is marked dead here, before the death pass, so it pays no
       // bounty and adds no kill. It still stuns and still poisons on the step it gets through.
+      //
+      // What it costs is the pathogen's, not a constant: pollen reaching the core does nothing,
+      // and a rule about over-defending needs something the player is allowed to let past.
       dead.add(enemy.id);
-      state.tissue -= 1;
+      state.tissue -= stats.leak ?? 1;
       state.waveLeaks += 1;
     }
 

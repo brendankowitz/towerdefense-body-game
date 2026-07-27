@@ -280,6 +280,27 @@ describe('seasonRows', () => {
     expect(rows[CASES.length]?.day).toBe(fresh.day + firstLater.offset);
   });
 
+  /**
+   * The tier decides which of EVERYDAY / LASTING / UNKNOWN the timeline prints beside a case, and
+   * it used to be the literal 1 here for every case — true while every case was a scrape or a bug,
+   * and wrong the moment a real disease became playable. The season screen's own naming-policy card
+   * names measles as the example of the tier this was flattening.
+   *
+   * The precondition is the point: with a season of uniform tiers this assertion holds against a
+   * hardcoded constant and proves nothing, so it says so out loud rather than passing quietly.
+   */
+  it('reports the tier each case declares rather than assuming they are all alike', () => {
+    expect(
+      new Set(CASES.map((definition) => definition.tier)).size,
+      'every case is the same tier, so this test cannot tell a lookup from a constant',
+    ).toBeGreaterThan(1);
+
+    const rows = seasonRows(createFreshProfile());
+
+    expect(rows.slice(0, CASES.length).map((row) => row.tier))
+      .toEqual(CASES.map((definition) => definition.tier));
+  });
+
   it('marks the current case as now and a cleared one as done', () => {
     const profile = clearCase(createFreshProfile(), requireCase(0).id, 0);
     const rows = seasonRows(profile);

@@ -5,6 +5,7 @@ import {
   DORMANT_CHANCE,
   DORMANT_DELAY,
   DORMANT_HP_FRACTION,
+  INFLAMMATION_PER_PIP,
   POISON_DPS_ANTIBODY,
   POISON_DPS_OTHER,
   POISON_RADIUS,
@@ -79,6 +80,31 @@ export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
       tower.hp -= (tower.kind === 'anti' ? POISON_DPS_ANTIBODY : POISON_DPS_OTHER) * dt;
     }
   }
+}
+
+/**
+ * Allergy cases charge for the response rather than for the threat. Every body killed inflames the
+ * tissue a little, and once the inflammation has built up enough it takes a pip — so the player
+ * loses this case by defending it well.
+ *
+ * Called from `resolveDeaths` under the same guard as splitting and dormancy, which is what makes
+ * the rule the inverse of every other one rather than an addition to them: a leak is marked dead
+ * before the death pass (decision D11), so something that walked past everything costs no
+ * inflammation at all. Kill it and you pay; let it through and you do not.
+ *
+ * The remainder is carried rather than cleared, so a hundred kills cost the same whether they
+ * arrive in one wave or spread over five. Clearing it would make a wave boundary a place to dump
+ * kills for free, and the player cannot see the counter to exploit it deliberately anyway — which
+ * would make it a hidden rule rather than a hard one.
+ */
+export function applyInflammation(state: SimState): void {
+  if (state.rule !== 'allergy') return;
+
+  state.inflammation += 1;
+  if (state.inflammation < INFLAMMATION_PER_PIP) return;
+
+  state.inflammation -= INFLAMMATION_PER_PIP;
+  state.tissue -= 1;
 }
 
 /**

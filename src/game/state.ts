@@ -13,13 +13,34 @@ export interface SimInput {
   readonly totalKills: number;
 }
 
+/**
+ * The amnesia rule, and the whole of it: one strain the profile earned reads as zero for the
+ * length of this case.
+ *
+ * Applied here rather than at each of the three places an immunity is read — the tetanus bounce in
+ * `applySpawn`, the suppressed split in `splitOnDeath`, the dropped armour in `armourMultiplier`.
+ * Those are the ones that exist today; the point of masking at the boundary is that the fourth one
+ * somebody adds is wiped too, without knowing the rule is there. It also keeps `SimState.immunity`
+ * honest as "what this case's simulation is entitled to", which is what every reader already
+ * assumes it means.
+ *
+ * The profile is not touched. A wipe that outlived the case would be a save-game change, and the
+ * fiction is that the memory comes back — measles takes the immunity for the illness, not forever.
+ */
+function immunityFor(
+  immunity: Readonly<Record<StrainId, number>>,
+  wipes: StrainId | undefined,
+): Readonly<Record<StrainId, number>> {
+  return wipes === undefined ? immunity : { ...immunity, [wipes]: 0 };
+}
+
 export function createSimState(input: SimInput): SimState {
   const definition = CASE_BY_ID[input.caseId];
   return {
     caseId: definition.id,
     rule: definition.rule,
     path: compilePath(definition.path),
-    immunity: input.immunity,
+    immunity: immunityFor(input.immunity, definition.wipes),
     clearedCount: input.clearedCount,
 
     phase: 'build',
@@ -39,6 +60,7 @@ export function createSimState(input: SimInput): SimState {
     spawnTimer: 0,
     shieldedWave: null,
     bleedTimer: 0,
+    inflammation: 0,
 
     towers: [],
     enemies: [],

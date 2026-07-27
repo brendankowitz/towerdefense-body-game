@@ -10,7 +10,9 @@ export interface LaterEntry {
   readonly note: string;
 }
 
+// Measles used to sit here. It is a case now, on the right lung, so the promise is kept rather
+// than repeated: a row here and a case with the same name would put the illness on the timeline
+// twice, once as something to play and once as something still coming.
 export const LATER: readonly LaterEntry[] = [
-  { offset: 4, name: 'Measles', region: 'Whole body', tier: 2, note: 'Wipes one immunity you already earned' },
-  { offset: 7, name: 'Strain Vesper', region: 'Lungs', tier: 3, note: 'Novel — nothing known about it yet' },
+  { offset: 7, name: 'Strain Vesper', region: 'Left lung', tier: 3, note: 'Novel — nothing known about it yet' },
 ];

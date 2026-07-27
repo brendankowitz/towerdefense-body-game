@@ -194,6 +194,32 @@ describe('applyMovement', () => {
     expect(dead.size).toBe(0);
     expect(state.tissue).toBe(TISSUE_PIPS);
   });
+
+  /**
+   * What a body costs on the way out is the body's, not a constant — the whole of the overreaction
+   * rule's other half. Pollen reaching the core does nothing, which is what makes letting it
+   * through a move the player is allowed to make.
+   *
+   * The two are asserted against each other on the same case rather than against the literal 1, so
+   * this measures the difference the field makes and not the number that happens to be in it.
+   */
+  it('charges what the pathogen says a leak costs, so a harmless one is free', () => {
+    expect(PATHOGENS.pollen.leak).toBe(0);
+    expect(PATHOGENS.staph.leak).toBeUndefined();
+
+    const harmless = fresh();
+    const harmful = fresh();
+    spawn(harmless, 'pollen', harmless.path.total - 1);
+    spawn(harmful, 'staph', harmful.path.total - 1);
+
+    applyMovement(harmless, 1, new Set(), new Set());
+    applyMovement(harmful, 1, new Set(), new Set());
+
+    expect(harmless.tissue, 'pollen through the core cost a pip').toBe(TISSUE_PIPS);
+    expect(harmful.tissue).toBe(TISSUE_PIPS - 1);
+    // Still a leak: it got past everything, and the result sheet should say so.
+    expect(harmless.waveLeaks).toBe(1);
+  });
 });
 
 /**

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyDormantWake, applyPoison, applyToxinStun, applyWoundBleed, scheduleDormancy,
+  applyDormantWake, applyInflammation, applyPoison, applyToxinStun, applyWoundBleed,
+  scheduleDormancy,
 } from './hazards';
 import { resolveDeaths } from './deaths';
+import { advanceToNextWave, startWave } from '../commands';
 import { PATHOGENS } from '../content/pathogens';
 import {
   BLEED_AMOUNT,
@@ -10,10 +12,12 @@ import {
   DORMANT_CHANCE,
   DORMANT_DELAY,
   DORMANT_HP_FRACTION,
+  INFLAMMATION_PER_PIP,
   POISON_DPS_ANTIBODY,
   POISON_DPS_OTHER,
   POISON_RADIUS,
   STEP_SECONDS,
+  TISSUE_PIPS,
   TOWER_MAX_HP,
   TOXIN_STUN_RADIUS,
 } from '../content/rules';
@@ -41,6 +45,13 @@ function poisoned(): SimState {
 function relapsing(): SimState {
   const state = simFor('hand');
   expect(state.rule).toBe('dormant');
+  return state;
+}
+
+/** And for overreaction, the one rule where killing is the thing that costs you. */
+function allergic(): SimState {
+  const state = simFor('sinus');
+  expect(state.rule).toBe('allergy');
   return state;
 }
 
@@ -524,5 +535,96 @@ describe('dormancy — some of what you kill gets back up', () => {
     expect(DORMANT_CHANCE).toBeLessThan(1);
     expect(state.dormant.length).toBeGreaterThan(0);
     expect(state.dormant.length).toBeLessThan(bodies);
+  });
+});
+
+describe('overreaction — your own response is the damage', () => {
+  /** Kills a body outright, `count` times, through the caller that owns the leak guard. */
+  function kill(state: SimState, count: number): void {
+    for (let n = 0; n < count; n += 1) {
+      addEnemy(state, 'pollen', { distance: 150, hp: 0 });
+      resolveDeaths(state, new Set());
+    }
+  }
+
+  it('holds the tissue until the inflammation reaches a whole pip, then takes one', () => {
+    const state = allergic();
+    const before = state.tissue;
+
+    for (let n = 0; n < INFLAMMATION_PER_PIP - 1; n += 1) applyInflammation(state);
+    expect(state.tissue, 'a pip went early').toBe(before);
+
+    applyInflammation(state);
+    expect(state.tissue).toBe(before - 1);
+  });
+
+  it('keeps charging, one pip per threshold, as the kills go on', () => {
+    const state = allergic();
+    const before = state.tissue;
+
+    for (let n = 0; n < INFLAMMATION_PER_PIP * 3; n += 1) applyInflammation(state);
+
+    expect(state.tissue).toBe(before - 3);
+  });
+
+  it('costs nothing at all under any other rule', () => {
+    for (const state of [wound(), poisoned(), relapsing()]) {
+      const before = state.tissue;
+      for (let n = 0; n < INFLAMMATION_PER_PIP * 3; n += 1) applyInflammation(state);
+      expect(state.tissue, `${state.caseId} inflamed`).toBe(before);
+      expect(state.inflammation, `${state.caseId} banked inflammation`).toBe(0);
+    }
+  });
+
+  /**
+   * The half that makes the rule an inversion rather than an addition. `resolveDeaths` skips
+   * anything already marked dead, which is what a leak is (decision D11) — so the player is paid
+   * for restraint in the one currency this case charges in.
+   */
+  it('inflames on a kill and never on something that walked past', () => {
+    const killed = allergic();
+    kill(killed, INFLAMMATION_PER_PIP);
+    expect(killed.tissue).toBe(TISSUE_PIPS - 1);
+
+    const ignored = allergic();
+    const leaks = new Set<number>();
+    for (let n = 0; n < INFLAMMATION_PER_PIP * 4; n += 1) {
+      leaks.add(addEnemy(ignored, 'pollen', { distance: ignored.path.total, hp: 0 }).id);
+    }
+    resolveDeaths(ignored, leaks);
+
+    expect(ignored.tissue, 'letting it through cost tissue').toBe(TISSUE_PIPS);
+    expect(ignored.inflammation).toBe(0);
+  });
+
+  /**
+   * Inflammation is a running total of the response, not of a wave. Asserted across a real wave
+   * boundary rather than on the field, because the way this would break is a reset somebody adds
+   * to `startWave` beside the ones that are there — and the field alone would not notice.
+   */
+  it('carries what it has banked across a wave boundary', () => {
+    const state = allergic();
+    state.phase = 'built';
+    kill(state, INFLAMMATION_PER_PIP - 1);
+    expect(state.tissue).toBe(TISSUE_PIPS);
+
+    advanceToNextWave(state);
+    startWave(state);
+
+    kill(state, 1);
+    expect(state.tissue, 'the wave boundary forgave a wave of kills').toBe(TISSUE_PIPS - 1);
+  });
+
+  /** Losing the last pip to your own defence ends the case exactly as leaking to zero does. */
+  it('loses the case when the response has used up the last pip', () => {
+    const state = allergic();
+    state.tissue = 1;
+    for (let n = 0; n < INFLAMMATION_PER_PIP; n += 1) applyInflammation(state);
+    expect(state.tissue).toBe(0);
+
+    step(state, STEP_SECONDS);
+
+    expect(state.phase).toBe('done');
+    expect(state.result).toBe('lost');
   });
 });

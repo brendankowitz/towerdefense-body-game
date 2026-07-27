@@ -1,7 +1,7 @@
 export type DefenderKind = 'phago' | 'clot' | 'anti' | 'nk' | 'mast' | 'mem';
-export type PathogenKind = 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa';
-export type CaseId = 'forearm' | 'throat' | 'stomach' | 'hand';
-export type CaseRuleKind = 'wound' | 'virus' | 'poison' | 'dormant';
+export type PathogenKind = 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa' | 'pollen';
+export type CaseId = 'forearm' | 'throat' | 'stomach' | 'hand' | 'blister' | 'measles' | 'sinus';
+export type CaseRuleKind = 'wound' | 'virus' | 'poison' | 'dormant' | 'amnesia' | 'allergy';
 
 /** A strain the immunity screen tracks. Every member has exactly one vaccine and one case that credits it. */
 export type StrainId = 'staph' | 'virus' | 'film';
@@ -21,7 +21,7 @@ export type BodyNodeId =
 export type PaletteToken =
   | 'threat' | 'frontline' | 'support' | 'control' | 'energy'
   | 'execute' | 'burst' | 'learn'
-  | 'armoured' | 'splitter' | 'fungal' | 'chemical' | 'resistant'
+  | 'armoured' | 'splitter' | 'fungal' | 'chemical' | 'resistant' | 'inert'
   | 'fever' | 'notReached' | 'vesselCasing' | 'vesselLumen' | 'tissueField' | 'core';
 
 export type Point = readonly [x: number, y: number];
@@ -148,7 +148,12 @@ export interface SimState {
   readonly caseId: CaseId;
   readonly rule: CaseRuleKind;
   readonly path: CompiledPath;
-  /** Profile facts the simulation reads but never writes. */
+  /**
+   * Profile facts the simulation reads but never writes — and, on an amnesia case, one strain of
+   * them masked to zero. The mask is applied where the state is built (`createSimState`), so the
+   * profile itself is untouched and a case can take an immunity away for its own duration without
+   * anything downstream needing to know the rule exists.
+   */
   readonly immunity: Readonly<Record<StrainId, number>>;
   readonly clearedCount: number;
 
@@ -173,6 +178,11 @@ export interface SimState {
    */
   shieldedWave: number | null;
   bleedTimer: number;
+  /**
+   * Kills banked toward the next pip an allergy case takes off the player. Zero on every other
+   * rule, and never reset between waves: it is a running total of the response, not of a wave.
+   */
+  inflammation: number;
 
   towers: Tower[];
   enemies: Enemy[];

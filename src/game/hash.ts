@@ -24,6 +24,11 @@ export function hashState(state: SimState): string {
   mix(state.waveIndex);
   mix(state.energy);
   mix(state.tissue);
+  // Kills banked toward the next pip an allergy case takes. Hashed rather than left to `tissue`,
+  // which only moves once every `INFLAMMATION_PER_PIP` of it: a run that killed twenty-five things
+  // and one that killed none are the same board by every other field here, and they are one kill
+  // apart from being different games.
+  mix(state.inflammation);
   mix(state.fever);
   mix(state.waveKills);
   mix(state.waveLeaks);

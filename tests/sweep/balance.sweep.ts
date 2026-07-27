@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CASES } from '../../src/game/content/cases';
+import { DEFENDERS } from '../../src/game/content/defenders';
 import { TISSUE_PIPS } from '../../src/game/content/rules';
+import { dwellSeconds } from '../../src/game/coverage';
 import type { CaseId, DefenderKind } from '../../src/game/types';
 import { CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR } from './band';
 import { pushoverFailures, trendFailures, type SeasonCase } from './curve';
@@ -146,12 +148,61 @@ function report(result: SweepResult): string {
   ].join('  |  ');
 }
 
+/**
+ * What every build spot of a case is worth, before a single board is played.
+ *
+ * **This exists because two of the twelve tuning passes that authored days 5 to 7 were spent
+ * without it.** The measles case opened under the floor with four boards in five dying on wave 1;
+ * two passes went into softening the wave table and adding starting energy, and moved the rate by
+ * nothing. The cause was geometry — summed over its five spots a phagocyte covered 9.1 seconds of
+ * vessel against forearm's 14.8 and hand's 17.2, the thinnest board in the season — and pulling
+ * three spots in was worth **+3.5 points**, ten times what either count lever bought.
+ *
+ * `content.invariants.test.ts` was already computing exactly this number and asserting a floor
+ * against it. A case can sit far above that floor and still be the thinnest board in the season, so
+ * the floor could not have said so; the number could, and nobody was printing it.
+ *
+ * **It reports and never gates.** There is no threshold here and there should not be one: what
+ * counts as too thin depends on the rule, the path length and how much the case is meant to hurt,
+ * which is an author's judgement. The floor in `content.invariants.test.ts` is what catches a spot
+ * nothing can fight from; this is for seeing that a board is an outlier while still legal.
+ *
+ * Printed at the top of the run rather than beside the results. `disableConsoleIntercept` puts it
+ * on the terminal immediately, so it lands in the first second of a run that takes minutes — early
+ * enough to stop one and go and move a spot instead.
+ */
+function coverageReport(): string {
+  // The cheapest cell, derived the way `content.invariants.test.ts` derives it: it is the reach
+  // every board can afford everywhere, so it is the one whose coverage describes the case rather
+  // than describing a build. Reading a fixed kind here would go quiet the day costs are retuned.
+  const cheapest = Object.values(DEFENDERS).reduce((a, b) => (a.cost <= b.cost ? a : b));
+
+  const rows = CASES.map((definition) => {
+    const perSpot = definition.spots.map(
+      (spot) => dwellSeconds(spot, definition.path, cheapest.range),
+    );
+    const total = perSpot.reduce((sum, seconds) => sum + seconds, 0);
+    return [
+      `  ${definition.id.padEnd(8)}`,
+      `${total.toFixed(1).padStart(5)}s total`,
+      `[${perSpot.map((seconds) => seconds.toFixed(1).padStart(4)).join(' ')}]`,
+    ].join('  ');
+  });
+
+  return [
+    `SPOT COVERAGE — seconds of vessel the ${cheapest.kind} covers per spot, at the slowest pathogen`,
+    ...rows,
+    '  (a report, not a gate; the floor every spot must clear is content.invariants.test.ts)',
+  ].join('\n');
+}
+
 describe('affordable-board sweep', () => {
   // The sweep itself, run once. In a hook rather than the describe body so its minutes are spent
   // under `hookTimeout` and its output lands with the run rather than with collection.
   let results: readonly SweepResult[] = [];
 
   beforeAll(() => {
+    console.log(coverageReport());
     results = SWEEP.map(sweepCase);
     for (const result of results) console.log(report(result));
   });

@@ -61,3 +61,15 @@ export const STRAIN_ROWS: readonly {
   { key: 'virus', name: 'Flu B', effect: 'Flu can no longer split when it dies', heldCopy: 'Flu B vaccine held. Nothing splits when it dies.' },
   { key: 'film', name: 'Biofilm', effect: 'Armour drops — phagocytes hurt it properly', heldCopy: 'Biofilm serum held. Armour is gone — phagocytes bite properly.' },
 ];
+
+/**
+ * What each strain's immunity is called, for copy that has to name one.
+ *
+ * The amnesia case's rule line says which immunity it takes away, and it takes it away by naming a
+ * `StrainId`. Reading the name off the same field the simulation masks is what stops that line
+ * going stale the day the wipe moves to another strain — the exact defect the Tetanus caveat above
+ * exists to record.
+ */
+export const STRAIN_NAME: Readonly<Record<StrainId, string>> = Object.fromEntries(
+  STRAIN_ROWS.map((row) => [row.key, row.name]),
+) as Record<StrainId, string>;

@@ -41,6 +41,47 @@ import {
  * The cross-product is several times the runs (2^growable-spots, and a board holds a couple of
  * those), it still would not be best play because it fixes *when* each cell grows, and the extra
  * precision does not change a decision: what a tuning needs to know is the direction and the size.
+ *
+ * ---
+ *
+ * **There is no growth ceiling, and that is a decision rather than an omission.**
+ *
+ * Growing every cell it can afford takes the forearm case to the highest `best` figure in the
+ * season — a quarter of its board space, against a buy-only rate a third of that. Nothing here
+ * caps it. The question of whether it should was asked and answered no, for three reasons, and
+ * this is the file the next person will look in:
+ *
+ * - **A ceiling would be a chosen number.** The band's floor is a design target and the curve's
+ *   two checks are shaped around a measured case rather than a picked margin — see `curve.ts`,
+ *   which spends most of its docstring explaining why. A cap on growth would be neither: nothing
+ *   measures what share of boards a growing player is *allowed* to win, so any figure put here
+ *   would be somebody's taste wearing an assertion.
+ * - **The opening case being forgiving to good play is correct.** Forearm is where the mechanic is
+ *   safe to learn. A player who works out that growing helps, on the first case, and is rewarded
+ *   for it, has understood the game — capping that is punishing the thing the case is for.
+ * - **The risk it would guard against is already refuted.** "Growth trivialises the season" would
+ *   show up as growth being right everywhere, and it is not. Three of the seven cases say no:
+ *   throat (6.3% buying, 5.9% growing), measles (7.2% down to 6.7%) and sinus, where growing
+ *   eagerly is a rout — 2.5% against 6.3%, 307 boards lost and 18 won. The two assertions below
+ *   already forbid the two failures that matter: a form that ruins a case, and a form that is not
+ *   worth its price.
+ *
+ * **Two observations to have before anyone gates growth later.**
+ *
+ * **Under a growth policy the curve is not monotonic.** Throat is harder than stomach for a player
+ * who grows — 5.9% against 14.0% — though the buy-only curve has them 6.3% and 5.5%, the other way
+ * round. Throat punishes reflexive growing and stomach does not. Any future ceiling therefore
+ * cannot be a single number applied per case in season order, because the ordering it would be
+ * enforcing does not exist under that policy. That is a fact about the content, not a defect: a
+ * rule that makes the obvious upgrade wrong is the depth this mechanic was added for.
+ *
+ * **And the allergy case gates growth by itself, without anything here saying so.** Sinus grows 366
+ * cells across its whole board space where hand grows 7500, and `surplus` clears it at exactly the
+ * buy-only rate — not similar, identical, board for board. The reason is worth keeping: that case's
+ * economy is fed by killing and its rule charges for killing, so a player who plays it correctly
+ * never has the surplus to grow anything. The one growth policy that spends anyway loses three
+ * hundred boards for it. No constant was chosen to make that true, which is the shape a ceiling
+ * would have to have to be worth adding.
  */
 
 /**
