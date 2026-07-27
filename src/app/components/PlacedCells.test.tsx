@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { placeDefender, reabsorbValue, startWave, towerAt } from '@game/commands';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
-import { maturedFormOf, type MaturedForm } from '@game/content/maturation';
+import { maturedChanges, maturedFormOf, type MaturedForm } from '@game/content/maturation';
 import { GameLoop } from '@game/loop';
 import { createSimState } from '@game/state';
 import type { DefenderKind } from '@game/types';
@@ -118,6 +118,66 @@ describe('PlacedCells', () => {
     expect(screen.getByTestId('mature').textContent).toBe(`${form.name}−${String(form.cost)}`);
   });
 
+  /**
+   * The offer used to be a name and a price. A matured form is a trade, and one of them was a
+   * trap for a whole tuning pass precisely because no screen said what it moved.
+   *
+   * Every growable kind, not the first one: the three forms move six different stats between them
+   * and only the antibody moves a stat spelled with a fraction, so a case that opens one cell
+   * would have proved the row renders and nothing about what it renders.
+   */
+  it('shows every stat the growth moves, and the numbers content actually carries', () => {
+    render(<Host loop={boardOf(...GROWABLE)} />);
+
+    GROWABLE.forEach((kind, spot) => {
+      fireEvent.click(screen.getByTestId(`cell-chip-${String(spot)}`));
+      const changes = maturedChanges(kind);
+      expect(changes.length, `${kind}'s form moves no stat, so this case asserts nothing`)
+        .toBeGreaterThan(0);
+
+      const text = screen.getByTestId('mature-trade').textContent;
+      for (const change of changes) {
+        expect(text).toContain(`${change.label}${change.from} → ${change.to}`);
+      }
+    });
+  });
+
+  /**
+   * Grouped under headings rather than told apart by colour. Both sides are always present —
+   * `maturation.invariants.test.ts` holds every form to moving at least one stat each way — so a
+   * heading that never renders is a trade the player only sees half of.
+   */
+  it('sorts the trade into what the growth gains and what it gives up', () => {
+    render(<Host loop={boardOf(...GROWABLE)} />);
+
+    GROWABLE.forEach((kind, spot) => {
+      fireEvent.click(screen.getByTestId(`cell-chip-${String(spot)}`));
+      const changes = maturedChanges(kind);
+
+      for (const gain of [true, false]) {
+        const side = changes.filter((change) => change.gain === gain);
+        expect(side.length, `${kind}'s form moves nothing that counts as ${gain ? 'a gain' : 'a cost'}`)
+          .toBeGreaterThan(0);
+        const row = screen.getByTestId('mature-trade')
+          .querySelector(`[data-gain='${String(gain)}']`)?.textContent ?? '';
+        for (const change of side) expect(row).toContain(change.label);
+        for (const other of changes.filter((change) => change.gain !== gain)) {
+          expect(row).not.toContain(other.label);
+        }
+      }
+    });
+  });
+
+  it('stops offering a trade once there is nothing left to trade for', () => {
+    const grown = boardOf(firstOf(GROWABLE, 'a cell that can be grown'));
+    render(<Host loop={grown} />);
+    fireEvent.click(screen.getByTestId('cell-chip-0'));
+    expect(screen.getByTestId('mature-trade')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mature'));
+    expect(screen.queryByTestId('mature-trade')).not.toBeInTheDocument();
+  });
+
   it('grows the cell and renames the chip when the form is taken', () => {
     const kind = firstOf(GROWABLE, 'a cell that can be grown');
     const form = maturedForm(kind);
@@ -169,14 +229,22 @@ describe('PlacedCells', () => {
     expect(screen.queryByTestId('placed-cells')).not.toBeInTheDocument();
   });
 
+  /** Both cells, so the growth offer and everything it spells out are inside the rule too. */
   it('never exclaims, and never uses an emoji — spec copy rules', () => {
-    const loop = boardOf(firstOf(UNGROWABLE, 'a cell that cannot be grown'));
-    const { container } = render(<Host loop={loop} />);
-    fireEvent.click(screen.getByTestId('cell-chip-0'));
+    const kinds = [
+      firstOf(UNGROWABLE, 'a cell that cannot be grown'),
+      firstOf(GROWABLE, 'a cell that can be grown'),
+    ];
 
-    const text = container.textContent;
-    expect(text.length).toBeGreaterThan(0);
-    expect(text).not.toContain('!');
-    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+    kinds.forEach((_kind, spot) => {
+      const { container, unmount } = render(<Host loop={boardOf(...kinds)} />);
+      fireEvent.click(screen.getByTestId(`cell-chip-${String(spot)}`));
+
+      const text = container.textContent;
+      expect(text.length).toBeGreaterThan(0);
+      expect(text).not.toContain('!');
+      expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+      unmount();
+    });
   });
 });

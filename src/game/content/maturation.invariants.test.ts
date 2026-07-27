@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFENDERS, DEFENDER_ORDER } from './defenders';
-import { MATURED_FORMS, maturedFormOf } from './maturation';
+import {
+  MATURED_FORMS, MATURED_STAT_FIELDS, MATURED_STAT_WORDING, maturedChanges, maturedFormOf,
+} from './maturation';
 import type { DefenderKind } from '../types';
 
 // Structural invariants over the matured forms, never their values. A balance pass must be
@@ -89,6 +91,91 @@ describe('matured forms', () => {
 
       expect(better, `${kind}'s matured form improves nothing`).toBeGreaterThan(0);
       expect(worse, `${kind}'s matured form costs nothing — it is a strict upgrade`).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * The offer the player reads carries its own copy of which way each stat counts, because the
+   * screen has to say whether a longer pulse is something the growth gains or something it gives
+   * up. Two tables state that, written independently and on purpose — a single one is a single
+   * thing to get quietly wrong, and getting it wrong prints the trade backwards.
+   */
+  it('agrees with the offer copy on which way every stat counts', () => {
+    for (const field of MATURED_STAT_FIELDS) {
+      expect(
+        MATURED_STAT_WORDING[field].betterWhenHigher,
+        `this suite and the offer copy disagree on whether a higher ${field} is better`,
+      ).toBe(BETTER_WHEN_HIGHER[field]);
+      expect(MATURED_STAT_WORDING[field].label.length, `${field} has no word on the offer`)
+        .toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * What the screen shows against what the table holds. The offer is the only place the player
+   * ever sees either side of a trade, so a form that moves a stat the offer omits is a cost or a
+   * gain being charged for silently — which is the state this whole mechanic shipped in.
+   */
+  it('puts every stat a form moves on the offer, on the right side of the trade', () => {
+    for (const kind of GROWN) {
+      const form = maturedFormOf(kind);
+      if (form === null) continue;
+
+      const base = baseStats(kind);
+      const changes = maturedChanges(kind);
+      expect(
+        changes.map((change) => change.field).sort(),
+        `${kind}'s offer does not list the same stats its form moves`,
+      ).toEqual(Object.keys(form.stats).sort());
+
+      for (const change of changes) {
+        const was = base[change.field];
+        const now = form.stats[change.field];
+        expect(typeof was).toBe('number');
+        expect(typeof now).toBe('number');
+        if (typeof was !== 'number' || now === undefined) continue;
+
+        expect(
+          change.gain,
+          `${kind}'s offer puts ${change.field} on the wrong side: ${String(was)} becomes ${String(now)}`,
+        ).toBe((now > was) === BETTER_WHEN_HIGHER[change.field]);
+      }
+    }
+  });
+
+  /**
+   * The numbers on the offer are spelled, not printed — trailing zeros dropped, fractions shown
+   * as percentages — so they can round. Asserted as a relation rather than as a string, because a
+   * string is the formatter restated: what matters is that the two values still read as different
+   * numbers, and in the direction the stats actually move.
+   */
+  it('spells the two sides of every change so they still read apart, and the right way round', () => {
+    const digits = (spelled: string): number => Number(spelled.replace(/[^0-9.]/g, ''));
+
+    for (const kind of GROWN) {
+      const form = maturedFormOf(kind);
+      if (form === null) continue;
+
+      const base = baseStats(kind);
+      for (const change of maturedChanges(kind)) {
+        const was = base[change.field];
+        const now = form.stats[change.field];
+        if (typeof was !== 'number' || now === undefined) continue;
+
+        expect(change.from, `${kind}'s ${change.field} reads the same on both sides of the offer`)
+          .not.toBe(change.to);
+        expect(
+          digits(change.to) > digits(change.from),
+          `${kind}'s ${change.field} goes ${String(was)} to ${String(now)} and reads ${change.from} to ${change.to}`,
+        ).toBe(now > was);
+      }
+    }
+  });
+
+  it('shows nothing for a cell that has nowhere left to grow', () => {
+    for (const kind of DEFENDER_ORDER) {
+      if (maturedFormOf(kind) !== null) continue;
+      expect(maturedChanges(kind)).toEqual([]);
     }
   });
 

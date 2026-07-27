@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CASE_BY_ID } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_BLURBS } from '../../src/game/content/defenders';
-import { maturedFormOf } from '../../src/game/content/maturation';
+import { maturedChanges, maturedFormOf } from '../../src/game/content/maturation';
 import { BUILD_SPOT_RADIUS, REABSORB_REFUND } from '../../src/game/content/rules';
 import type { Point } from '../../src/game/types';
 import { onScreen, openCase, placeCell, screen, tapSpot, tapWorld } from './helpers';
@@ -133,6 +133,14 @@ test('maturing a cell charges the growth and renames it', async ({ page }) => {
   await onScreen(page, 'cell-chip-2').click();
   await expect(onScreen(page, 'mature')).toContainText(grown.name);
   await expect(onScreen(page, 'mature')).toContainText(`−${String(grown.cost)}`);
+
+  // Both sides of the trade, in the real browser. The unit suite proves the wording; what it
+  // cannot prove is that the row survives the layout and is on screen next to the price.
+  const trade = onScreen(page, 'mature-trade');
+  await expect(trade).toBeVisible();
+  for (const change of maturedChanges('phago')) {
+    await expect(trade).toContainText(`${change.from} → ${change.to}`);
+  }
 
   await onScreen(page, 'mature').click();
   await expect(onScreen(page, 'energy')).toHaveText(String(afterPlacing - grown.cost));

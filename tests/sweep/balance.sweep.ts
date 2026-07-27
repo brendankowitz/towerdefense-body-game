@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { CASES } from '../../src/game/content/cases';
 import { TISSUE_PIPS } from '../../src/game/content/rules';
 import type { CaseId, DefenderKind } from '../../src/game/types';
-import { everyBoard, playBoard, unlockedKinds } from './playBoard';
+import { CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR } from './band';
+import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoard';
 
 /**
  * THE BALANCE HARNESS. Not part of `npm test` — it takes minutes.
@@ -32,15 +33,10 @@ import { everyBoard, playBoard, unlockedKinds } from './playBoard';
  */
 
 /**
- * The band the design is aiming at, from the holistic review (2026-07-26, §5): 5–15% of
- * affordable boards clearing, falling as the season progresses. Below the floor and the player
- * never stumbles into a win; above the ceiling and the board stops being a decision.
- *
- * These are asserted, not printed. A tuning that drops a case out of the band turns this red —
- * that is what makes the harness worth committing rather than reporting.
+ * The band is asserted here, not printed. A tuning that drops a case out of it turns this red —
+ * that is what makes the harness worth committing rather than reporting. The numbers themselves
+ * live in `band.ts`, because `maturation.sweep.ts` holds growth to the same floor.
  */
-const CLEAR_RATE_FLOOR = 0.05;
-const CLEAR_RATE_CEILING = 0.15;
 
 /**
  * A per-case floor, recorded here rather than by lowering the bar for all three. No case needs
@@ -98,7 +94,10 @@ function sweepCase({ caseId, clearedCount }: SweepCase): SweepResult {
   let bestTissue = -1;
 
   for (const board of everyBoard(kinds, definition.spots.length)) {
-    const outcome = playBoard(caseId, clearedCount, board, 'never');
+    // `'never'` grows nothing, so the set it is handed cannot change the outcome. Passed as
+    // every growable kind rather than as nothing, so this line says "a player who declines the
+    // offers" and not "a player the harness never offers anything to".
+    const outcome = playBoard(caseId, clearedCount, board, 'never', EVERY_GROWABLE);
     boards += 1;
     if (outcome.stalled) stalls += 1;
 

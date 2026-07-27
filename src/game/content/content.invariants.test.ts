@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from './defenders';
+import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES } from './cases';
 import { STRAIN_ROWS, VACCINES } from './vaccines';
@@ -346,6 +347,40 @@ describe('build spots are usable', () => {
           `${c.id} spot ${String(index)} holds only ${String(usable.length)} defender(s) over the vessel for ${String(MIN_DWELL_SECONDS)}s — ${detail}`,
         ).toBeGreaterThanOrEqual(2);
       });
+    }
+  });
+
+  /**
+   * The same defect one tier up, and the one this block used to be blind to: it iterated
+   * `DEFENDERS`, so it did not know maturation existed.
+   *
+   * Reach is the dominant stat in this game, and nothing had said so. Every defender's range sits
+   * in a narrow band just above the offsets the build spots are laid at, so a form that trims a
+   * few units of reach does not cover slightly less vessel — it falls off a cliff and covers none.
+   * The high-affinity antibody's range took it from 5.30s of the slowest pathogen at throat spot 3
+   * to 0.00s: a cell the player paid to grow, standing on a spot it could no longer fight from.
+   *
+   * So: **a matured form may never drop a cell below the dwell floor at a spot its base form was
+   * above.** Stated per spot rather than as "a form may not reduce range", because what matters is
+   * the geometry — a form is free to give up reach it was never using.
+   */
+  it('never takes a grown cell off a stretch of vessel the cell it grew from covered', () => {
+    for (const c of CASES) {
+      for (const kind of DEFENDER_ORDER) {
+        const form = maturedFormOf(kind);
+        if (form === null) continue;
+        const grownRange = form.stats.range ?? DEFENDERS[kind].range;
+
+        c.spots.forEach((spot, index) => {
+          const base = dwellSeconds(spot, c.path, DEFENDERS[kind].range);
+          if (base < MIN_DWELL_SECONDS) return;
+          const grown = dwellSeconds(spot, c.path, grownRange);
+          expect(
+            grown,
+            `growing ${kind} into ${form.name} on ${c.id} spot ${String(index)} drops it from ${base.toFixed(2)}s of vessel to ${grown.toFixed(2)}s`,
+          ).toBeGreaterThanOrEqual(MIN_DWELL_SECONDS);
+        });
+      }
     }
   });
 

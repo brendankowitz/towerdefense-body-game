@@ -108,3 +108,49 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/*
+ * What the growth on offer trades. Wraps rather than scrolls: a trade the player has to swipe
+ * to finish reading is a trade they will decide without.
+ */
+.cells-trade {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cells-trade-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 10px;
+}
+
+.cells-trade-side {
+  flex: none;
+  min-width: 52px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--label);
+}
+
+.cells-trade-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.cells-trade-stat {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Colour only reinforces the headings; the row is already legible in a single ink. */
+.cells-trade-row[data-gain='true'] .cells-trade-value {
+  color: var(--support);
+}
+
+.cells-trade-row[data-gain='false'] .cells-trade-value {
+  color: var(--threat);
+}

@@ -3,6 +3,7 @@ import {
 } from '../../src/game/commands';
 import { CASES } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '../../src/game/content/defenders';
+import { maturedFormOf } from '../../src/game/content/maturation';
 import { IMMUNITY_MAX, STEP_SECONDS } from '../../src/game/content/rules';
 import { createSimState } from '../../src/game/state';
 import { step } from '../../src/game/step';
@@ -96,10 +97,10 @@ export function* everyBoard(
  * direction for a floor to be wrong in.
  *
  * Maturing used to be on that list, with the same "can only help" justification. It is now a
- * policy of its own (`MaturationPolicy`) and it was measured, because "optional" and "an
- * improvement" are not the same claim — and on two cases of three, growing is a rout. The floor
- * survives on the first claim alone: a player who declines all three plays exactly this policy,
- * so best play is at least this good whatever those decisions turn out to be worth.
+ * policy of its own (`MaturationPolicy`, crossed with `GrowableSet`) and it was measured, because
+ * "optional" and "an improvement" are not the same claim — and one of the three forms was a rout.
+ * The floor survives on the first claim alone: a player who declines all three plays exactly this
+ * policy, so best play is at least this good whatever those decisions turn out to be worth.
  */
 function buyCheapestFirst(state: SimState, board: readonly DefenderKind[]): number {
   const pending = board
@@ -131,22 +132,41 @@ function buyCheapestFirst(state: SimState, board: readonly DefenderKind[]): numb
  *   naive upgrade-lover, and the policy that tests whether growth competing with placement is a
  *   mistake.
  *
- * `maturation.sweep.ts` runs all three over the whole board space and reports the difference. It
- * has: growing everything is a *win* on forearm (9.1% → 13.5%) and a rout on throat (6.3% →
- * 0.4%) and stomach (5.5% → 1.9%), even under `'surplus'`, which never took a cell off the board
- * to pay for it. Maturing is a trade and the trade is case-shaped, so no policy here is "the
- * player playing well" — which is why `'never'` is still what the gate measures.
+ * `maturation.sweep.ts` runs all three over the whole board space, crossed with `GrowableSet`, and
+ * reports the difference. No number from it is repeated here: it moves every time a form is tuned,
+ * and a docstring that quotes it goes stale silently. What holds whatever the numbers are is that
+ * maturing is a trade and the trade is case-shaped, so no policy here is "the player playing well"
+ * — which is why `'never'` is still what the gate measures.
  */
 export type MaturationPolicy = 'never' | 'surplus' | 'eager';
+
+/**
+ * Which kinds a run is willing to grow, and the second axis of the comparison.
+ *
+ * A policy alone cannot answer whether growing a *particular* cell is worth it: `'surplus'` grows
+ * everything it can afford, so a form that is a rout drags every board it appears on down with it
+ * and a form that is a win is credited for boards the rout lost anyway. That is how an antibody
+ * that could not hold a second of vessel from four of the season's fifteen spots hid inside an
+ * aggregate for a whole tuning pass. Narrowing the set to one kind measures the form, which is
+ * what the player is actually offered.
+ *
+ * Never optional. Every call states the set it means, because "all of them" and "the one I am
+ * measuring" are the two readings of a missing argument and they answer different questions.
+ */
+export type GrowableSet = readonly DefenderKind[];
+
+/** Every kind the content offers a form for, in dock order. */
+export const EVERY_GROWABLE: GrowableSet = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) !== null);
 
 /**
  * Grows what the balance allows, cheapest form first for the same reason placement buys cheapest
  * first: it is the ordering that gets the most cells grown soonest. Ties break on spot index, so
  * the sweep stays deterministic.
  */
-export function growCheapestFirst(state: SimState): number {
+export function growCheapestFirst(state: SimState, kinds: GrowableSet): number {
   const offers: { readonly spotIndex: number; readonly cost: number }[] = [];
   for (const tower of state.towers) {
+    if (!kinds.includes(tower.kind)) continue;
     const form = maturationAt(state, tower.spotIndex);
     if (form !== null) offers.push({ spotIndex: tower.spotIndex, cost: form.cost });
   }
@@ -178,11 +198,12 @@ export function runBuildPhase(
   state: SimState,
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
+  kinds: GrowableSet,
 ): BuildPhaseSpend {
-  const grownFirst = policy === 'eager' ? growCheapestFirst(state) : 0;
+  const grownFirst = policy === 'eager' ? growCheapestFirst(state, kinds) : 0;
   const built = buyCheapestFirst(state, board);
   const grownAfter = policy === 'surplus' && isBoardStanding(state, board)
-    ? growCheapestFirst(state)
+    ? growCheapestFirst(state, kinds)
     : 0;
   return { built, grown: grownFirst + grownAfter };
 }
@@ -192,6 +213,7 @@ export function playBoard(
   clearedCount: number,
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
+  kinds: GrowableSet,
 ): BoardOutcome {
   const state = createSimState({
     caseId,
@@ -203,7 +225,7 @@ export function playBoard(
   let built = 0;
   let grown = 0;
   for (;;) {
-    const spend = runBuildPhase(state, board, policy);
+    const spend = runBuildPhase(state, board, policy, kinds);
     built += spend.built;
     grown += spend.grown;
     startWave(state);

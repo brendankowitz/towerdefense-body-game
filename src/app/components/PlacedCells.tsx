@@ -2,7 +2,7 @@ import {
   isBuildPhase, matureDefender, maturationAt, reabsorbDefender, reabsorbValue, towerAt,
 } from '@game/commands';
 import { DEFENDERS, DEFENDER_BLURBS } from '@game/content/defenders';
-import { maturedFormOf } from '@game/content/maturation';
+import { maturedChanges, maturedFormOf } from '@game/content/maturation';
 import type { GameLoop } from '@game/loop';
 import type { Tower } from '@game/types';
 import { palette } from '@theme/tokens';
@@ -19,6 +19,22 @@ function cellName(tower: Tower): string {
   if (grown !== null) return grown.name;
   return DEFENDER_BLURBS[tower.kind].name.split(' · ')[0] ?? DEFENDERS[tower.kind].label;
 }
+
+/**
+ * The two sides of a growth, and the order they read in.
+ *
+ * A matured form is a trade, and the offer beside this was a name and a price: the player was
+ * being asked to spend most of another cell on a decision they could not see either side of.
+ * Grouped under headings rather than distinguished by colour, so the trade reads without it —
+ * the colours below only reinforce a split the words already make.
+ *
+ * Which side a stat falls on is content's to say, not this file's: `maturedChanges` knows that a
+ * longer mark is a gain and a longer pulse is not.
+ */
+const TRADE_SIDES: readonly { readonly gain: boolean; readonly heading: string }[] = [
+  { gain: true, heading: 'GAINS' },
+  { gain: false, heading: 'GIVES UP' },
+];
 
 /**
  * Taking a cell back, and growing one on. Both are build-phase only — the simulation refuses
@@ -44,6 +60,7 @@ export function PlacedCells({ loop, chosenSpot, onChoose }: PlacedCellsProps) {
   const chosen = chosenSpot === null ? null : towerAt(loop.state, chosenSpot);
   const offer = chosenSpot === null ? null : maturationAt(loop.state, chosenSpot);
   const affordable = offer !== null && loop.state.energy >= offer.cost;
+  const trade = chosen === null || offer === null ? [] : maturedChanges(chosen.kind);
 
   const run = (mutate: () => void): void => {
     mutate();
@@ -118,6 +135,26 @@ export function PlacedCells({ loop, chosenSpot, onChoose }: PlacedCellsProps) {
               </span>
             </button>
           )}
+        </div>
+      )}
+
+      {trade.length > 0 && (
+        <div className="cells-trade" data-testid="mature-trade">
+          {TRADE_SIDES.map(({ gain, heading }) => {
+            const changes = trade.filter((change) => change.gain === gain);
+            if (changes.length === 0) return null;
+            return (
+              <div className="cells-trade-row" key={heading} data-gain={String(gain)}>
+                <span className="mono cells-trade-side">{heading}</span>
+                {changes.map((change) => (
+                  <span key={change.field} className="cells-trade-item">
+                    <span className="cells-trade-stat">{change.label}</span>
+                    <span className="mono cells-trade-value">{`${change.from} → ${change.to}`}</span>
+                  </span>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

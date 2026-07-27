@@ -185,25 +185,34 @@ describe('high-affinity antibody — a matured antibody', () => {
     expect(cooldownFor(true)).toBeGreaterThan(cooldownFor(false));
   });
 
-  it('covers a narrower field than the cell it grew from', () => {
-    const reach = DEFENDERS.anti.range;
-    const grownReach = override('anti', 'range');
-    expect(grownReach).toBeLessThan(reach);
-    const between = (reach + grownReach) / 2;
+  /**
+   * The defect this form was rebuilt around. Reach used to be what it paid with, and reach is the
+   * one stat the geometry cannot absorb — the grown cell stood on build spots it could no longer
+   * mark anything from at all. `content.invariants.test.ts` states that as a rule over the real
+   * board geometry; this is the same rule as behaviour, at the base form's own edge, so it holds
+   * whatever either range becomes.
+   */
+  it('marks everything the cell it grew from could reach, so growing never costs it a spot', () => {
+    function marksAt(matured: boolean, x: number): boolean {
+      const state = simFor();
+      addTower(state, 'anti', 0, 0, 0, matured);
+      const target = addEnemy(state, 'staph', { x, y: 0 });
+      tick(state, STEP_SECONDS);
+      return target.tag > 0;
+    }
 
-    const plain = simFor();
-    addTower(plain, 'anti', 0, 0, 0);
-    const plainTarget = addEnemy(plain, 'staph', { x: between, y: 0 });
-
-    const grown = simFor();
-    addTower(grown, 'anti', 0, 0, 0, true);
-    const grownTarget = addEnemy(grown, 'staph', { x: between, y: 0 });
-
-    tick(plain, STEP_SECONDS);
-    tick(grown, STEP_SECONDS);
-
-    expect(plainTarget.tag).toBeGreaterThan(0);
-    expect(grownTarget.tag).toBe(0);
+    const SAMPLES = 10;
+    let reached = 0;
+    for (let sample = 1; sample <= SAMPLES; sample += 1) {
+      const x = (DEFENDERS.anti.range * sample) / SAMPLES;
+      if (!marksAt(false, x)) continue;
+      reached += 1;
+      expect(
+        marksAt(true, x),
+        `a grown antibody cannot mark at ${x.toFixed(1)}, and the cell it grew from can`,
+      ).toBe(true);
+    }
+    expect(reached, 'the base antibody marked nothing anywhere, so this asserted nothing').toBe(SAMPLES);
   });
 });
 
