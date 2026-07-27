@@ -39,9 +39,10 @@ interface Scenario {
   readonly immunity: Readonly<Record<StrainId, number>>;
   readonly board: readonly (readonly [DefenderKind, number])[];
   /**
-   * One cell per case is grown before the wave starts, so matured stats are inside the net
-   * rather than beside it. A different kind each time, and never the only cell of its kind on
-   * the board, so both forms of every grown cell are exercised somewhere.
+   * One cell per case is grown before the wave starts, so matured stats are inside the net rather
+   * than beside it. Content offers two forms, and both are exercised: the macrophage on the two
+   * cases whose streams are mostly small bodies, the high-affinity antibody on the one whose rule
+   * makes marks matter most.
    */
   readonly matureKind?: DefenderKind;
   /** Step at which fever is called, for the scenario that covers the slow. */
@@ -63,7 +64,7 @@ const SCENARIOS: readonly Scenario[] = [
     waveIndex: 3,
     immunity: { staph: 0, film: 0, virus: 0 },
     board: [['clot', 0], ['anti', 1], ['nk', 2], ['phago', 3], ['mem', 4]],
-    matureKind: 'clot',
+    matureKind: 'phago',
     feverAtStep: 300,
   },
   // Poison: defenders taking damage, toxin stun, resistant strains, and the Biofilm serum.

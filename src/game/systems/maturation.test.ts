@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { acquireHolds, runDefenders } from './damage';
 import { resolveDeaths } from './deaths';
-import { applyMovement } from './movement';
 import { statsFor } from './stats';
 import { hashState } from '../hash';
 import { DEFENDERS } from '../content/defenders';
 import { maturedFormOf } from '../content/maturation';
 import { PATHOGENS } from '../content/pathogens';
-import { STEP_SECONDS, TOWER_MAX_HP } from '../content/rules';
-import { addEnemy, addTower, addTowerOnPath, simFor } from '../testing';
+import { STEP_SECONDS } from '../content/rules';
+import { addEnemy, addTower, simFor } from '../testing';
 import type { DefenderKind, SimState } from '../types';
 
 /**
@@ -83,6 +82,29 @@ describe('macrophage — a matured phagocyte', () => {
     expect(grownCell.holdingEnemyId).toBe(prey.id);
   });
 
+  /**
+   * The whole of what growing one costs, and the reason the form is a trade at all. The pause is
+   * charged once per *body*, so a stream of small ones pays it over and over where one heavy body
+   * pays it once — which is what makes a macrophage the answer to a Resistant and the wrong answer
+   * to a swarm. Read off the cell after a body that left it room, so it is the short pause under
+   * test and not the long rest below.
+   */
+  it('pauses longer between bodies than the cell it grew from', () => {
+    function pauseAfterBody(matured: boolean): number {
+      const state = simFor();
+      const cell = addTower(state, 'phago', 0, 0, 0, matured);
+      const prey = addEnemy(state, 'staph', { x: 10, y: 0, hp: 0 });
+
+      cell.holdingEnemyId = prey.id;
+      resolveDeaths(state, new Set());
+      return cell.rest;
+    }
+
+    expect(pauseAfterBody(false)).toBe(DEFENDERS.phago.gap);
+    expect(pauseAfterBody(true)).toBe(override('phago', 'gap'));
+    expect(pauseAfterBody(true)).toBeGreaterThan(pauseAfterBody(false));
+  });
+
   it('is slower to come back once it is full, which is what it trades for the bite', () => {
     function restWhenFull(matured: boolean): number {
       const state = simFor();
@@ -122,37 +144,9 @@ describe('macrophage — a matured phagocyte', () => {
 
     expect(override('phago', 'capacity')).toBeGreaterThan(DEFENDERS.phago.capacity);
     expect(restAfterLoad(false)).toBe(DEFENDERS.phago.rest);
-    expect(restAfterLoad(true)).toBe(DEFENDERS.phago.gap);
-  });
-});
-
-describe('fibrin mesh — a matured clot', () => {
-  function crawl(matured: boolean): { readonly advanced: number; readonly worn: number } {
-    const state = simFor();
-    const clot = addTowerOnPath(state, 'clot', 0, matured);
-    const enemy = addEnemy(state, 'staph', { distance: 0 });
-
-    applyMovement(state, STEP_SECONDS, new Set(), new Set());
-    return { advanced: enemy.distance, worn: TOWER_MAX_HP - clot.hp };
-  }
-
-  it('holds everything harder, in proportion to the slow it was given', () => {
-    const plain = crawl(false);
-    const grown = crawl(true);
-
-    expect(plain.advanced).toBeGreaterThan(0);
-    expect(grown.advanced).toBeLessThan(plain.advanced);
-    expect(grown.advanced / plain.advanced)
-      .toBeCloseTo(override('clot', 'slow') / DEFENDERS.clot.slow, 6);
-  });
-
-  it('is worn down faster for it, in proportion to the wear it was given', () => {
-    const plain = crawl(false);
-    const grown = crawl(true);
-
-    expect(plain.worn).toBeGreaterThan(0);
-    expect(grown.worn).toBeGreaterThan(plain.worn);
-    expect(grown.worn / plain.worn).toBeCloseTo(override('clot', 'wear') / DEFENDERS.clot.wear, 6);
+    expect(restAfterLoad(true)).toBe(override('phago', 'gap'));
+    // The point is which of the two pauses it takes, so they have to be different pauses.
+    expect(override('phago', 'gap')).toBeLessThan(override('phago', 'rest'));
   });
 });
 

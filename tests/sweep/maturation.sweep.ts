@@ -30,16 +30,17 @@ import {
  *   moved nothing measurable, and the antibody alone lost 485 of throat's 486 winning boards. The
  *   aggregate read as "growing is a rout", which was true of exactly one of the three. A trade is
  *   a property of the form and the geometry, not of which combination of spots happened to grow,
- *   so the form is what gets measured.
+ *   so the form is what gets measured. Two of those three findings became changes: the antibody was
+ *   rebuilt around its pulse, and the mesh was deleted outright — `maturation.ts` records why.
  * - **Is the reported rate really a floor?** It is, but not for the reason the old docstring gave.
  *   Maturing is *optional*: a player who declines it plays the buy-only run exactly, so best play
  *   is at least that good whatever growth does. `best` — boards that clear under any run here — is
  *   how much room is left above the floor, and the gap between it and `never` is how loose it is.
  *
  * The shape of a run is a policy per board rather than a cross-product over which cells to grow.
- * The cross-product is ~8× more runs (2^growable-spots, which averages three of five spots), it
- * still would not be best play because it fixes *when* each cell grows, and the extra precision
- * does not change a decision: what a tuning needs to know is the direction and the rough size.
+ * The cross-product is several times the runs (2^growable-spots, and a board holds a couple of
+ * those), it still would not be best play because it fixes *when* each cell grows, and the extra
+ * precision does not change a decision: what a tuning needs to know is the direction and the size.
  */
 
 /**
@@ -64,38 +65,6 @@ const RUNS: readonly Run[] = [
     label: `only ${kind}`, policy: 'surplus', kinds: [kind], single: kind,
   })),
 ];
-
-/**
- * Forms known to fail `worth having`, recorded rather than tuned into passing.
- *
- * `BAND_EXCEPTIONS` in `balance.sweep.ts` is the precedent, and the reason for the shape: a check
- * that is permanently red decays into wallpaper. Someone runs it, learns it is always red, stops
- * reading it, and the day it goes red for a *new* reason nobody notices. An exception keeps the
- * command green and carries the truth, and the assertion fails if a listed form starts passing —
- * so a stale entry is deleted rather than left as a second kind of wallpaper.
- *
- * This is for the one form below and must not become a per-kind opt-out. Widening it is how the
- * next trap walks straight through the hole.
- */
-const WORTH_HAVING_EXCEPTIONS: Partial<Record<DefenderKind, string>> = {
-  /**
-   * The fibrin mesh, measured 2026-07-26: +5 boards won and 23 lost across the season, on every
-   * pricing tried. Ten of them, over the whole board space of all three cases, moved single digits
-   * out of 3125 and 7776 — and every one scored `+0` on throat.
-   *
-   * That is not a tuning failure, it is the form. A mesh's gain is a stronger hold and its cost is
-   * faster wear, and those are the same currency: total slowing delivered is hold strength times
-   * lifetime, and lifetime is one over wear. Pricing them against each other is a wash by
-   * construction, which is why the mesh "does nothing measurable" and why no exchange rate fixes
-   * it. Reach is the only axis that broke the tie and converted a throat board at all.
-   *
-   * So the mesh needs a design decision, not a balance pass, and picking whichever of the ten rows
-   * happened to land green would be choosing a number because it passed rather than because it was
-   * true — the same mistake as the reach literal that started all of this. Delete this entry when
-   * the form is redesigned.
-   */
-  clot: 'grip and wear are the same currency, so the trade cancels itself — see the note above',
-};
 
 /** `SWEEP_CASES=forearm npm run sweep:maturation` — same escape hatch as the balance sweep. */
 const ONLY = process.env.SWEEP_CASES?.split(',').map((id) => id.trim()).filter((id) => id !== '');
@@ -296,6 +265,14 @@ describe('maturation comparison', () => {
    * forbids case-shaped trades; and it is worse than merely strict — on a case where a cell is
    * barely used no gain can convert a board, so the only way to pass is to make the downside
    * inert. A rule that can only be satisfied by removing the trade is a rule against trades.
+   *
+   * **There is no exception list, deliberately.** One used to sit above this suite holding the
+   * fibrin mesh, on the reasoning that a permanently red check decays into wallpaper. The mesh
+   * turned out not to be tunable at all — every stat a clot has is the same currency, so no pricing
+   * of it was ever going to pass — and the answer was to delete the form rather than keep excusing
+   * it. A form that cannot pass this is a form that should not be sold, and an opt-out is how the
+   * next one that cannot pass stays on the dock anyway. Add the list back only for a form that has
+   * a reason to be red *and* a date it stops being red.
    */
   it('never offers a growth that is not worth having — every form wins more than it loses', () => {
     // Every form is judged before anything is asserted, and the failure names all of them. One
@@ -303,15 +280,8 @@ describe('maturation comparison', () => {
     // second bad form should not cost eleven more.
     const failures: string[] = [];
     for (const { kind, helped, hurt, perCase } of EVERY_GROWABLE.map(seasonTotal)) {
-      const excused = WORTH_HAVING_EXCEPTIONS[kind];
-      const worthHaving = helped > hurt;
-      const detail = `wins ${String(helped)} boards across the season and loses ${String(hurt)} (${perCase.join(', ')})`;
-
-      if (excused === undefined) {
-        if (!worthHaving) failures.push(`growing only ${kind} ${detail}`);
-      } else if (worthHaving) {
-        failures.push(`${kind} is listed as a known exception and now passes — ${detail}. Delete its entry in WORTH_HAVING_EXCEPTIONS.`);
-      }
+      if (helped > hurt) continue;
+      failures.push(`growing only ${kind} wins ${String(helped)} boards across the season and loses ${String(hurt)} (${perCase.join(', ')})`);
     }
 
     // The scope is named, because `SWEEP_CASES` narrows it. Summed over one case this is the

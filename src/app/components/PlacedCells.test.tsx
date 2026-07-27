@@ -122,9 +122,9 @@ describe('PlacedCells', () => {
    * The offer used to be a name and a price. A matured form is a trade, and one of them was a
    * trap for a whole tuning pass precisely because no screen said what it moved.
    *
-   * Every growable kind, not the first one: the three forms move six different stats between them
-   * and only the antibody moves a stat spelled with a fraction, so a case that opens one cell
-   * would have proved the row renders and nothing about what it renders.
+   * Every growable kind, not the first one: the forms move different stats between them, spelled
+   * in different units — a reach is a bare number, a pause is seconds, a bite is per second — so a
+   * case that opened one cell would have proved the row renders and nothing about what it renders.
    */
   it('shows every stat the growth moves, and the numbers content actually carries', () => {
     render(<Host loop={boardOf(...GROWABLE)} />);

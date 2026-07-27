@@ -44,8 +44,25 @@ export interface MaturedForm {
   readonly stats: Readonly<Partial<Record<MaturedStatField, number>>>;
 }
 
-/** How much more a macrophage holds than the phagocyte it grew from. See `MATURED_FORMS`. */
+/**
+ * The macrophage, as four relationships to the phagocyte it grew from. Every stat it carries is one
+ * of these times a base value and never a number of its own: the base has already moved once
+ * without the form moving with it, and a grown cell that reached less far than the cell it grew
+ * from shipped as a result. See `MATURED_FORMS`.
+ *
+ * `MACROPHAGE_APPETITE` does double duty. The long rest is what a full bank costs to clear, so a
+ * cell with twice the bank takes twice as long over it — one idea, one number, two stats.
+ */
 const MACROPHAGE_APPETITE = 2;
+const MACROPHAGE_REACH = 1.25;
+const MACROPHAGE_BITE = 1.75;
+
+/**
+ * How much longer a macrophage takes between bodies, and the whole of what growing one gives up.
+ * `MATURED_FORMS` carries the measurement that put it here — it is the one number in this file
+ * that decides whether the form is a trade or a strict upgrade wearing a longer rest.
+ */
+const MACROPHAGE_PAUSE = 3;
 
 /**
  * The high-affinity antibody's two dials: its mark holds `HIGH_AFFINITY_GRIP` times as long, and
@@ -65,38 +82,45 @@ const HIGH_AFFINITY_PULSE = 1.2;
  * know what a const holding it was called.
  *
  * - **Macrophage.** A monocyte that has settled into tissue: bigger, hungrier, longer reach, and
- *   slower to come back. The trade is burst and single-target bite against sustained throughput,
- *   so a macrophage beats a phagocyte on one armoured thing and loses to it on a stream of small
- *   ones.
+ *   far slower between bodies.
  *
- *   Its appetite is the point of growing one. `MACROPHAGE_APPETITE` is written as a multiple of
- *   the phagocyte's own capacity rather than as a number, so the relationship survives a balance
- *   pass on the base. At the 2× it carries today that is enough to swallow the heaviest body in
- *   the game whole and still have room, where the cell it grew from is filled by that one body
- *   and has to rest it off — which is what makes the macrophage the answer to a Resistant and
- *   leaves the base phagocyte, at less than half the energy, the answer to a stream of small ones.
+ *   **It is the answer to one heavy thing and the slow answer to a crowd**, and the pause is the
+ *   only reason that is true. Its appetite, `MACROPHAGE_APPETITE` times the phagocyte's, is enough
+ *   to swallow the heaviest body in the game whole and still have room, where the cell it grew from
+ *   is filled by that one body and has to rest it off. But appetite, bite and reach all help it
+ *   against a swarm as much as against a Resistant. The pause is the one stat that does not: it is
+ *   charged once per *body*, so a stream of small ones pays it over and over and one Resistant pays
+ *   it once.
  *
- *   Its reach is derived from the phagocyte's, at 1.25×, and not written down independently. The
- *   2026-07-26 tuning raised the base from 56 to 74 and left this at its literal 70, which turned
- *   the cell's signature upgrade into a downgrade — growing a phagocyte cost it reach. Every
- *   value here is a relationship to a base stat; when the base moves, re-derive rather than
- *   re-check that the number still looks sensible. Capacity is spelled as that relationship
- *   instead of a comment about one, which is the only form of it a stale base cannot break.
- * - **Fibrin mesh.** Fibrin cross-links a soft platelet plug into a firm one: it holds far
- *   harder, and it is consumed faster for it. Wear is per body (decision D10), so a mesh in a
- *   busy lane buys a long hold and then fails outright.
+ *   Bodies fully digested per second by a grown cell against the cell it grew from, at saturation —
+ *   one cell that is never short of prey, so none of this is geometry. Only the pause moves:
  *
- *   **This form does not work, and it is not a tuning problem.** Its gain and its cost are the
- *   same quantity: total slowing delivered is hold strength × lifetime, and lifetime is 1/wear, so
- *   trading `slow` against `wear` moves one number up and the other down by the same amount and
- *   the mesh comes out where it started. Measured, ten pricings across the whole board space of
- *   all three cases moved single digits out of 3125 and 7776 boards, and every one of them won
- *   exactly zero boards on throat. Reach is the only axis that broke the tie.
+ *   | pause        | Staph 26 | Virus 34 | Spore 60 | Biofilm 120 | Resistant 150 |
+ *   |--------------|----------|----------|----------|-------------|---------------|
+ *   | 1× (0.70s)   |    1.27× |    1.28× |    1.86× |       1.59× |         1.50× |
+ *   | 2× (1.40s)   |    1.02× |    1.06× |    1.73× |       1.53× |         1.47× |
+ *   | 2.5× (1.75s) |    0.92× |    0.98× |    1.67× |       1.53× |         1.43× |
+ *   | 3× (2.10s)   |    0.85× |    0.90× |    1.62× |       1.53× |         1.43× |
  *
- *   Recorded as a named exception in `maturation.sweep.ts` rather than tuned until a number went
- *   green, and left for a design pass. Nothing here should be nudged in the meantime: with the two
- *   knobs cancelling, any movement is noise, and choosing the pricing that happened to measure
- *   well is how the antibody's reach literal below got written in the first place.
+ *   The armoured columns barely move over the whole range while the small ones cross 1.0, which is
+ *   what makes the pause a dial rather than a cliff — the opposite of reach (spec §5.0) and of the
+ *   antibody's pulse below, and the reason the cost is spent here and nowhere else.
+ *
+ *   **The bolded sentence above used to sit here at a pause of 1×**, in the words "loses to a
+ *   phagocyte on a stream of small ones" — top row of the table, where the macrophage was 27%
+ *   faster through a stream of staph and faster through everything else besides. Better at every
+ *   body in the game, for 55 energy, with a longer rest as the only thing it appeared to give up.
+ *   The sentence was the design and the number was not, and the number is what the game ran. It is
+ *   true now because `MACROPHAGE_PAUSE` makes it true. Note what it does *not* claim: growing every
+ *   phagocyte still wins forearm boards on net, because reach and bite are real. The claim is about
+ *   throughput per body, which is the table above.
+ *
+ *   Its reach is `MACROPHAGE_REACH` times the phagocyte's, and until 2026-07-26 it was the literal
+ *   92 beside a comment stating it was 1.25× and *not written down independently*. 74 × 1.25 is
+ *   92.5, so the comment was already half a unit wrong the day it was written; the tuning before
+ *   that had left the same field at 70 against a base of 74, and growing a phagocyte cost it reach.
+ *   Every value here is a relationship to a base stat, spelled as that relationship rather than
+ *   asserted in prose beside a number — which is the only form of it a stale base cannot break.
  * - **High-affinity antibody.** Affinity maturation: the same cell, selected until what it makes
  *   binds far harder. The mark holds `HIGH_AFFINITY_GRIP` times as long — long enough that it
  *   outlives the stretch of vessel the cell can see, and travels on with the body — and the cell
@@ -139,19 +163,53 @@ const HIGH_AFFINITY_PULSE = 1.2;
  *   gets became none at all. It grew into a cell that stood there marking nothing, for 110 energy,
  *   and nothing said so. The rule is asserted per spot against the real geometry in
  *   `content.invariants.test.ts`.
+ *
+ * **The clot has no form, and that is a finding rather than an omission.** It had one — a fibrin
+ * mesh that held harder and wore through faster — and it never worked. Every number a clot carries
+ * is the same currency: total slowing delivered is hold strength × lifetime, lifetime is 1/wear, so
+ * pricing `slow` against `wear` moves both ends of one quantity and lands back where it started.
+ * Ten pricings over the whole board space of all three cases confirmed that, moving single digits
+ * out of 3125 and 7776 boards and winning exactly zero throat boards every time.
+ *
+ * Reach was the one axis that was not that currency, and it was measured properly before the form
+ * was removed. The clot reaches 76, and five of the season's fifteen build spots — throat 2, 3 and
+ * 4, stomach 4, forearm 3 — need more than that before anything holds a body there for a second,
+ * four of them 79–81. A mesh at 87.4 turns all five live: a real, spatial reason to grow one, and
+ * the first pricing that ever converted a throat board. It still does not work, because reach is
+ * not orthogonal either — wear is charged per body in range (decision D10), so a wider mesh catches
+ * more bodies and is chewed through faster in proportion to the extra vessel it covers. Boards won
+ * and lost over the whole season, growing only clots:
+ *
+ * | mesh                                            |  won | lost |
+ * |-------------------------------------------------|------|------|
+ * | as shipped: grip 0.28→0.16, wear 6→10, reach 76 |   +5 |  -23 |
+ * | reach 76→87.4, giving up nothing at all         |  +12 |  -11 |
+ * | reach 76→87.4, wear 6→9                         |  +10 |  -20 |
+ * | reach 76→87.4, wear 6→12                        |  +11 |  -23 |
+ *
+ * The second row is the ceiling and it is a wash: a mesh that costs the player nothing but the
+ * energy wins one board net out of 18 677, and every version that pays for its width with anything
+ * at all loses. For scale, a strictly *favourable* 1–6% move on the macrophage's own stats swung one
+ * case by 13 boards — so no row in that table carries a sign, let alone a design.
+ *
+ * A `MaturedForm` can only move numbers a defender already has, and the clot has three that touch
+ * the fight. Grip and wear trade against each other exactly; reach buys more of both sides at once.
+ * A form worth 80 energy would have to change what a clot *does*, which is a mechanic and not a
+ * table entry, so there is no mesh — and the named exception that used to hold its place in
+ * `maturation.sweep.ts` is gone with it. Two forms that work beat three that are excused.
  */
 export const MATURED_FORMS: { readonly [K in DefenderKind]?: MaturedForm } = {
   phago: {
     name: 'Macrophage',
     cost: 55,
     stats: {
-      range: 92,
-      dps: 26,
+      range: DEFENDERS.phago.range * MACROPHAGE_REACH,
+      dps: DEFENDERS.phago.dps * MACROPHAGE_BITE,
+      gap: DEFENDERS.phago.gap * MACROPHAGE_PAUSE,
       capacity: DEFENDERS.phago.capacity * MACROPHAGE_APPETITE,
-      rest: 7.2,
+      rest: DEFENDERS.phago.rest * MACROPHAGE_APPETITE,
     },
   },
-  clot: { name: 'Fibrin mesh', cost: 80, stats: { slow: 0.16, wear: 10 } },
   anti: {
     name: 'High-affinity antibody',
     cost: 110,

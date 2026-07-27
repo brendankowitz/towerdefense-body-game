@@ -71,9 +71,9 @@ describe('applyMaturationTuning', () => {
   });
 
   it('rejects a stat the defender does not carry, which the type cannot rule out', () => {
-    // `MaturedForm.stats` is one flat union over every defender, so `dps` on the clot's form
-    // type-checks. The clot has no dps, so this must be refused at runtime.
-    expect(() => { applyMaturationTuning('clot', { dps: 1 }); }).toThrow(/unknown field/i);
+    // `MaturedForm.stats` is one flat union over every defender, so `dps` on the antibody's form
+    // type-checks. The antibody has no dps, so this must be refused at runtime.
+    expect(() => { applyMaturationTuning('anti', { dps: 1 }); }).toThrow(/unknown field/i);
   });
 
   it('rejects a kind that has nothing to grow into', () => {

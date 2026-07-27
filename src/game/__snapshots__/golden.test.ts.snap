@@ -2,8 +2,8 @@
 
 exports[`golden run > matches the blessed snapshot 1`] = `
 {
-  "forearm": "98c3cae3 ea6b7e10 5920202e 202efcaf 77082c06 0fc08b83 ea7178ea a51db1ab ff32d5b7 54e2e15a 589550fa cb00f7f4 3d8e4ae4 13bc2ca8 b85ae07c",
+  "forearm": "98c3cae3 ea6b7e10 5920202e e6e76f56 0624f06b 53951225 5bb33a83 34324b97 14f25536 363f79eb 399de9e3 26dbee51 181e95df 18353c13 869e7164",
   "stomach": "4f12c3ae 4e7b1b05 171c4eeb d109183d 83e12a92 b2d4dfca 1afbdcd5 5b53e24c 5e6fd5fe ff906d3d 5fe870a8 f56f604c 0e926e75 459ea444 2ce9c54e",
-  "throat": "d19ddd2b 988f9114 b4a0266b 8e02f202 968577b2 ca658828 06aa3d43 ee077d1f 3535d9fd 52e09d1e 0746ef74 a86637ba 80cdb1d8 b6d8349e 2a084dd5",
+  "throat": "6364ed93 9d77f893 2dfa6e24 a0c4118e ac318bb1 6ed54d5d d56f6de6 61d97dd4 aa42649f 76899311 8f418f6a fd326910 67c7b8d6 b6d9eea4 23741f3a",
 }
 `;
