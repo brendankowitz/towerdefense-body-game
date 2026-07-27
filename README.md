@@ -82,19 +82,25 @@ move everything without turning the suite red.
 through the real simulation and reports the clear rate:
 
 ```
-forearm  5 cells  |  283/3125 clear (9.1%)  |  best: anti,mast,phago,phago,phago
-throat   6 cells  |  486/7776 clear (6.3%)  |  best: anti,anti,anti,phago,phago
-stomach  6 cells  |  424/7776 clear (5.5%)  |  best: anti,phago,anti,phago,anti
+forearm  5 cells  |  414/3125 clear (13.2%)  |  best: anti,mast,phago,phago,phago
+throat   6 cells  |  486/7776 clear (6.3%)   |  best: anti,anti,anti,phago,phago
+stomach  6 cells  |  424/7776 clear (5.5%)   |  best: anti,phago,anti,phago,anti
+hand     6 cells  |  411/7776 clear (5.3%)   |  best: anti,mast,mem,phago,phago
 ```
 
-It fails if a tuning makes a case unwinnable or breaks the difficulty curve.
+It fails if a tuning makes a case unwinnable, if a later case becomes easier than the one the
+season opens with, or if the curve inverts. Not if one case is easier than the case before it:
+a hard case followed by a breather is pacing, and one body moved between waves was measured to
+be worth 0.8 points, so a staircase would have been asserting past the instrument's resolution.
+`tests/sweep/curve.ts` has the arithmetic and the measurement behind it.
 
 That player buys cells and never grows one. `npm run sweep:maturation` plays the same boards
-again under two policies that do, and the answer is not the one the harness used to assume:
-growing every cell you can afford takes forearm from 9.1% to 13.5% and throat from 6.3% to
-**0.4%**. It is not starvation — the policy that only grows once the whole board is standing
-still loses 461 of throat's 486 winning boards. A matured form is a trade, the trade is
-case-shaped, and there is no policy here that is simply "playing better".
+again under policies that do, and the answer is not the one the harness used to assume. Growing
+every cell you can afford once the board is standing takes forearm from 13.2% to **21.8%** and
+stomach from 5.5% to **14.0%** — and takes throat *down*, from 6.3% to 5.9%, winning 42 boards
+and losing 69. A matured form is a trade, the trade is case-shaped, and there is no policy here
+that is simply "playing better". The gate on that run is the band floor, not the ceiling:
+growing may make a case harder, and may not make it a case nobody can win.
 
 <div align="center">
 <img src="docs/screenshots/fight-build.png" width="30%" alt="The build phase, with a cell selected and its reach previewed at every open junction" />

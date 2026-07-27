@@ -20,7 +20,7 @@ import type { CaseId, DefenderKind, SimState, StrainId } from './types';
  * timers — so very different runs reach the same end state. Hashing the trajectory catches a
  * change in how the wave was fought, not only in how it came out.
  *
- * It runs all three cases on late waves, so every pathogen behaviour and every defender is
+ * It runs every case on late waves, so every pathogen behaviour and every defender is
  * actually exercised. A single early wave of one case is eight identical bacteria: a damage
  * retune moved nothing in it, because the killer cell one-shot them either way.
  *

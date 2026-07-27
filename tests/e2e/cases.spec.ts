@@ -5,7 +5,7 @@ import type { CaseId } from '../../src/game/types';
 import { onScreen, openCase, placeCell, screen, seedProfile } from './helpers';
 
 /**
- * Spec §13.1 — all three cases are playable, and progression opens them in order.
+ * Spec §13.1 — every case is playable, and progression opens them in order.
  *
  * Playable here means the mechanics of a run work in a real browser: the case loads, a cell
  * can be placed on its board, the wave starts and the simulation is running. Whether a

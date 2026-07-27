@@ -32,13 +32,32 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', rule: 'wound', credits: 'staph',
     story: 'Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.',
     ruleLabel: 'Bleeding', ruleSub: 'You lose energy every second until a clot is placed',
-    startingEnergy: 260,
+    // Opened at 9.1% of affordable boards clearing, which made the first case of the game the one
+    // nine players in ten lose. A season's opening case is the forgiving one — everything after it
+    // is measured against it — so this was retuned to 13.2%, inside the band's 15% ceiling with
+    // room to spare. Two levers, and they are not interchangeable:
+    //
+    // **Starting energy, 260 to 320.** Worth +1.4 points here, against the tenth of a point ten
+    // energy buys on the hand case: this case bleeds and starts poorest, so energy it has not got
+    // is a board it never builds. It is also the lever that saturates — 320 to 400 bought only
+    // another 1.0 — and leaning on it further would have paid for the opening by making the bleed
+    // stop mattering, which is the one thing this case is about.
+    //
+    // **Wave 5, 18/5/3 to 17/5/2.** Worth the remaining +2.7. Wave 5 is where two thirds of the
+    // boards die, so mass removed there is worth several times the same mass removed from wave 1 —
+    // the same finding the hand case records below. Wave 5 keeps more staph than wave 4 on purpose:
+    // dropping it to 15 measured 14.5%, too close to the ceiling, and it also flattened the table
+    // into two waves that read the same.
+    //
+    // What this bought the player is in the histogram: boards losing on wave 1 fell from 729 to
+    // 453. What it bought the season is headroom — see `tests/sweep/curve.ts`.
+    startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 8 }],
       [{ kind: 'staph', count: 13 }],
       [{ kind: 'staph', count: 12 }, { kind: 'film', count: 3 }],
       [{ kind: 'staph', count: 15 }, { kind: 'film', count: 4 }, { kind: 'mrsa', count: 1 }],
-      [{ kind: 'staph', count: 18 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 3 }],
+      [{ kind: 'staph', count: 17 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 2 }],
     ],
     path: [[-24, 46], [86, 58], [150, 116], [232, 146], [252, 238], [168, 298], [112, 342], [104, 430]],
     // Spot 4 was at [206, 372]: 81.7 from the vessel, where the only cell that covered a whole
@@ -80,13 +99,14 @@ export const CASES: readonly CaseDefinition[] = [
     spots: [[70, 158], [212, 132], [292, 216], [46, 264], [234, 341]],
   },
   {
-    // Credits film, not staph, and the reason is a promise the brief would otherwise break. The
-    // brief shows the held copy of whichever strain a case credits, and Tetanus's is "the first
-    // Staph of every wave bounces off" — but `applySpawn` only bounces one in a `wound` case. A
-    // non-wound case crediting staph therefore tells a player with the vaccine that something will
-    // happen which will not. Biofilm's serum drops armour wherever it is met, so its copy is true
-    // here, and a splinter site is where a biofilm belongs anyway. See the note to the team lead:
-    // the gate and the copy disagree, and one of them is wrong.
+    // Credits film because a biofilm is what lives in a splinter site, and Biofilm's serum drops
+    // armour wherever it is met, so the brief's held copy is true here.
+    //
+    // It was originally credited film to dodge a broken promise as well: Tetanus's copy said the
+    // first staph of every wave bounces off, `applySpawn` only bounces one in a `wound` case, and
+    // the brief shows the held copy of whichever strain a case credits. That disagreement is
+    // settled — the copy now says "in a wound", see `vaccines.ts` — so a later non-wound case is
+    // free to credit staph. This one still should not, on the fiction alone.
     id: 'hand', node: 'handR', region: 'HAND · CASE 07', title: 'Splinter', rule: 'dormant', credits: 'film',
     story: 'You pulled the splinter out last week. Something came in with it and stayed.',
     ruleLabel: 'Relapsing', ruleSub: 'Some of what you kill goes down instead of away, and gets back up where it fell',
@@ -99,10 +119,15 @@ export const CASES: readonly CaseDefinition[] = [
     // worth several added to wave 1. Retune by moving whole waves, not by counting bodies.
     //
     // **Wave counts are the coarse dial and starting energy is the fine one.** One staph is worth
-    // roughly three to four tenths of a percentage point and the whole target window is half a
-    // point wide, so counts alone cannot land a case. Ten energy is worth about a tenth, which is
-    // what the odd-looking 355 is doing: it is the last 0.8 points, bought back after wave 5 got
-    // the staph that makes this table escalate the way a wave table should read.
+    // roughly three to four tenths of a percentage point; ten energy is worth about a tenth, which
+    // is what the odd-looking 355 is doing — it is the last 0.8 points, bought back after wave 5
+    // got the staph that makes this table escalate the way a wave table should read.
+    //
+    // Those fifteen passes were spent against a gate that gave the case half a point to land in.
+    // It no longer exists: the 0.8 measured above is the reason the adjacent-pair staircase was
+    // replaced by a trend, and any case after the first is now free anywhere between the floor and
+    // the opening case's rate. See `tests/sweep/curve.ts`. Nothing here needs that precision again,
+    // and a future case that reaches for it has misread the gate.
     startingEnergy: 355,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'spore', count: 3 }],

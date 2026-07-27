@@ -3,6 +3,7 @@ import { CASES } from '../../src/game/content/cases';
 import { TISSUE_PIPS } from '../../src/game/content/rules';
 import type { CaseId, DefenderKind } from '../../src/game/types';
 import { CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR } from './band';
+import { pushoverFailures, trendFailures, type SeasonCase } from './curve';
 import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoard';
 
 /**
@@ -12,8 +13,10 @@ import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoar
  *
  * It plays every board the player could actually build, on the real simulation, and counts how
  * many clear. The point is not "is this case winnable" — one winning board in 7776 is a game
- * nobody can find. The point is a *rate*, and a rate that falls as the season goes on. That is a
- * difficulty curve; "some board somewhere wins" is not.
+ * nobody can find. The point is a *rate*, and a rate that trends down as the season goes on. That
+ * is a difficulty curve; "some board somewhere wins" is not. What "trends down" is allowed to mean
+ * — and why it is a trend rather than a staircase — is `curve.ts`, which is also where the
+ * measurement that settled it is written down.
  *
  * A board is an assignment of a defender kind to each of the five build spots, drawn from the
  * kinds unlocked at that point in progression. The economy decides how much of it gets built —
@@ -35,11 +38,13 @@ import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoar
 /**
  * The band is asserted here, not printed. A tuning that drops a case out of it turns this red —
  * that is what makes the harness worth committing rather than reporting. The numbers themselves
- * live in `band.ts`, because `maturation.sweep.ts` holds growth to the same floor.
+ * live in `band.ts`, because `maturation.sweep.ts` holds growth to the same floor; the shape of
+ * the curve over the band lives in `curve.ts`, because a gate that only runs inside a minutes-long
+ * sweep is a gate nobody exercises.
  */
 
 /**
- * A per-case floor, recorded here rather than by lowering the bar for all three. No case needs
+ * A per-case floor, recorded here rather than by lowering the bar for the whole season. No case needs
  * one. Stomach carried an exception at 4.4% until the antibody stopped renewing a
  * mark that was still burning: giving the mark a real duration cost the cell enough that the
  * whole curve came down into the band together, stomach included.
@@ -53,18 +58,21 @@ interface SweepCase {
 }
 
 /**
- * The three cases in the order a real run meets them, each at the tier it is actually played at.
+ * The season in the order a real run meets it, each case at the tier it is actually played at.
  *
  * `SWEEP_CASES=stomach npm run sweep` narrows it while iterating on one case — a full pass is
- * minutes and a single case is seconds. The assertions below still hold for whatever is swept,
- * but the curve assertion is only meaningful over the whole season, so a filtered run is a
- * working tool and never the evidence for a tuning.
+ * minutes and a single case is seconds. The stall and band assertions below still hold for
+ * whatever is swept, but the curve ones are only meaningful over the whole season, so a filtered
+ * run is a working tool and never the evidence for a tuning.
  */
 const ONLY = process.env.SWEEP_CASES?.split(',').map((id) => id.trim()).filter((id) => id !== '');
 
 const SWEEP: readonly SweepCase[] = CASES
   .map((definition, index) => ({ caseId: definition.id, clearedCount: index }))
   .filter(({ caseId }) => ONLY === undefined || ONLY.includes(caseId));
+
+/** Whether this run swept the season rather than a slice of it. Gates the two curve assertions. */
+const IS_WHOLE_SEASON = SWEEP.length === CASES.length;
 
 interface SweepResult {
   readonly caseId: CaseId;
@@ -169,15 +177,29 @@ describe('affordable-board sweep', () => {
     }
   });
 
-  it('gets harder as the season goes on', () => {
-    const rates = results.map((result) => result.clears / result.boards);
-    for (let i = 1; i < rates.length; i += 1) {
-      const previous = rates[i - 1] ?? 0;
-      const current = rates[i] ?? 0;
-      expect(
-        current,
-        `${String(results[i]?.caseId)} is easier than ${String(results[i - 1]?.caseId)} — the curve is inverted`,
-      ).toBeLessThanOrEqual(previous);
-    }
+  /** Read through a function, not a const: `results` is only filled once `beforeAll` has run. */
+  const season = (): readonly SeasonCase[] =>
+    results.map((result) => ({ caseId: result.caseId, rate: result.clears / result.boards }));
+
+  /*
+   * The two curve checks, and what each is for is in `curve.ts` rather than restated here.
+   *
+   * Both only mean anything over the whole season: narrowed to some of it, the first case swept is
+   * not the case the season opens with and the halves are not the season's halves. Skipped rather
+   * than quietly satisfied, so a narrowed run shows on the report that it measured no curve — the
+   * same thing the note on `ONLY` says in words.
+   */
+  it.skipIf(!IS_WHOLE_SEASON)('never makes a case easier than the one the season opens with', () => {
+    expect(
+      pushoverFailures(season()),
+      'a case later in the season is a pushover',
+    ).toEqual([]);
+  });
+
+  it.skipIf(!IS_WHOLE_SEASON)('gets harder as the season goes on, as a trend rather than a staircase', () => {
+    expect(
+      trendFailures(season()),
+      'the season does not get harder as it goes on',
+    ).toEqual([]);
   });
 });

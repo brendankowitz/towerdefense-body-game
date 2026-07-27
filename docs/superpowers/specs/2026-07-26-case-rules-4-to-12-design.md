@@ -1,7 +1,8 @@
 # Case rules 4–12 — content design
 
 **Date:** 2026-07-26
-**Status:** Proposal, not approved
+**Status:** Proposal. Day 7 has since shipped — the hand case, carrying Dormancy — so the
+sections describing that rule are records rather than proposals and say so.
 **Depends on:** the shipped ruleset in `src/game/content/`, spec §5
 
 ---
@@ -13,8 +14,9 @@ the forearm feel unlike the throat is not geometry — it is that one bleeds you
 until you clot and the other doubles every kill. Geometry varies the *execution*
 of a plan; a rule changes what the plan **is**.
 
-Three rules ship today. This proposes four more, giving seven, spread across ten
-cases so each rule is met twice and the second meeting can assume the first.
+Four rules ship today — Dormancy landed with the hand case after this document was
+written. This proposes the remaining three, giving seven, spread across ten cases
+so each rule is met twice and the second meeting can assume the first.
 
 Seven rules is also close to the ceiling. Every rule has to be explainable in one
 line on the brief screen, and a player has to hold all of them in mind when
@@ -48,7 +50,7 @@ and shrinking it to flatter the content spends that hook to save authoring time.
 
 ---
 
-## The three shipped rules
+## The four shipped rules
 
 Restated because the new ones are defined against them.
 
@@ -57,13 +59,14 @@ Restated because the new ones are defined against them.
 | **Bleeding** | Forearm | Energy drains every second until a clot exists. Forces an opening purchase that does no damage. |
 | **Multiplying** | Throat | Every virus killed splits in two. Punishes killing in the wrong order and rewards suppressing the split at source. |
 | **Toxic** | Stomach | Pathogens damage defenders. Antibodies resist far better than phagocytes. Makes position a liability, not just a choice. |
+| **Relapsing** | Hand | A share of what dies goes back down and gets up again where it fell. Shipped as day 7; §6 below is the design it shipped from. |
 
 Each one attacks a different assumption: that energy only goes up, that killing is
-always good, and that a placed cell stays placed.
+always good, that a placed cell stays placed, and that progress only runs one way.
 
 ---
 
-## Four proposed rules
+## Four rules, of which one has since shipped
 
 ### 4. Overreaction — the allergy rule
 
@@ -102,7 +105,7 @@ and costs a day not spent fighting: the first real strategic trade in the season
 *Fiction:* Measles, whole body. Tier 2 — named because immune amnesia is genuinely
 what it does, per the naming policy.
 
-### 6. Dormancy — the relapse rule
+### 6. Dormancy — the relapse rule — SHIPPED
 
 **Clearing it is not the end of it.**
 
@@ -115,11 +118,18 @@ It attacks the assumption that progress is monotonic, and it makes the memory ce
 than a late-unlock curiosity.
 
 Chickenpox already exists in `vaccines.ts` as "stops a cleared case reopening
-later", gated behind surviving a dormancy case. That gate is currently
-unreachable (`gate: 99`); this rule is what makes it real.
+later". It shipped with an unreachable `gate: 99` and is now marked `later: true`
+instead — on the schedule rather than behind a gate nobody can satisfy — because
+this rule governs relapse *within* a case and the vaccine's promise is about a
+case reopening between days, which nothing yet does.
 
 *Fiction:* a splinter in the hand that festers; shingles from a chickenpox that
 never left. Tier 2.
+
+**Shipped** as day 7: `hand` on the `handR` node, rule `dormant`, tuned in
+`cases.ts` and governed by `DORMANT_CHANCE`, `DORMANT_DELAY` and
+`DORMANT_HP_FRACTION` in `rules.ts`. It credits film rather than staph — see the
+note in `vaccines.ts` on why the Tetanus copy now says "in a wound".
 
 ### 7. Novel — the unknown-strain rule
 
@@ -150,12 +160,14 @@ No vaccine exists, and `vaccines.ts` already says so. The one case fought raw.
 | 4 | Foot | Blister | Bleeding | The rule again, with less room and a longer path. |
 | 5 | Whole body | Measles | Amnesia | Breadth beats depth. MMR becomes worth a day. |
 | 6 | Sinus | Hay fever | Overreaction | Sometimes do less. |
-| 7 | Hand | Splinter | Dormancy | Cleared is not clear. Memory cells earn their place. |
+| 7 | Hand | Splinter | Dormancy | Cleared is not clear. Memory cells earn their place. **Shipped.** |
 | 8 | Left lung | Bronchitis | Multiplying | Splitting under a real time limit. |
 | 9 | Gut | Relapse | Dormancy + Toxic | Two rules at once — the first compound case. |
 | 10 | Right lung | Strain Vesper | Novel | Everything, unannounced. |
 
-Right foot and right hand stay open for a second season, or become connective.
+There is one hand node, `handR`, and day 7 has taken it — so the right hand is
+spoken for, not open. Of the two foot nodes, day 4 takes one and the other stays
+open for a second season, or becomes connective.
 
 **Ordering rationale.** Each rule is met alone before it is combined. Day 4
 repeats bleeding on harder geometry so the rule is understood before day 5 takes
@@ -187,9 +199,8 @@ immunity for its duration. `SimState` already carries `immunity` as readonly
 profile data; this becomes a per-case mask applied when the state is built, which
 keeps the profile itself untouched.
 
-**Dormancy needs a revival queue** — dead enemies scheduled to return once. The
-`generation` field already distinguishes originals from split children and can
-carry a third state without widening the union.
+**Dormancy needed a revival queue** — dead enemies scheduled to return once. Built
+and shipped; it did not reuse `generation` as this section guessed it would.
 
 ---
 

@@ -63,34 +63,44 @@ test('a tap on bare tissue builds nothing', async ({ page }) => {
 });
 
 /**
- * The dearest cell the dock offers on day one, so one purchase is the largest dent a single tap
- * can make in the opening balance. Derived rather than named: this was written against the killer
- * cell and the 2026-07-26 tuning raised forearm's opening energy to 260, which made two of them
- * affordable and quietly skipped the test. Whichever cell is dearest is the one that breaks the
- * bank soonest, so deriving it is what keeps this running through the next retune too.
+ * The dearest cell the dock offers on day one, and how many of them the opening balance buys.
+ *
+ * Both derived, and the count is the part that matters. This was written against the killer cell
+ * and a single purchase; the 2026-07-26 tuning raised forearm's opening energy to 260 and made two
+ * killer cells affordable, which skipped the test, and deriving the *cell* fixed it only until the
+ * next retune raised that energy to 320 and made two of the dearest affordable too. Spending down
+ * to wherever the next one stops being affordable is the version that asks the same question at
+ * whatever balance a tuning leaves, so there is no third time.
  */
 const DEAREST_ON_DAY_ONE = Object.values(DEFENDERS)
   .filter((stats) => stats.unlock === 0)
   .reduce((a, b) => (a.cost >= b.cost ? a : b));
 
+const AFFORDABLE_ON_DAY_ONE = Math.floor(FOREARM.startingEnergy / DEAREST_ON_DAY_ONE.cost);
+
 test('a cell that cannot be afforded is priced red and refuses to be placed', async ({ page }) => {
-  const afterOne = FOREARM.startingEnergy - DEAREST_ON_DAY_ONE.cost;
+  // One spot has to be left over to tap, and one cell has to be affordable to spend down from.
   test.skip(
-    afterOne >= DEAREST_ON_DAY_ONE.cost,
-    `a retune made two ${DEAREST_ON_DAY_ONE.label} cells affordable; retarget this test`,
+    AFFORDABLE_ON_DAY_ONE < 1 || AFFORDABLE_ON_DAY_ONE >= FOREARM.spots.length,
+    `the opening balance buys ${String(AFFORDABLE_ON_DAY_ONE)} of ${String(FOREARM.spots.length)} spots' worth of ${DEAREST_ON_DAY_ONE.label}; retarget this test`,
   );
 
+  const spentOut = FOREARM.startingEnergy - AFFORDABLE_ON_DAY_ONE * DEAREST_ON_DAY_ONE.cost;
+
   await openCase(page, 'forearm');
-  await placeCell(page, 'forearm', DEAREST_ON_DAY_ONE.kind, 1);
-  await expect(onScreen(page, 'energy')).toHaveText(String(afterOne));
+  for (let spot = 0; spot < AFFORDABLE_ON_DAY_ONE; spot += 1) {
+    await placeCell(page, 'forearm', DEAREST_ON_DAY_ONE.kind, spot);
+  }
+  await expect(onScreen(page, 'energy')).toHaveText(String(spentOut));
   await expect(onScreen(page, `dock-cost-${DEAREST_ON_DAY_ONE.kind}`))
     .toHaveAttribute('data-affordable', 'false');
 
-  // That cell is still selected and the board is demonstrably live — the placement above went
+  // That cell is still selected and the board is demonstrably live — the placements above went
   // through it — so this tap fails on cost and on nothing else.
-  await tapSpot(page, 'forearm', 3);
-  await expect(onScreen(page, 'cell-chip-3')).toHaveCount(0);
-  await expect(onScreen(page, 'energy')).toHaveText(String(afterOne));
+  const empty = AFFORDABLE_ON_DAY_ONE;
+  await tapSpot(page, 'forearm', empty);
+  await expect(onScreen(page, `cell-chip-${String(empty)}`)).toHaveCount(0);
+  await expect(onScreen(page, 'energy')).toHaveText(String(spentOut));
 });
 
 test('a locked cell shows LOCK and cannot be selected', async ({ page }) => {
