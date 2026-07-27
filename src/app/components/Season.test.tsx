@@ -63,7 +63,7 @@ describe('Season', () => {
 
   it('says nothing on a badge that the design vocabulary would have said', () => {
     render(<Season season={season} vaccines={vaccines} onImmunityClick={noop} onMapClick={noop} />);
-    const labels = screen.getAllByTestId('season-tier').map((el) => el.textContent ?? '');
+    const labels = screen.getAllByTestId('season-tier').map((el) => el.textContent);
     for (const label of labels) {
       expect(label, 'a badge is player copy, not the naming policy').not.toMatch(/MECHANIC|INVENTED|TIER/i);
     }
