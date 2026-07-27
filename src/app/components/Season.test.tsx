@@ -50,10 +50,23 @@ describe('Season', () => {
     expect(rows.map((r) => r.getAttribute('data-state'))).toEqual(['done', 'now', 'next', 'warn', 'unknown']);
   });
 
-  it('labels each tier by what the naming policy means, not by a number', () => {
+  /**
+   * The labels say what a row is to the player, not which naming-policy bucket it came from.
+   * "REAL MECHANIC" and "INVENTED STRAIN" were the policy's own wording on screen, and a reader
+   * has no way to know what a mechanic being real would mean.
+   */
+  it('labels each tier by what it means for the run, not by the naming policy', () => {
     render(<Season season={season} vaccines={vaccines} onImmunityClick={noop} onMapClick={noop} />);
     const labels = screen.getAllByTestId('season-tier').map((el) => el.textContent);
-    expect(labels).toEqual(['EVERYDAY', 'EVERYDAY', 'EVERYDAY', 'REAL MECHANIC', 'INVENTED STRAIN']);
+    expect(labels).toEqual(['EVERYDAY', 'EVERYDAY', 'EVERYDAY', 'LASTING', 'UNKNOWN']);
+  });
+
+  it('says nothing on a badge that the design vocabulary would have said', () => {
+    render(<Season season={season} vaccines={vaccines} onImmunityClick={noop} onMapClick={noop} />);
+    const labels = screen.getAllByTestId('season-tier').map((el) => el.textContent ?? '');
+    for (const label of labels) {
+      expect(label, 'a badge is player copy, not the naming policy').not.toMatch(/MECHANIC|INVENTED|TIER/i);
+    }
   });
 
   it('lists all five vaccines with their status carried to the row', () => {

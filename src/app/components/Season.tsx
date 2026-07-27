@@ -8,10 +8,22 @@ interface SeasonProps {
   readonly onMapClick: () => void;
 }
 
+/**
+ * What a tier means to the player, which is not what it means to us.
+ *
+ * `Tier` encodes the content naming policy: everyday illnesses are named freely, a real disease
+ * is named only where its mechanic is the one it actually has, and anything stranger is invented
+ * so no real outbreak is ever framed as an attack. That is a rule for whoever writes a case, and
+ * "REAL MECHANIC" and "INVENTED STRAIN" were it leaking onto a screen — the reader has no idea
+ * what a mechanic being real would mean.
+ *
+ * These say what the row is instead. A tier 2 illness reaches past the case it is on — measles
+ * takes an immunity you earned — and a tier 3 has no vaccine because nobody has seen it before.
+ */
 const TIER_LABEL: Record<Tier, string> = {
   1: 'EVERYDAY',
-  2: 'REAL MECHANIC',
-  3: 'INVENTED STRAIN',
+  2: 'LASTING',
+  3: 'UNKNOWN',
 };
 
 /** The season timeline: every case ahead, what the season promises beyond it, and the vaccination schedule. */
