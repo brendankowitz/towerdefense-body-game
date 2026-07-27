@@ -100,7 +100,7 @@ export class BoardRenderer {
     const effectSeconds =
       Math.min(elapsedSeconds, MAX_FRAME_SECONDS) * (state.fast ? FAST_MULTIPLIER : 1);
 
-    this.#towers.draw(state, motion);
+    this.#towers.draw(state, effectSeconds, motion);
     this.#beams.draw(state);
     this.#puffs.draw(state, effectSeconds, motion);
     this.#enemies.draw(state);

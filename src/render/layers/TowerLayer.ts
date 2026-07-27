@@ -3,13 +3,15 @@ import { CASE_BY_ID } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
 import { BUILD_SPOT_RADIUS, TOWER_MAX_HP } from '@game/content/rules';
 import { statsFor } from '@game/systems/stats';
-import type { CaseId, SimState, Tower } from '@game/types';
+import type { CaseId, Enemy, PhagocyteTower, SimState, Tower } from '@game/types';
 import {
   EMPTY_SPOT_CROSS, EMPTY_SPOT_FILL, EMPTY_SPOT_STROKE, PAPER, TOWER_HEALTH_TRACK,
-  defenderHex, tokenHex,
+  defenderHex, pathogenHex, tokenHex,
 } from '../colors';
 import {
-  BURST_RING_WIDTH, burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius,
+  BURST_RING_WIDTH, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_RADIUS,
+  burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, loadRadius, moteAlpha,
+  motePhase, moteScale, moteTravel, phagocyteFullness,
 } from '../effects';
 import { assertNever } from '../exhaustive';
 import { healthBarWidth, quantise, squareToDiamondHalf } from '../geometry';
@@ -44,9 +46,22 @@ const SPENT_ALPHA = 0.4;
  */
 const BURST_STEPS = 12;
 
+/**
+ * How finely a cell's load is followed. The mark grows by `LOAD_MAX_RADIUS - LOAD_MIN_RADIUS`
+ * over a full cell, so one step is one pixel of it and the body repaints once per pixel of
+ * growth rather than on every frame of a continuous fill.
+ */
+const LOAD_STEPS = LOAD_MAX_RADIUS - LOAD_MIN_RADIUS;
+
 /** Seconds of burst left on a cell. Zero for everything that is not a mast cell. */
 function burstFlashOf(tower: Tower): number {
   return tower.kind === 'mast' ? tower.flash : 0;
+}
+
+/** How full a cell is of matter it has broken down. Zero for everything that does not eat. */
+function loadOf(tower: Tower): number {
+  if (tower.kind !== 'phago') return 0;
+  return phagocyteFullness(tower.digested, statsFor(tower).capacity);
 }
 
 /**
@@ -75,22 +90,32 @@ function isSpent(tower: Tower): boolean {
  * float rather than one of a small set of states. Without it a range moved in the tuning panel
  * left the ring on screen at its old radius until something else about the cell changed, which
  * is the one thing a balance session most needs to see.
+ *
+ * Whether a phagocyte is holding anything is deliberately absent. It used to bump the mark and
+ * so had to be compared; the mark now follows the load instead, and what a cell is holding is
+ * said by the tether that runs to it.
  */
 function signatureOf(tower: Tower, motion: Motion): string {
   let packed = DEFENDER_ORDER.indexOf(tower.kind);
   packed = packed * (HEALTH_STEPS + 1) + quantise(tower.hp / TOWER_MAX_HP, HEALTH_STEPS);
   packed = packed * 2 + (isSpent(tower) ? 1 : 0);
-  packed = packed * 2 + (tower.kind === 'phago' && tower.holdingEnemyId !== null ? 1 : 0);
+  packed = packed * (LOAD_STEPS + 1) + quantise(loadOf(tower), LOAD_STEPS);
   packed = packed * (BURST_STEPS + 2) + burstStep(burstFlashOf(tower), motion);
   packed = packed * 2 + (tower.matured ? 1 : 0);
   return `${String(packed)}:${String(statsFor(tower).range)}`;
 }
 
-/** The inner mark that says what a cell does. Cut out of the body in paper, never outlined. */
+/**
+ * The inner mark that says what a cell does. Cut out of the body in paper, never outlined.
+ *
+ * A phagocyte's is the one that moves: it grows with the matter the cell has broken down and
+ * empties when the cell dumps its load and goes to rest, so a cell about to stop for a long
+ * one is visibly full before it stops.
+ */
 function paintGlyph(g: Graphics, tower: Tower, spent: boolean): void {
   switch (tower.kind) {
     case 'phago':
-      filledCircle(g, 0, 0, tower.holdingEnemyId === null ? 6 : 9, PAPER, spent ? 0.5 : 1);
+      filledCircle(g, 0, 0, loadRadius(loadOf(tower)), PAPER, spent ? 0.5 : 1);
       return;
     case 'anti':
       bar(g, -8, -3, 16, 6, 3, PAPER);
@@ -194,6 +219,19 @@ class LabelView {
 }
 
 /**
+ * One lump of matter crossing a tether.
+ *
+ * Painted once at `MOTE_RADIUS` and scaled down from there, never up: Pixi tessellates a circle
+ * from the radius it was built at, so a mote grown from a smaller one would arrive as a polygon.
+ * The only thing that can force a repaint is the cell starting on a body of a different kind.
+ */
+class MoteView {
+  readonly graphics = new Graphics();
+  /** The colour currently in the geometry. -1 is no colour Pixi accepts, so it means unpainted. */
+  paintedColor = -1;
+}
+
+/**
  * Cells and the spots they stand on. Both are keyed by build spot index, of which there
  * are five, so the pools here settle at five views and never move again.
  */
@@ -202,15 +240,26 @@ export class TowerLayer {
   readonly #caseId: CaseId;
   readonly #spots = new Graphics();
   readonly #tethers = new Graphics();
+  readonly #motes = new Container();
   readonly #bodies = new Container();
   readonly #labels = new Container();
   readonly #bodyPool: ViewPool<TowerView>;
   readonly #labelPool: ViewPool<LabelView>;
+  readonly #motePool: ViewPool<MoteView>;
+  /**
+   * How long each feeding cell has been feeding, by build spot. Kept per cell rather than shared,
+   * so two phagocytes that grabbed at different moments do not draw the same picture; and only
+   * advanced on the frames a cell is actually holding something, so a cell that pauses between
+   * bodies picks its stream back up where it left it.
+   */
+  readonly #moteAges = new Map<number, number>();
   #spotsSignature = '';
 
   constructor(caseId: CaseId) {
     this.#caseId = caseId;
-    this.container.addChild(this.#spots, this.#tethers, this.#bodies, this.#labels);
+    // Motes ride over the tether and under the bodies, so a mote that reaches a cell goes
+    // behind it rather than sitting on top of the mark it is being added to.
+    this.container.addChild(this.#spots, this.#tethers, this.#motes, this.#bodies, this.#labels);
 
     this.#bodyPool = new ViewPool<TowerView>({
       create: () => {
@@ -241,14 +290,30 @@ export class TowerLayer {
       },
       destroy: (view) => { view.text.destroy(); },
     });
+
+    this.#motePool = new ViewPool<MoteView>({
+      create: () => {
+        const view = new MoteView();
+        view.graphics.visible = false;
+        this.#motes.addChild(view.graphics);
+        return view;
+      },
+      attach: (view) => { view.graphics.visible = true; },
+      detach: (view) => { view.graphics.visible = false; },
+      destroy: (view) => { view.graphics.destroy(); },
+    });
   }
 
-  /** `motion` defaults to a board that may animate; only the renderer knows otherwise. */
-  draw(state: SimState, motion: Motion = 'full'): void {
+  /**
+   * `elapsedSeconds` is presentational time — the frame the caller measured, in the scale the
+   * simulation just advanced by. Required rather than defaulted, the way `PuffLayer` takes it:
+   * a default of zero would leave every mote parked without saying so.
+   */
+  draw(state: SimState, elapsedSeconds: number, motion: Motion): void {
     this.#drawSpots(state);
     this.#drawBodies(state, motion);
     this.#drawLabels(state);
-    this.#drawTethers(state);
+    this.#drawTethers(state, elapsedSeconds, motion);
   }
 
   #drawBodies(state: SimState, motion: Motion): void {
@@ -325,25 +390,83 @@ export class TowerLayer {
   }
 
   /**
-   * Both ends move every frame while a phagocyte drags its prey, so there is nothing here
-   * worth caching. There are at most five of these and usually none.
+   * A phagocyte and the body it is taking in.
+   *
+   * Both ends move every frame while the cell drags its prey, so the tether itself is nothing
+   * worth caching — there are at most five of these and usually none. What rides on it is
+   * pooled: matter comes off the body in the pathogen's own colour and crosses into the cell,
+   * which is the difference between a cell holding something and a cell eating it.
+   *
+   * Under reduced motion the tether is drawn and nothing crosses it. That is the state the
+   * board had before, and it is kept rather than dropped because the tether carries a fact —
+   * which body this cell has taken — that no other mark on the board states.
    */
-  #drawTethers(state: SimState): void {
+  #drawTethers(state: SimState, elapsedSeconds: number, motion: Motion): void {
     this.#tethers.clear();
+    this.#motePool.beginFrame();
+
     for (const tower of state.towers) {
       if (tower.kind !== 'phago' || tower.holdingEnemyId === null) continue;
       const prey = state.enemies.find((enemy) => enemy.id === tower.holdingEnemyId);
       if (prey === undefined) continue;
+
       thickLine(
         this.#tethers, tower.x, tower.y, prey.x, prey.y,
         defenderHex('phago'), TETHER_WIDTH, 0.5,
       );
+      if (motion === 'reduced') continue;
+      this.#drawMotes(tower, prey, this.#advanceMotes(tower.spotIndex, elapsedSeconds));
+    }
+
+    this.#motePool.endFrame();
+  }
+
+  /** Where this cell's stream has got to, one frame on. */
+  #advanceMotes(spotIndex: number, elapsedSeconds: number): number {
+    const age = (this.#moteAges.get(spotIndex) ?? 0) + elapsedSeconds;
+    this.#moteAges.set(spotIndex, age);
+    return age;
+  }
+
+  /**
+   * The train, from under the body it is coming off to the wall of the cell taking it in.
+   *
+   * Motes start at the prey's own centre, so each one emerges from behind a pathogen the enemy
+   * layer draws over the top of them, and end at the cell's edge, having shrunk to nothing. A
+   * body standing closer than that edge has no crossing left to make and gets none.
+   */
+  #drawMotes(tower: PhagocyteTower, prey: Enemy, age: number): void {
+    const towardsCellX = tower.x - prey.x;
+    const towardsCellY = tower.y - prey.y;
+    const gap = Math.hypot(towardsCellX, towardsCellY);
+    if (gap <= BODY_RADIUS) return;
+
+    const crossing = gap - BODY_RADIUS;
+    const color = pathogenHex(prey.kind);
+
+    for (let index = 0; index < MOTE_COUNT; index += 1) {
+      const view = this.#motePool.acquire(tower.spotIndex * MOTE_COUNT + index);
+      if (view.paintedColor !== color) {
+        view.graphics.clear();
+        filledCircle(view.graphics, 0, 0, MOTE_RADIUS, color);
+        view.paintedColor = color;
+      }
+
+      const phase = motePhase(age, index, MOTE_COUNT);
+      const travelled = crossing * moteTravel(phase);
+      view.graphics.position.set(
+        prey.x + (towardsCellX / gap) * travelled,
+        prey.y + (towardsCellY / gap) * travelled,
+      );
+      view.graphics.scale.set(moteScale(phase));
+      view.graphics.alpha = moteAlpha(phase);
     }
   }
 
   destroy(): void {
     this.#bodyPool.destroyAll();
     this.#labelPool.destroyAll();
+    this.#motePool.destroyAll();
     this.container.destroy({ children: true });
   }
 }

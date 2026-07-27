@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BURST_SECONDS, PUFF_SECONDS, burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius,
-  clamp01, isPuffAlive, puffAlpha, puffScale,
+  BURST_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_SECONDS, PUFF_SECONDS,
+  burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, clamp01, isPuffAlive,
+  loadRadius, moteAlpha, motePhase, moteScale, moteTravel, phagocyteFullness, puffAlpha,
+  puffScale,
 } from './effects';
 
 /** Enough samples to catch a curve that is not a curve. */
@@ -176,5 +178,202 @@ describe('the effects are short', () => {
   it('keeps a puff and a burst under a third of a second each', () => {
     expect(PUFF_SECONDS).toBeLessThan(0.34);
     expect(BURST_SECONDS).toBeLessThan(0.34);
+  });
+});
+
+describe('motePhase', () => {
+  it('starts the leading mote on the body it is coming off', () => {
+    expect(motePhase(0, 0, 3)).toBe(0);
+  });
+
+  /** Spread evenly round the cycle: mote i of c opens a fraction i/c into the crossing. */
+  it('spreads the train evenly, whatever the train is', () => {
+    expect(motePhase(0, 1, 4)).toBeCloseTo(0.25, 12);
+    expect(motePhase(0, 3, 4)).toBeCloseTo(0.75, 12);
+    expect(motePhase(0, 2, 5)).toBeCloseTo(0.4, 12);
+  });
+
+  it('has the leading mote half way across at half a crossing', () => {
+    expect(motePhase(MOTE_SECONDS / 2, 0, 3)).toBeCloseTo(0.5, 12);
+  });
+
+  it('sends the next mote after it rather than back the way it came', () => {
+    const early = motePhase(MOTE_SECONDS * 0.1, 0, 3);
+    const later = motePhase(MOTE_SECONDS * 0.3, 0, 3);
+    expect(later).toBeGreaterThan(early);
+  });
+
+  /** A stream, not one trip: the cell keeps feeding, so the cycle comes round again. */
+  it('starts over when a mote arrives', () => {
+    expect(motePhase(MOTE_SECONDS, 0, 3)).toBeCloseTo(0, 12);
+    expect(motePhase(MOTE_SECONDS * 2.25, 0, 3)).toBeCloseTo(0.25, 12);
+  });
+
+  it('stays a fraction of one crossing however long the cell has been eating', () => {
+    for (const age of [0, 0.01, 1, 7.5, 600]) {
+      for (let index = 0; index < 3; index += 1) {
+        const phase = motePhase(age, index, 3);
+        expect(phase).toBeGreaterThanOrEqual(0);
+        expect(phase).toBeLessThan(1);
+      }
+    }
+  });
+});
+
+describe('moteTravel', () => {
+  it('opens on the body and closes at the cell', () => {
+    expect(moteTravel(0)).toBe(0);
+    expect(moteTravel(1)).toBe(1);
+  });
+
+  it('only ever moves towards the cell', () => {
+    expect(isIncreasing(sample(SAMPLES, moteTravel))).toBe(true);
+  });
+
+  /**
+   * Behind a straight run for the whole crossing, so it arrives faster than it left and reads
+   * as being pulled in. Half way through the time is not half way along the tether.
+   */
+  it('runs behind a straight crossing all the way', () => {
+    for (const phase of [0.1, 0.25, 0.5, 0.75, 0.9]) {
+      expect(moteTravel(phase)).toBeLessThan(phase);
+    }
+  });
+
+  /** But it is moving the moment it comes off — a mote that sits still first reads as dropped. */
+  it('is already travelling as it leaves the body', () => {
+    expect(moteTravel(0.02)).toBeGreaterThan(0.02 * 0.4);
+  });
+
+  it('covers more of the tether in its last tenth than in its first', () => {
+    expect(1 - moteTravel(0.9)).toBeGreaterThan(moteTravel(0.1));
+  });
+
+  it('never leaves the tether, whatever it is handed', () => {
+    expect(moteTravel(-3)).toBe(0);
+    expect(moteTravel(3)).toBe(1);
+  });
+});
+
+describe('moteScale', () => {
+  it('comes off the body at full size and arrives at nothing', () => {
+    expect(moteScale(0)).toBe(1);
+    expect(moteScale(1)).toBe(0);
+  });
+
+  it('only ever shrinks', () => {
+    expect(isDecreasing(sample(SAMPLES, moteScale))).toBe(true);
+  });
+
+  /** It is swallowed at the end rather than dwindling the whole way, so it is still there to see. */
+  it('is still more than half of itself at the half way mark', () => {
+    expect(moteScale(0.5)).toBeGreaterThan(0.5);
+  });
+
+  it('never inverts or overshoots, whatever it is handed', () => {
+    expect(moteScale(-3)).toBe(1);
+    expect(moteScale(3)).toBe(0);
+  });
+});
+
+describe('moteAlpha', () => {
+  it('emerges from the body rather than appearing on it', () => {
+    expect(moteAlpha(0)).toBe(0);
+  });
+
+  it('is fully there long before it arrives, and stays there', () => {
+    expect(moteAlpha(0.5)).toBeGreaterThan(0);
+    expect(moteAlpha(1)).toBe(moteAlpha(0.5));
+  });
+
+  /** Nearly solid: a mote is matter, not a glow — but never quite hides the tether under it. */
+  it('is strong but never opaque', () => {
+    expect(moteAlpha(1)).toBeGreaterThan(0.5);
+    expect(moteAlpha(1)).toBeLessThan(1);
+  });
+
+  it('never rises above the strength it settles at', () => {
+    for (const alpha of sample(SAMPLES, moteAlpha)) {
+      expect(alpha).toBeLessThanOrEqual(moteAlpha(1));
+    }
+  });
+});
+
+describe('phagocyteFullness', () => {
+  it('is empty at nothing digested and full at the whole appetite', () => {
+    expect(phagocyteFullness(0, 100)).toBe(0);
+    expect(phagocyteFullness(100, 100)).toBe(1);
+  });
+
+  it('is half full at half the appetite', () => {
+    expect(phagocyteFullness(50, 100)).toBe(0.5);
+  });
+
+  /** A cell finishes the body it is on, so the bank can overrun the appetite before it rests. */
+  it('stops at full rather than overflowing', () => {
+    expect(phagocyteFullness(240, 100)).toBe(1);
+  });
+
+  it('reads an appetite tuned away as an empty cell, not a permanently full one', () => {
+    expect(phagocyteFullness(30, 0)).toBe(0);
+    expect(phagocyteFullness(30, -50)).toBe(0);
+  });
+
+  it('cannot go below empty', () => {
+    expect(phagocyteFullness(-30, 100)).toBe(0);
+  });
+});
+
+describe('loadRadius', () => {
+  it('draws an empty cell the mark it has always had', () => {
+    expect(loadRadius(0)).toBe(LOAD_MIN_RADIUS);
+  });
+
+  it('draws a full cell the largest mark that fits', () => {
+    expect(loadRadius(1)).toBe(LOAD_MAX_RADIUS);
+  });
+
+  /** Half a cell's worth of matter is half the growth: nothing about filling up is eased. */
+  it('is exactly half way at half full', () => {
+    expect(loadRadius(0.5)).toBeCloseTo((LOAD_MIN_RADIUS + LOAD_MAX_RADIUS) / 2, 12);
+  });
+
+  it('only ever grows', () => {
+    expect(isIncreasing(sample(SAMPLES, loadRadius))).toBe(true);
+  });
+
+  it('holds its ends, whatever it is handed', () => {
+    expect(loadRadius(-2)).toBe(LOAD_MIN_RADIUS);
+    expect(loadRadius(2)).toBe(LOAD_MAX_RADIUS);
+  });
+
+  /**
+   * The mark is cut out of a cell body of radius 20 wearing a 4 wide paper ring inside its own
+   * edge, so it has 16 to grow into — and a full one has to leave a band of the cell's own
+   * colour inside that ring, or a full cell stops reading as a cell at all.
+   */
+  it('leaves the cell visible around even a full load', () => {
+    expect(LOAD_MIN_RADIUS).toBeGreaterThan(0);
+    expect(LOAD_MAX_RADIUS).toBeGreaterThan(LOAD_MIN_RADIUS);
+    expect(LOAD_MAX_RADIUS).toBeLessThanOrEqual(13);
+  });
+
+  /** And a full one has to be obviously bigger than an empty one, or the reading buys nothing. */
+  it('grows the mark by at least half again over a full cell', () => {
+    expect(loadRadius(1)).toBeGreaterThan(loadRadius(0) * 1.5);
+  });
+});
+
+/**
+ * Absorption is a state, not an event: it runs for as long as the cell is eating. What it must
+ * not do is read as a threat pulse (spec §7) or as a leash — so a crossing is quick enough to
+ * be a stream and the train is small enough to be one.
+ */
+describe('the crossing reads as a stream', () => {
+  it('carries a few motes, quickly', () => {
+    expect(MOTE_COUNT).toBeGreaterThan(1);
+    expect(MOTE_COUNT).toBeLessThan(6);
+    expect(MOTE_SECONDS).toBeGreaterThan(0.2);
+    expect(MOTE_SECONDS).toBeLessThan(1);
   });
 });
