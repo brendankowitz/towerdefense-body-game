@@ -314,6 +314,10 @@ describe('maturation comparison', () => {
       }
     }
 
-    expect(failures, 'a growth offer is not worth what it costs').toEqual([]);
+    // The scope is named, because `SWEEP_CASES` narrows it. Summed over one case this is the
+    // per-case bar the docstring above explains why we do not want, and a reader who narrowed the
+    // run needs to see that in the failure rather than conclude a form regressed.
+    const scope = comparisons.map((comparison) => comparison.caseId).join(' + ');
+    expect(failures, `a growth offer is not worth what it costs, over ${scope}`).toEqual([]);
   });
 });
