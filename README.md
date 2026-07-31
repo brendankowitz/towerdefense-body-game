@@ -138,18 +138,18 @@ All seven rules and all ten regions are now authored: bleeding, multiplying, tox
 amnesia, overreaction and one case that tells you nothing at all. Day 9 is the first case played
 under two rules at once.
 
+Every day of the season adds something. Days 1–4 open the dock a cell at a time; days 5 and 7 open
+the two matured forms; the rest bring a rule or a strain. No two of the ten boards enter and leave
+by the same pair of edges — a limb the vessel crosses, a sac that goes in and comes back out, a
+coil, a climb. Both of those were findings before they were features:
+`docs/superpowers/reviews/2026-07-31-season-shape-review.md` measured a season that had neither.
+
 `docs/superpowers/` carries the design spec, the implementation plan, a holistic review of the
 finished codebase, the case-rules design the ten cases were built from, and a review of what the
 first seven boards had in common.
 
 ## Known and open
 
-- **Days 1 to 7 are one board, seven times.** Measured in
-  `docs/superpowers/reviews/2026-07-31-season-shape-review.md`: every one of those vessels enters
-  off the left edge and leaves through the floor, and their build spots sit within twelve units of
-  the same offset. Days 8 to 10 are shaped against that finding; the first seven have not been
-  retrofitted, because moving a spot is worth up to eleven points of clear rate and it would be a
-  re-tune of the whole season.
 - **Poison stacks per enemy in range**, and that was never a decision — it is emergent from a
   loop rather than chosen. Stomach sits at the bottom of the band largely because of it.
 - **Maturing is worth measuring per case, and nobody has.** `npm run sweep:maturation` says

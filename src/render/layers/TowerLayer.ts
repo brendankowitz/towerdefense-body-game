@@ -9,9 +9,10 @@ import {
   defenderHex, pathogenHex, tokenHex,
 } from '../colors';
 import {
-  BURST_RING_WIDTH, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_RADIUS,
-  burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, loadRadius, moteAlpha,
-  motePhase, moteScale, moteTravel, phagocyteFullness,
+  BURST_RING_WIDTH, GROWTH_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_RADIUS,
+  burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, growthRingAlpha,
+  growthRingRadius, isGrowthAlive, loadRadius, moteAlpha, motePhase, moteScale, moteTravel,
+  phagocyteFullness,
 } from '../effects';
 import { assertNever } from '../exhaustive';
 import { healthBarWidth, quantise, squareToDiamondHalf } from '../geometry';
@@ -94,14 +95,28 @@ function isSpent(tower: Tower): boolean {
  * Whether a phagocyte is holding anything is deliberately absent. It used to bump the mark and
  * so had to be compared; the mark now follows the load instead, and what a cell is holding is
  * said by the tether that runs to it.
+ *
+ * The growth flourish is here and has to be: it is the one part of a cell's appearance that moves
+ * with nothing in the simulation moving at all, so without it a grown cell would keep the frame it
+ * was painted on until something else about it changed — which, in a build phase, is never.
  */
-function signatureOf(tower: Tower, motion: Motion): string {
+
+/** Steps the growth flourish is quantised to. Twelve is a repaint roughly every frame of it. */
+const GROWTH_STEPS = 12;
+
+function growthStep(age: number, motion: Motion): number {
+  if (motion === 'reduced' || !isGrowthAlive(age)) return 0;
+  return 1 + quantise(age / GROWTH_SECONDS, GROWTH_STEPS);
+}
+
+function signatureOf(tower: Tower, motion: Motion, growthAge: number): string {
   let packed = DEFENDER_ORDER.indexOf(tower.kind);
   packed = packed * (HEALTH_STEPS + 1) + quantise(tower.hp / TOWER_MAX_HP, HEALTH_STEPS);
   packed = packed * 2 + (isSpent(tower) ? 1 : 0);
   packed = packed * (LOAD_STEPS + 1) + quantise(loadOf(tower), LOAD_STEPS);
   packed = packed * (BURST_STEPS + 2) + burstStep(burstFlashOf(tower), motion);
   packed = packed * 2 + (tower.matured ? 1 : 0);
+  packed = packed * (GROWTH_STEPS + 2) + growthStep(growthAge, motion);
   return `${String(packed)}:${String(statsFor(tower).range)}`;
 }
 
@@ -162,7 +177,22 @@ function paintBurst(g: Graphics, flash: number, range: number, color: number, mo
   );
 }
 
-function paintBody(g: Graphics, tower: Tower, motion: Motion): void {
+/**
+ * The ring closing onto a cell that has just been grown.
+ *
+ * Drawn from the same age the layer keeps, so it is a function of frames elapsed rather than of
+ * anything the simulation decides — a growth is a build-phase command and the board is otherwise
+ * still, which is exactly why it needed a mark at all.
+ */
+function paintGrowth(g: Graphics, age: number, color: number, alpha: number): void {
+  if (!isGrowthAlive(age)) return;
+  ring(
+    g, 0, 0, growthRingRadius(age, MATURED_RING_RADIUS), color,
+    MATURED_RING_WIDTH, growthRingAlpha(age) * alpha,
+  );
+}
+
+function paintBody(g: Graphics, tower: Tower, motion: Motion, growthAge: number): void {
   g.clear();
   const stats = statsFor(tower);
   const color = defenderHex(tower.kind);
@@ -180,6 +210,7 @@ function paintBody(g: Graphics, tower: Tower, motion: Motion): void {
   filledCircle(g, 0, 0, BODY_RADIUS, color, alpha);
   ring(g, 0, 0, BODY_RADIUS, PAPER, PAPER_RING_WIDTH, alpha);
   if (tower.matured) ring(g, 0, 0, MATURED_RING_RADIUS, color, MATURED_RING_WIDTH, alpha);
+  if (motion === 'full') paintGrowth(g, growthAge, color, alpha);
   if (spent) dashedRing(g, 0, 0, BODY_RADIUS, color, 3, 4, 6);
 
   paintGlyph(g, tower, spent);
@@ -253,6 +284,13 @@ export class TowerLayer {
    * bodies picks its stream back up where it left it.
    */
   readonly #moteAges = new Map<number, number>();
+  /**
+   * How long ago each cell was grown, by build spot, and what each spot's `matured` was last
+   * frame. Both are the layer's own bookkeeping — see `#ageGrowth` for why the simulation does
+   * not carry a "grew this frame" flag.
+   */
+  readonly #growthAges = new Map<number, number>();
+  readonly #wasMatured = new Map<number, boolean>();
   #spotsSignature = '';
 
   constructor(caseId: CaseId) {
@@ -310,19 +348,57 @@ export class TowerLayer {
    * a default of zero would leave every mote parked without saying so.
    */
   draw(state: SimState, elapsedSeconds: number, motion: Motion): void {
+    this.#ageGrowth(state, elapsedSeconds);
     this.#drawSpots(state);
     this.#drawBodies(state, motion);
     this.#drawLabels(state);
     this.#drawTethers(state, elapsedSeconds, motion);
   }
 
+  /**
+   * Notices a cell that has just been grown, and ages the flourish for one that already was.
+   *
+   * The simulation carries no "grew this frame" flag and should not: growing is a build-phase
+   * command with a permanent result, and a one-frame marker on the state would be a piece of
+   * presentation living in the ruleset. So the layer watches the field that does change and keeps
+   * the clock itself, the way `PuffLayer` keeps a puff's age.
+   *
+   * A spot seen for the first time is *recorded* rather than animated. Otherwise a board rebuilt
+   * with a grown cell already on it — leaving the fight screen and coming back — would replay a
+   * growth the player paid for a wave ago.
+   */
+  #ageGrowth(state: SimState, elapsedSeconds: number): void {
+    const standing = new Set<number>();
+    for (const tower of state.towers) {
+      standing.add(tower.spotIndex);
+      const before = this.#wasMatured.get(tower.spotIndex);
+      if (before === false && tower.matured) this.#growthAges.set(tower.spotIndex, 0);
+      this.#wasMatured.set(tower.spotIndex, tower.matured);
+
+      const age = this.#growthAges.get(tower.spotIndex);
+      if (age === undefined) continue;
+      const aged = age + elapsedSeconds;
+      if (isGrowthAlive(aged)) this.#growthAges.set(tower.spotIndex, aged);
+      else this.#growthAges.delete(tower.spotIndex);
+    }
+
+    // A cell that was reabsorbed or destroyed leaves nothing behind, so the spot forgets it was
+    // ever grown — the next cell built there is a new cell and grows on its own account.
+    for (const spotIndex of this.#wasMatured.keys()) {
+      if (standing.has(spotIndex)) continue;
+      this.#wasMatured.delete(spotIndex);
+      this.#growthAges.delete(spotIndex);
+    }
+  }
+
   #drawBodies(state: SimState, motion: Motion): void {
     this.#bodyPool.beginFrame();
     for (const tower of state.towers) {
       const view = this.#bodyPool.acquire(tower.spotIndex);
-      const signature = signatureOf(tower, motion);
+      const growthAge = this.#growthAges.get(tower.spotIndex) ?? Number.POSITIVE_INFINITY;
+      const signature = signatureOf(tower, motion, growthAge);
       if (signature !== view.signature) {
-        paintBody(view.body, tower, motion);
+        paintBody(view.body, tower, motion, growthAge);
         view.signature = signature;
       }
       view.body.position.set(tower.x, tower.y);

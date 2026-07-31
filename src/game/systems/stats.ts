@@ -18,11 +18,24 @@ import type { DefenderKind } from '../types';
  */
 type Stats<K extends DefenderKind> = (typeof DEFENDERS)[K];
 
-/** The cell this one can still be grown into. Null once it is already there, or if it has none. */
+/**
+ * The cell this one can still be grown into. Null once it is already there, if it has none, or if
+ * the season has not opened the form yet.
+ *
+ * `clearedCount` is passed rather than read off a tower because a form is a *season* unlock and a
+ * tower knows nothing about the run it is standing in. It is the same gate the dock applies to a
+ * cell — `DEFENDERS[kind].unlock` — one tier up, and it exists for the same reason: growth used to
+ * be available from day one, so the two forms the game has were both spent before the player had
+ * met four of the six cells.
+ */
 export function maturationOffer(
   tower: { readonly kind: DefenderKind; readonly matured: boolean },
+  clearedCount: number,
 ): MaturedForm | null {
-  return tower.matured ? null : maturedFormOf(tower.kind);
+  if (tower.matured) return null;
+  const form = maturedFormOf(tower.kind);
+  if (form === null) return null;
+  return clearedCount >= form.unlock ? form : null;
 }
 
 export function statsFor<K extends DefenderKind>(

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { maturationOffer, statsFor } from './stats';
 import { DEFENDERS, DEFENDER_ORDER } from '../content/defenders';
+import { CASES } from '../content/cases';
 import { maturedFormOf } from '../content/maturation';
 import type { DefenderKind } from '../types';
 
@@ -86,21 +87,43 @@ describe('statsFor', () => {
 });
 
 describe('maturationOffer', () => {
+  /** Everything is open to a profile that has cleared the season. */
+  const OPEN = CASES.length;
+
   it('offers the form to a cell that has one and has not taken it', () => {
     for (const kind of GROWN) {
-      expect(maturationOffer({ kind, matured: false })).toBe(maturedFormOf(kind));
+      expect(maturationOffer({ kind, matured: false }, OPEN)).toBe(maturedFormOf(kind));
     }
   });
 
   it('offers nothing to a cell that has already grown', () => {
     for (const kind of GROWN) {
-      expect(maturationOffer({ kind, matured: true })).toBeNull();
+      expect(maturationOffer({ kind, matured: true }, OPEN)).toBeNull();
     }
   });
 
   it('offers nothing to a kind with no matured form', () => {
     for (const kind of PLAIN) {
-      expect(maturationOffer({ kind, matured: false })).toBeNull();
+      expect(maturationOffer({ kind, matured: false }, OPEN)).toBeNull();
+    }
+  });
+
+  /**
+   * The season gate, asserted at its own edge rather than at a chosen number of clears: a form is
+   * offered from the clear it names and not from the one before it. Reads the gate off the form, so
+   * moving the schedule moves the test with it.
+   */
+  it('offers nothing until the season has opened the form', () => {
+    for (const kind of GROWN) {
+      const form = maturedFormOf(kind);
+      expect(form, `${kind} lost its form`).not.toBeNull();
+      if (form === null) continue;
+
+      expect(
+        maturationOffer({ kind, matured: false }, form.unlock - 1),
+        `${form.name} was offered one clear before it opens`,
+      ).toBeNull();
+      expect(maturationOffer({ kind, matured: false }, form.unlock)).toBe(form);
     }
   });
 });

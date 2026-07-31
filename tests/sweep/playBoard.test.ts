@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { maturationAt, placeDefender, reabsorbDefender, towerAt } from '../../src/game/commands';
+import { CASES } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '../../src/game/content/defenders';
 import { maturedFormOf } from '../../src/game/content/maturation';
 import { createSimState } from '../../src/game/state';
@@ -21,9 +22,18 @@ import {
 const CASE_ID = 'forearm';
 const SPOTS = 5;
 
+/**
+ * A profile with the whole season behind it, so every cell and both matured forms are open.
+ *
+ * These tests are about what the policies do with a balance, not about what the season has handed
+ * over yet — a fixture short of a form's unlock would test the gate in `maturationOffer` over and
+ * over instead, and read as the policy declining to grow.
+ */
+const CLEARED = CASES.length;
+
 function openState(): SimState {
   return createSimState({
-    caseId: CASE_ID, immunity: immunityAfter(0), clearedCount: 0, totalKills: 0,
+    caseId: CASE_ID, immunity: immunityAfter(0), clearedCount: CLEARED, totalKills: 0,
   });
 }
 
@@ -167,11 +177,19 @@ describe('runBuildPhase', () => {
 });
 
 describe('playBoard', () => {
+  /**
+   * The last case of the season, played with the season behind it — so every cell is in the dock
+   * and both matured forms are open. A run at `clearedCount: 0` would measure the unlock schedule
+   * rather than the policy, and would read as the policy declining to grow.
+   */
+  const LATE_CASE = CASES[CASES.length - 1]?.id ?? CASE_ID;
+  const LATE_CLEARS = CASES.length - 1;
+
   it('carries the policy through a whole run', () => {
     const board = boardOf('phago');
 
-    const never = playBoard(CASE_ID, 0, board, 'never', EVERY_GROWABLE);
-    const surplus = playBoard(CASE_ID, 0, board, 'surplus', EVERY_GROWABLE);
+    const never = playBoard(LATE_CASE, LATE_CLEARS, board, 'never', EVERY_GROWABLE);
+    const surplus = playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', EVERY_GROWABLE);
 
     expect(never.grown).toBe(0);
     // Surplus only ever grows on a standing board, so this also says the board was built.
@@ -186,8 +204,8 @@ describe('playBoard', () => {
   it('carries the growable set through a whole run', () => {
     const board = boardOf('phago');
 
-    expect(playBoard(CASE_ID, 0, board, 'surplus', ['phago']).grown).toBeGreaterThan(0);
-    expect(playBoard(CASE_ID, 0, board, 'surplus', ['anti']).grown).toBe(0);
+    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['phago']).grown).toBeGreaterThan(0);
+    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['anti']).grown).toBe(0);
   });
 });
 

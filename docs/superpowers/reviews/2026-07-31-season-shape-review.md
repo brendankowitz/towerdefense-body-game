@@ -4,7 +4,9 @@
 **Under review:** the seven cases shipped as days 1–7, at `cb17fd4`
 **Method:** measured every case's path, build spots, wave table and unlock schedule off the shipped
 content modules. Every number below is computed from `src/game/content/`, not estimated.
-**Status of the fix:** days 8–10 are authored against this. Days 1–7 are not — see §5.
+**Status of the fix: all of it has landed.** Days 8–10 were authored against this review; days 1–7
+were then re-shaped and the dock was turned into a schedule. §1–§4 describe the season as it was;
+§5 is what was done about it and §6 is what doing it cost.
 
 ---
 
@@ -149,27 +151,34 @@ through the floor and **climbs**, the only case in the season whose flow is agai
 every other. Each brings something new besides its rule — a second splitter, a compound of two
 rules, and an untaggable strain that makes the season's dominant cell useless.
 
-**Not done — days 1 to 7 still share one board.** Retrofitting them means re-authoring seven paths
-and thirty-five build spots, and every one of those cases is tuned to a measured clear rate that
-geometry moves by up to 11 points (measured this pass: relapse moved 15.8% → 4.4% on spot offsets
-alone, with its wave table untouched). That is a re-tune of the whole season, and it should be its
-own piece of work with its own sweep budget rather than a rider on shipping the last three cases.
+**Done — days 1 to 7 were re-shaped, and the technique is the part worth keeping.** Every one of the
+seven has a new path and five new spots. No two of the ten cases now share an entry-and-exit pair:
 
-**Recommended order when that work happens**, cheapest first, because the first item alone would
-fix most of the reading:
+| | forearm | throat | stomach | hand | blister | measles | sinus | bronchitis | relapse | vesper |
+|---|---|---|---|---|---|---|---|---|---|---|
+| in | left | top | top | right | bottom | top | left | top | right | bottom |
+| out | right | left | top | bottom | bottom | right | top | bottom | left | top |
 
-1. **Change where four or five of them enter and leave.** Entry and exit edges are the strongest
-   signal of "a different place" and the cheapest thing to move — the throat should come down from
-   the head, the forearm should come in from the wrist, a foot should drain upward. Re-tuning is
-   needed but the wave tables can stay.
-2. **Give two of them a shape with a name.** A fork, a loop that crosses itself, a spiral. The
-   serpentine is the default and it has been used seven times.
-3. **Spread the spot offsets deliberately.** A case where every spot is 40u out plays differently
-   from one where every spot is 70u out, and the season currently has neither — it has seven cases
-   averaging 60.
-4. **Re-gate a cell or two.** Five cells on day one is what leaves eight cases with nothing to
-   unlock. This is the most invasive item and the one most likely to break the early band, which is
-   why it is last.
+A limb the vessel crosses; an airway coming down from the head; a sac that goes in and comes back
+out the way it came; a splinter track folded twice; a closed pocket under a blister; a column; a
+coil; a climb.
+
+**The re-tune was affordable because the spots were placed by matching, not by eye.** Clear rate
+tracks a board's *dwell profile* — the seconds of vessel each spot covers, per cell — far more than
+it tracks the shape of the path. So each new board's five spots were chosen by grid search against
+the old board's profile, cell by cell across all six ranges. Two cases came across needing nothing
+at all. The one thing that does not survive the matching is **redundancy**: two spots covering the
+same stretch have the same summed dwell and much less union coverage, which is what moved blister
+by three points before its spots were re-picked against the full six-range profile rather than the
+phagocyte's alone.
+
+**Done — the dock is a schedule.** Five cells on day one was what left eight cases with nothing to
+unlock. It is now three on day 1 and one each on days 2, 3 and 4, with the two matured forms on
+days 5 and 7 (`defenders.ts` carries the reasoning). Every day of the season now adds a cell, a
+form, a rule or a strain; before this, six of the ten added a rule and nothing else.
+
+**Not done — nothing.** The one thing this review recommended and did not get is a case whose path
+crosses itself; the gut's coil comes closest.
 
 ---
 
@@ -189,3 +198,19 @@ wave 1 moved it 4.5% → 3.9%; softening relapse's moved it 4.4% → 4.1%. Bodie
 board that meets a smaller wave 1 arrives at wave 2 with less energy and fewer cells. Late waves are
 where mass is a cost rather than a wage — the forearm and hand tunings found the same thing from the
 other direction.
+
+**A wave table and an unlock schedule are one schedule, and splitting them costs more than any
+tuning.** Gating the killer cell to day 2 and the macrophage to day 5 left the opening case sending
+three Resistant strains at a dock that had no answer to one: `mrsa` carries 60 per cent armour and
+cannot be tagged, so a phagocyte does it six damage a second against 150 health. Forearm measured
+**2.1%** of boards clearing. Taking the three Resistants off day one, with nothing else changed,
+measured **14.0%** — nearly seven times, and far more than every other lever on that case put
+together. Before tuning a case that reads as impossible, check that everything it sends has an
+answer the player has already been handed.
+
+**Coverage is not the only thing spot distance buys on a poison case — it is also what the poison
+costs.** The stomach's whole identity is that position is a liability, and the retrofit briefly
+deleted it: the new spots were all more than 42 units off the vessel, which is `POISON_RADIUS`, so
+no cell was ever damaged and the case jumped to 14.6%. It came back to 7.4% on spot distance alone.
+A poison case has two thresholds, not one — far enough to survive, close enough to fight — and a
+board that satisfies only the first is a different case wearing the same rule.

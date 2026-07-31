@@ -95,7 +95,7 @@ export function reabsorbValue(tower: Tower): number {
 /** The form the cell on this spot can still be grown into, or null. */
 export function maturationAt(state: SimState, spotIndex: number): MaturedForm | null {
   const tower = towerAt(state, spotIndex);
-  return tower === null ? null : maturationOffer(tower);
+  return tower === null ? null : maturationOffer(tower, state.clearedCount);
 }
 
 /** Returns true when a cell was actually taken back. Build phase only. */
@@ -118,7 +118,7 @@ export function matureDefender(state: SimState, spotIndex: number): boolean {
   const tower = towerAt(state, spotIndex);
   if (tower === null) return false;
 
-  const form = maturationOffer(tower);
+  const form = maturationOffer(tower, state.clearedCount);
   if (form === null) return false;
   if (state.energy < form.cost) return false;
 

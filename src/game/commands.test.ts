@@ -24,6 +24,16 @@ function fresh(clearedCount = 0): SimState {
 
 const MAX_UNLOCK = Math.max(...DEFENDER_ORDER.map((kind) => DEFENDERS[kind].unlock));
 
+/**
+ * Clears enough for the season to have opened both the dock and both matured forms. Growth is
+ * gated on the same counter one tier up, so a maturation test run at `MAX_UNLOCK` would be asking
+ * a season that has not offered the form yet, and would read as the command refusing.
+ */
+const ALL_OPEN = Math.max(
+  MAX_UNLOCK,
+  ...DEFENDER_ORDER.map((kind) => maturedFormOf(kind)?.unlock ?? 0),
+);
+
 /** The cheapest defender available from the start — what the affordability tests reason about. */
 const STARTER: DefenderKind = DEFENDER_ORDER.filter((kind) => DEFENDERS[kind].unlock === 0)
   .reduce((cheapest, kind) => (DEFENDERS[kind].cost < DEFENDERS[cheapest].cost ? kind : cheapest));
@@ -219,7 +229,7 @@ const UNGROWABLE = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) === null)
 
 /** Places `kind` on spot 0 of a funded board and hands back the state. */
 function boardWith(kind: DefenderKind, extraEnergy = 0): SimState {
-  const state = fresh(MAX_UNLOCK);
+  const state = fresh(ALL_OPEN);
   state.selected = kind;
   state.energy = DEFENDERS[kind].cost + extraEnergy;
   if (!placeDefender(state, 0)) throw new Error(`Could not place ${kind} to set up the test`);
@@ -367,6 +377,29 @@ describe('matureDefender', () => {
       for (const [field, value] of Object.entries(form?.stats ?? {})) {
         expect(grown[field], `${kind}.${field} did not take the matured value`).toBe(value);
       }
+    }
+  });
+
+  /**
+   * Growth is a season unlock, so the command answers to it and not only the offer does. Asserted
+   * at the edge and derived from the form, so moving the schedule in `maturation.ts` moves this
+   * with it: one clear short is a refusal that costs nothing, and the clear it names is a yes.
+   */
+  it('refuses a form the season has not opened yet, and charges nothing for the refusal', () => {
+    for (const kind of GROWABLE) {
+      const form = maturedFormOf(kind);
+      if (form === null || form.unlock === 0) continue;
+
+      const state = fresh(form.unlock - 1);
+      state.selected = kind;
+      state.energy = DEFENDERS[kind].cost + form.cost;
+      expect(placeDefender(state, 0), `could not place a ${kind} to grow`).toBe(true);
+      const banked = state.energy;
+
+      expect(matureDefender(state, 0), `${form.name} was offered before the season opened it`)
+        .toBe(false);
+      expect(state.energy).toBe(banked);
+      expect(towerAt(state, 0)?.matured).toBe(false);
     }
   });
 

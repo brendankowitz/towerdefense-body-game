@@ -3,14 +3,22 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { placeDefender, reabsorbValue, startWave, towerAt } from '@game/commands';
-import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
+import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from '@game/content/defenders';
 import { maturedChanges, maturedFormOf, type MaturedForm } from '@game/content/maturation';
 import { GameLoop } from '@game/loop';
 import { createSimState } from '@game/state';
 import type { DefenderKind } from '@game/types';
 import { PlacedCells } from './PlacedCells';
 
-const ALL_UNLOCKED = Math.max(...DEFENDER_ORDER.map((kind) => DEFENDERS[kind].unlock));
+/**
+ * Enough clears that the season has opened everything — every cell in the dock *and* both matured
+ * forms, which are gated on the same counter one tier up. Derived from both tables rather than
+ * from the dock alone: reading only `DEFENDERS` left this fixture short of the forms the moment
+ * growth became a season unlock, and every maturation test below failed to find its own button.
+ */
+const ALL_UNLOCKED = Math.max(
+  ...DEFENDER_ORDER.map((kind) => Math.max(DEFENDERS[kind].unlock, maturedFormOf(kind)?.unlock ?? 0)),
+);
 
 const GROWABLE = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) !== null);
 const UNGROWABLE = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) === null);
@@ -166,6 +174,31 @@ describe('PlacedCells', () => {
         }
       }
     });
+  });
+
+  /**
+   * The panel says which of the five cells it is acting on. A player who opened this by tapping
+   * the board never looked at the chip row, so a Reabsorb button with nothing naming its cell is
+   * two buttons and a guess.
+   */
+  it('names the cell whose actions are open', () => {
+    const kind = firstOf(GROWABLE, 'a cell with a form');
+    render(<Host loop={boardOf(kind)} />);
+    expect(screen.queryByTestId('cell-open')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('cell-chip-0'));
+
+    const open = screen.getByTestId('cell-open');
+    expect(open).toHaveTextContent(DEFENDER_BLURBS[kind].name.split(' · ')[0] ?? '');
+  });
+
+  it('renames the open cell when the form is taken, so the panel follows what it became', () => {
+    const kind = firstOf(GROWABLE, 'a cell with a form');
+    render(<Host loop={boardOf(kind)} />);
+    fireEvent.click(screen.getByTestId('cell-chip-0'));
+    fireEvent.click(screen.getByTestId('mature'));
+
+    expect(screen.getByTestId('cell-open')).toHaveTextContent(maturedForm(kind).name);
   });
 
   it('stops offering a trade once there is nothing left to trade for', () => {

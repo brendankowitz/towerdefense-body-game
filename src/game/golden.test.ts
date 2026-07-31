@@ -151,7 +151,11 @@ function armBoard(scenario: Scenario): SimState {
   const state = createSimState({
     caseId: scenario.caseId,
     immunity: scenario.immunity,
-    clearedCount: 2,
+    // A profile that has cleared the season, so every cell and both matured forms are open. This
+    // net is about reproducing trajectories, not about progression: a scenario that could not place
+    // the cell it names would silently stop covering the mechanic it was written for, and the
+    // schedule in `defenders.ts` is free to move without rewriting seven boards here.
+    clearedCount: CASES.length,
     totalKills: 0,
   });
 

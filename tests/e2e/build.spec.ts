@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { CASE_BY_ID } from '../../src/game/content/cases';
+import { CASES, CASE_BY_ID } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_BLURBS } from '../../src/game/content/defenders';
 import { maturedChanges, maturedFormOf } from '../../src/game/content/maturation';
 import { BUILD_SPOT_RADIUS, REABSORB_REFUND } from '../../src/game/content/rules';
 import type { Point } from '../../src/game/types';
-import { onScreen, openCase, placeCell, screen, tapSpot, tapWorld } from './helpers';
+import { createFreshProfile } from '../../src/game/progression';
+import { onScreen, openCase, placeCell, screen, seedProfile, tapSpot, tapWorld } from './helpers';
 
 /**
  * Spec §13.4 — the build phase's mechanics, exercised through a real canvas.
@@ -17,8 +18,12 @@ import { onScreen, openCase, placeCell, screen, tapSpot, tapWorld } from './help
 
 const FOREARM = CASE_BY_ID.forearm;
 
-/** Mid-board, and asserted at run time to be well clear of every build spot. */
-const EMPTY_TISSUE: Point = [187, 215];
+/**
+ * Bare tissue, and asserted at run time to be well clear of every build spot — which is what
+ * caught it when the forearm board was re-shaped and the old point landed 43 units from a
+ * junction, inside the tap radius it was chosen to be outside of.
+ */
+const EMPTY_TISSUE: Point = [60, 300];
 
 /** The refund rule restated, exactly as `refundOf` states it. Whole units, never more than went in. */
 function refundOf(spent: number): number {
@@ -131,15 +136,29 @@ test('reabsorbing a cell returns part of what it cost', async ({ page }) => {
   await expect(onScreen(page, 'placed-cells')).toContainText('NONE YET');
 });
 
+/**
+ * Growth is a season unlock, so this runs on the first case that offers it rather than on day one.
+ * Both the profile and the case are derived from the form's own `unlock`: seed exactly that many
+ * clears, then open the case the season would be on next. Naming a case here would go stale the
+ * first time the schedule in `maturation.ts` moved.
+ */
 test('maturing a cell charges the growth and renames it', async ({ page }) => {
   const grown = maturedFormOf('phago');
   test.skip(grown === null, 'the phagocyte no longer has a matured form; retarget this test');
   if (grown === null) return;
 
-  await openCase(page, 'forearm');
-  await placeCell(page, 'forearm', 'phago', 2);
+  const definition = CASES[grown.unlock];
+  test.skip(definition === undefined, 'the season is shorter than the growth schedule');
+  if (definition === undefined) return;
 
-  const afterPlacing = FOREARM.startingEnergy - DEFENDERS.phago.cost;
+  await seedProfile(page, {
+    ...createFreshProfile(),
+    cleared: CASES.slice(0, grown.unlock).map((c) => c.id),
+  });
+  await openCase(page, definition.id);
+  await placeCell(page, definition.id, 'phago', 2);
+
+  const afterPlacing = definition.startingEnergy - DEFENDERS.phago.cost;
   await onScreen(page, 'cell-chip-2').click();
   await expect(onScreen(page, 'mature')).toContainText(grown.name);
   await expect(onScreen(page, 'mature')).toContainText(`−${String(grown.cost)}`);

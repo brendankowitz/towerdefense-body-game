@@ -11,7 +11,7 @@ import type {
 } from '@game/types';
 import { defenderHex, pathogenHex } from '../colors';
 import {
-  BURST_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_SECONDS,
+  BURST_SECONDS, GROWTH_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_SECONDS,
 } from '../effects';
 import type { Motion } from '../motion';
 import { TowerLayer } from './TowerLayer';
@@ -193,6 +193,62 @@ describe('TowerLayer matured cells', () => {
     layer.draw(state, STILL, 'full');
 
     expect(bodyAt(layer, CELL_X, CELL_Y).context.instructions.length).not.toBe(before);
+    layer.destroy();
+  });
+
+  /**
+   * The flourish, and the three things that make it one rather than a permanent extra ring.
+   *
+   * It is the only effect on this board driven by a change the simulation records once and then
+   * keeps — `matured` is true forever after — so the layer keeps the clock and these assert the
+   * clock rather than the picture: it starts when the cell grows, it ends on its own, and a board
+   * that arrives already grown never plays it.
+   */
+  it('marks the moment a cell grows, and stops on its own', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    const cell = phagocyteGrown(false);
+    state.towers = [cell];
+
+    layer.draw(state, STILL, 'full');
+    cell.matured = true;
+    layer.draw(state, STILL, 'full');
+    const flourishing = bodyAt(layer, CELL_X, CELL_Y).context.instructions.length;
+
+    // Past the end of the effect in one frame: what is left is the ring the cell keeps.
+    layer.draw(state, GROWTH_SECONDS, 'full');
+    const settled = bodyAt(layer, CELL_X, CELL_Y).context.instructions.length;
+
+    expect(flourishing, 'the growth drew nothing extra on the frame it happened')
+      .toBeGreaterThan(settled);
+    layer.destroy();
+  });
+
+  it('never plays the flourish for a cell that was already grown when the board appeared', () => {
+    const fresh = new TowerLayer('forearm');
+    const state = boardState();
+    state.towers = [phagocyteGrown(true)];
+    fresh.draw(state, STILL, 'full');
+    const first = bodyAt(fresh, CELL_X, CELL_Y).context.instructions.length;
+
+    fresh.draw(state, GROWTH_SECONDS, 'full');
+    expect(bodyAt(fresh, CELL_X, CELL_Y).context.instructions.length).toBe(first);
+    fresh.destroy();
+  });
+
+  it('leaves the flourish out under reduced motion, and keeps the ring', () => {
+    const layer = new TowerLayer('forearm');
+    const state = boardState();
+    const cell = phagocyteGrown(false);
+    state.towers = [cell];
+
+    layer.draw(state, STILL, 'reduced');
+    cell.matured = true;
+    layer.draw(state, STILL, 'reduced');
+    const grown = bodyAt(layer, CELL_X, CELL_Y).context.instructions.length;
+
+    layer.draw(state, GROWTH_SECONDS, 'reduced');
+    expect(bodyAt(layer, CELL_X, CELL_Y).context.instructions.length).toBe(grown);
     layer.destroy();
   });
 

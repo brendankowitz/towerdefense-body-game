@@ -249,7 +249,14 @@ they credit, and `content.invariants.test.ts` now asserts it rather than leaving
 somebody did once.
 
 **What the ten measure**, buying and never growing, over every affordable board:
-13.2 / 6.3 / 5.5 / 5.3 / 7.2 / 7.2 / 6.3 / 5.2 / 5.4 / 6.2 per cent of boards clearing.
+14.0 / 8.6 / 7.4 / 5.3 / 7.7 / 5.9 / 8.9 / 5.2 / 5.4 / 6.2 per cent of boards clearing.
+
+Those are boards drawn from a *growing* dock — three cells on day 1, four on day 2, five on day 3
+and six from day 4 — so the early cases are searched over 243, 1024 and 3125 boards rather than
+7776. The schedule and its reasoning are in `defenders.ts`; what it cost to introduce is in the
+season-shape review, and the short version is that a wave table and an unlock schedule are one
+schedule: the opening case was sending a strain the day-one dock had no answer to, and that alone
+was worth twelve points of clear rate.
 
 **The three new boards are shaped against `2026-07-31-season-shape-review.md`**, which measured what
 the first seven had in common: one entry edge, one exit edge, one flow direction and one spot

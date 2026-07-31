@@ -41,6 +41,15 @@ export interface MaturedForm {
   readonly name: string;
   /** Energy to grow the cell, on top of what its placement already cost. */
   readonly cost: number;
+  /**
+   * Cases cleared before the season offers this form, the same shape as `DefenderStats.unlock`.
+   *
+   * Growth used to be available from day one, which meant both of the game's forms were spent
+   * before the player had met four of its six cells. Days 5 and 7 are the two days of the season
+   * that add no cell and no rule, so they are where the forms belong: `defenders.ts` carries the
+   * whole schedule and why it reads the way it does.
+   */
+  readonly unlock: number;
   readonly stats: Readonly<Partial<Record<MaturedStatField, number>>>;
 }
 
@@ -202,6 +211,7 @@ export const MATURED_FORMS: { readonly [K in DefenderKind]?: MaturedForm } = {
   phago: {
     name: 'Macrophage',
     cost: 55,
+    unlock: 4,
     stats: {
       range: DEFENDERS.phago.range * MACROPHAGE_REACH,
       dps: DEFENDERS.phago.dps * MACROPHAGE_BITE,
@@ -213,6 +223,7 @@ export const MATURED_FORMS: { readonly [K in DefenderKind]?: MaturedForm } = {
   anti: {
     name: 'High-affinity antibody',
     cost: 110,
+    unlock: 6,
     stats: {
       rate: DEFENDERS.anti.rate * HIGH_AFFINITY_PULSE,
       tag: DEFENDERS.anti.tag * HIGH_AFFINITY_GRIP,

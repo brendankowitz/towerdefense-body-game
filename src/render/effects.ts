@@ -83,6 +83,40 @@ export function puffAlpha(age: number): number {
 }
 
 /**
+ * Growing a cell, which is the one change on this board the player pays for and then cannot see.
+ *
+ * A grown cell wears a second ring for the rest of the case, so the flourish is that ring arriving:
+ * it comes in from outside and closes onto the radius the cell will keep. Inward rather than
+ * outward on purpose — a burst leaves a cell and is over, and this is the opposite event, so
+ * borrowing the burst's expanding front would say the wrong thing about a permanent change.
+ *
+ * Longer than a burst or a puff because it is not an echo of feedback that has already landed:
+ * energy left the bank, a button went away and nothing else on the board moved.
+ */
+export const GROWTH_SECONDS = 0.45;
+
+/** How far outside its final radius the ring starts. Enough to read as arriving, not as a flash. */
+const GROWTH_START_GAP = 16;
+
+const GROWTH_ALPHA = 0.85;
+
+/** A flourish that has aged out draws nothing, so the layer stops asking for a repaint. */
+export function isGrowthAlive(age: number): boolean {
+  return age >= 0 && age < GROWTH_SECONDS;
+}
+
+/** Closes onto `finalRadius`, decelerating, so it settles rather than snapping shut. */
+export function growthRingRadius(age: number, finalRadius: number): number {
+  const t = easeOut(clamp01(age / GROWTH_SECONDS));
+  return finalRadius + GROWTH_START_GAP * (1 - t);
+}
+
+/** Brightest as it arrives and gone as it lands, so the ring it leaves behind is the only mark. */
+export function growthRingAlpha(age: number): number {
+  return GROWTH_ALPHA * (1 - clamp01(age / GROWTH_SECONDS));
+}
+
+/**
  * Absorption — what a phagocyte does to the body it is holding, in two readings.
  *
  * The load is not motion at all. It is a plain function of `digested` against the kind's

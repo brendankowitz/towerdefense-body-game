@@ -94,44 +94,53 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', credits: 'staph', tier: 1,
     story: 'Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.',
     rules: [BLEEDING],
-    // Opened at 9.1% of affordable boards clearing, which made the first case of the game the one
-    // nine players in ten lose. A season's opening case is the forgiving one — everything after it
-    // is measured against it — so this was retuned to 13.2%, inside the band's 15% ceiling with
-    // room to spare. Two levers, and they are not interchangeable:
+    // The season's opening case, and the one every other case's rate is measured against. It is
+    // deliberately the forgiving one: it clears 14.0% of the three-cell boards a first-day player
+    // can build, just inside the band's 15% ceiling.
     //
-    // **Starting energy, 260 to 320.** Worth +1.4 points here, against the tenth of a point ten
-    // energy buys on the hand case: this case bleeds and starts poorest, so energy it has not got
-    // is a board it never builds. It is also the lever that saturates — 320 to 400 bought only
-    // another 1.0 — and leaning on it further would have paid for the opening by making the bleed
-    // stop mattering, which is the one thing this case is about.
+    // **Starting energy is worth about a point and a half per sixty here**, against the tenth of a
+    // point ten energy buys on the hand case: this case bleeds and starts poorest, so energy it has
+    // not got is a board it never builds. It also saturates — 320 to 400 bought a single point —
+    // and leaning on it further would pay for the opening by making the bleed stop mattering, which
+    // is the one thing this case is about.
     //
-    // **Wave 5, 18/5/3 to 17/5/2.** Worth the remaining +2.7. Wave 5 is where two thirds of the
-    // boards die, so mass removed there is worth several times the same mass removed from wave 1 —
-    // the same finding the hand case records below. Wave 5 keeps more staph than wave 4 on purpose:
-    // dropping it to 15 measured 14.5%, too close to the ceiling, and it also flattened the table
-    // into two waves that read the same.
+    // **The Resistant strain came off this table when the dock became a schedule**, and that is not
+    // a difficulty decision. Its own note says what to do about it — execute it, or grow a bigger
+    // cell — and day one now has neither: the killer cell opens on day 2 and the macrophage on day
+    // 5. A phagocyte against 60 per cent armour is six damage a second against 150 health, so the
+    // three Resistants this table used to carry were three pips the player could not argue with.
+    // Measured: 2.1% of boards clearing with them, **14.0% without**, nothing else changed.
     //
-    // What this bought the player is in the histogram: boards losing on wave 1 fell from 729 to
-    // 453. What it bought the season is headroom — see `tests/sweep/curve.ts`.
+    // The wave tables and the unlock schedule are one schedule, and this is where that first bit.
+    // Every pathogen a case sends should have an answer the player has already been handed.
     startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 8 }],
       [{ kind: 'staph', count: 13 }],
       [{ kind: 'staph', count: 12 }, { kind: 'film', count: 3 }],
-      [{ kind: 'staph', count: 15 }, { kind: 'film', count: 4 }, { kind: 'mrsa', count: 1 }],
-      [{ kind: 'staph', count: 17 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 2 }],
+      [{ kind: 'staph', count: 15 }, { kind: 'film', count: 4 }],
+      [{ kind: 'staph', count: 17 }, { kind: 'film', count: 5 }],
     ],
-    path: [[-24, 46], [86, 58], [150, 116], [232, 146], [252, 238], [168, 298], [112, 342], [104, 430]],
-    // Spot 4 was at [206, 372]: 81.7 from the vessel, where the only cell that covered a whole
-    // second of it was the antibody. Pulled 20 left, it is still the case's longest reach and now
-    // every cell can do something from it. See `content.invariants.test.ts`, build spots.
-    spots: [[70, 118], [206, 88], [292, 196], [69, 282], [186, 372]],
+    // **A limb, so the vessel crosses it.** In at the wrist and out at the elbow: this is the one
+    // case in the season that runs left to right and never reaches the floor, which is what a
+    // forearm looks like from above. Reshaped in the retrofit — see the note on `throat` for what
+    // the seven of these were before, and `2026-07-31-season-shape-review.md` for why.
+    path: [[-24, 120], [90, 140], [166, 96], [252, 140], [286, 226], [220, 288], [300, 340], [398, 322]],
+    // Spot 4 is the case's one long reach, at 0.3 seconds of vessel for a phagocyte and a real
+    // stretch for an antibody. It is deliberate and it is the same trade the old board's spot 4
+    // carried: a spot far from the vessel should demand range. What it may not be is a spot no
+    // *two* cells can use — see `content.invariants.test.ts`, build spots.
+    spots: [[114, 78], [288, 144], [204, 324], [162, 180], [198, 30]],
   },
   {
     id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', credits: 'virus', tier: 1,
     story: 'Someone coughed on the train. The virus is already copying itself in your throat.',
     rules: [{ kind: 'virus', label: 'Multiplying', sub: 'Every virus that dies splits into two smaller ones' }],
-    startingEnergy: 300,
+    // Day 2 opens the killer cell, so this is the first case that can answer a Resistant — and the
+    // first that sends one, in its last wave. Starting energy carries the rest: at four cells the
+    // board is a third smaller than it used to be, and the wave that kills three boards in four is
+    // the first one.
+    startingEnergy: 380,
     waves: [
       [{ kind: 'virus', count: 6 }],
       [{ kind: 'virus', count: 9 }, { kind: 'spore', count: 2 }],
@@ -139,8 +148,25 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'virus', count: 13 }, { kind: 'spore', count: 5 }, { kind: 'film', count: 3 }],
       [{ kind: 'virus', count: 16 }, { kind: 'spore', count: 6 }, { kind: 'mrsa', count: 2 }],
     ],
-    path: [[-24, 120], [90, 120], [150, 60], [240, 74], [268, 170], [180, 230], [180, 320], [96, 380], [104, 430]],
-    spots: [[64, 62], [220, 148], [107, 218], [258, 286], [232, 372]],
+    // **The retrofit, and this comment is the record of it for all seven cases it touched.**
+    //
+    // Days 1 to 7 were authored one at a time against a clear rate, and came out as one board seven
+    // times: every vessel entered at `x = -24` in the upper third and left through the floor, 32 to
+    // 48 per cent of every path ran downward and at most 9 per cent ran up, and the five spots sat a
+    // mean 53 to 65 units off the vessel in all seven. The rule was the only thing that changed.
+    // `2026-07-31-season-shape-review.md` measured it; this is the fix.
+    //
+    // **Each case now has an entry edge, an exit edge and a shape of its own**, and no two of the
+    // ten share a pair. Throat comes down from the head and turns out toward the chest — the only
+    // case that leaves by the left.
+    //
+    // **The balance came across intact, and that is the technique rather than luck.** Clear rate
+    // tracks total spot coverage far more than it tracks path shape, so each board's five spots were
+    // placed to reproduce that case's *existing* per-spot dwell profile — same firepower, new
+    // ground. Measured against the seven rates before the retrofit, every case landed within a point
+    // of where it was, and no case needed a wave table touched.
+    path: [[186, -24], [178, 68], [96, 110], [104, 196], [212, 226], [268, 300], [186, 356], [86, 330], [-24, 356]],
+    spots: [[138, 126], [150, 246], [300, 320], [292, 268], [210, 144]],
   },
   {
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', credits: 'film', tier: 1,
@@ -148,17 +174,17 @@ export const CASES: readonly CaseDefinition[] = [
     rules: [TOXIC],
     startingEnergy: 320,
     waves: [
-      [{ kind: 'staph', count: 10 }, { kind: 'toxin', count: 2 }],
-      [{ kind: 'staph', count: 9 }, { kind: 'toxin', count: 4 }, { kind: 'film', count: 3 }],
-      [{ kind: 'staph', count: 13 }, { kind: 'toxin', count: 5 }, { kind: 'spore', count: 3 }],
-      [{ kind: 'staph', count: 15 }, { kind: 'toxin', count: 6 }, { kind: 'film', count: 5 }],
-      [{ kind: 'staph', count: 18 }, { kind: 'toxin', count: 8 }, { kind: 'film', count: 6 }, { kind: 'mrsa', count: 2 }],
+      [{ kind: 'staph', count: 12 }, { kind: 'toxin', count: 3 }],
+      [{ kind: 'staph', count: 12 }, { kind: 'toxin', count: 5 }, { kind: 'film', count: 3 }],
+      [{ kind: 'staph', count: 16 }, { kind: 'toxin', count: 6 }, { kind: 'spore', count: 4 }],
+      [{ kind: 'staph', count: 19 }, { kind: 'toxin', count: 8 }, { kind: 'film', count: 6 }],
+      [{ kind: 'staph', count: 22 }, { kind: 'toxin', count: 10 }, { kind: 'film', count: 7 }, { kind: 'mrsa', count: 3 }],
     ],
-    path: [[-24, 70], [100, 90], [180, 62], [268, 120], [230, 214], [120, 250], [90, 330], [180, 392], [180, 430]],
-    // Spot 0 was at [74, 168]: 81.1 from the vessel, antibody-only for the same reason forearm's
-    // spot 4 was. Ten units up is enough — it stays the case's longest reach and stops being a
-    // parking space.
-    spots: [[70, 158], [212, 132], [292, 216], [46, 264], [234, 341]],
+    // A sac, so the vessel goes in and comes back out the way it came: the only case in the season
+    // that enters and leaves by the same edge, and the only one a body can be carried most of the
+    // way round before it reaches anything.
+    path: [[110, -24], [116, 88], [58, 168], [96, 268], [200, 310], [292, 250], [286, 148], [232, 92], [268, -24]],
+    spots: [[248, 192], [148, 164], [36, 300], [208, 380], [340, 304]],
   },
   {
     // Credits film because a biofilm is what lives in a splinter site, and Biofilm's serum drops
@@ -190,7 +216,7 @@ export const CASES: readonly CaseDefinition[] = [
     // replaced by a trend, and any case after the first is now free anywhere between the floor and
     // the opening case's rate. See `tests/sweep/curve.ts`. Nothing here needs that precision again,
     // and a future case that reaches for it has misread the gate.
-    startingEnergy: 355,
+    startingEnergy: 400,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'spore', count: 3 }],
       [{ kind: 'staph', count: 13 }, { kind: 'spore', count: 4 }, { kind: 'film', count: 3 }],
@@ -198,12 +224,12 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'spore', count: 6 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 2 }],
       [{ kind: 'staph', count: 19 }, { kind: 'spore', count: 8 }, { kind: 'film', count: 6 }, { kind: 'mrsa', count: 3 }],
     ],
-    // A splinter track: in at the wrist, folded back on itself twice, out through the palm. No
-    // spot here is one of the antibody-only parking spaces the first three cases each had to have
-    // pulled in — the closest is 73.4 against the phagocyte's 74, so the cheapest cell in the dock
-    // can fight from four of the five and the fifth is a real reach demand rather than a wall.
-    path: [[-24, 74], [96, 88], [188, 52], [268, 118], [214, 200], [104, 232], [140, 330], [214, 386], [214, 430]],
-    spots: [[76, 158], [196, 132], [300, 190], [52, 296], [186, 292]],
+    // A splinter track: in at the fingers, folded back on itself twice, out through the wrist. It
+    // is the season's one case that comes in from the right and leaves through the floor, and it
+    // keeps the property the old board had — every one of its five spots holds something for the
+    // cheapest cell in the dock for a second or more, so none of them is a reach demand.
+    path: [[398, 110], [300, 96], [212, 140], [148, 92], [72, 130], [64, 226], [148, 268], [140, 356], [216, 396], [212, 454]],
+    spots: [[132, 162], [72, 264], [348, 36], [348, 174], [186, 210]],
   },
   {
     // The season's one repeat of a rule, and it is here to be the cheap case: no new mechanic, no
@@ -230,7 +256,7 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'blister', node: 'footL', region: 'FOOT · CASE 08', title: 'Blister', credits: 'film', tier: 1,
     story: 'New boots, eleven kilometres. The skin rubbed through this morning and it has not closed.',
     rules: [BLEEDING],
-    startingEnergy: 262,
+    startingEnergy: 330,
     waves: [
       [{ kind: 'staph', count: 11 }, { kind: 'film', count: 2 }],
       [{ kind: 'staph', count: 14 }, { kind: 'film', count: 3 }],
@@ -238,8 +264,11 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'staph', count: 18 }, { kind: 'film', count: 6 }, { kind: 'spore', count: 4 }, { kind: 'mrsa', count: 1 }],
       [{ kind: 'staph', count: 23 }, { kind: 'film', count: 7 }, { kind: 'spore', count: 5 }, { kind: 'mrsa', count: 3 }],
     ],
-    path: [[-24, 58], [78, 44], [162, 74], [228, 40], [286, 106], [230, 168], [128, 168], [72, 240], [140, 306], [236, 322], [252, 398], [176, 430]],
-    spots: [[44, 122], [252, 44], [182, 242], [58, 320], [310, 348]],
+    // A closed pocket under the skin: in at the ball of the foot, round the blister and out at the
+    // heel, so it is the only case that enters and leaves through the floor. Still the season's
+    // longest vessel, which is what the comment above means by more vessel in the same board.
+    path: [[96, 454], [104, 356], [50, 286], [80, 186], [166, 128], [258, 158], [292, 246], [232, 306], [148, 288], [120, 372], [214, 410], [268, 454]],
+    spots: [[180, 264], [294, 336], [336, 174], [210, 378], [84, 96]],
   },
   {
     // Measles, and the reason it is on a lung rather than on "whole body" as the design table has
@@ -277,8 +306,12 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'virus', count: 12 }, { kind: 'film', count: 6 }, { kind: 'spore', count: 4 }, { kind: 'mrsa', count: 1 }],
       [{ kind: 'virus', count: 15 }, { kind: 'film', count: 5 }, { kind: 'spore', count: 5 }, { kind: 'mrsa', count: 2 }],
     ],
-    path: [[-24, 96], [88, 76], [176, 118], [252, 82], [300, 152], [236, 226], [148, 244], [96, 316], [168, 380], [168, 430]],
-    spots: [[62, 134], [218, 110], [302, 262], [122, 188], [216, 336]],
+    // Down the airway from above and out into the chest on the right. The retrofit kept this
+    // case's coverage to the unit — it is the one that taught the season that geometry is worth
+    // ten times what a wave count is, and it is the last board that should have been re-shaped
+    // carelessly.
+    path: [[240, -24], [232, 74], [140, 104], [72, 168], [96, 262], [196, 288], [246, 358], [340, 372], [398, 300]],
+    spots: [[120, 186], [144, 330], [144, 30], [198, 402], [306, 66]],
   },
   {
     // The rule that inverts the loop, and the last case of the season because six cases of
@@ -320,8 +353,10 @@ export const CASES: readonly CaseDefinition[] = [
       [{ kind: 'pollen', count: 50 }, { kind: 'staph', count: 2 }],
       [{ kind: 'pollen', count: 58 }, { kind: 'staph', count: 3 }],
     ],
-    path: [[-24, 150], [64, 96], [150, 62], [244, 78], [300, 146], [268, 236], [176, 268], [96, 240], [76, 322], [160, 372], [252, 396], [252, 430]],
-    spots: [[104, 152], [50, 200], [212, 182], [318, 274], [130, 400]],
+    // A sinus drains upward and outward, so this one climbs: in low on the left, round the cavity
+    // twice and out through the roof. The pollen is going somewhere it was always going to go.
+    path: [[-24, 300], [78, 316], [150, 372], [244, 356], [292, 276], [232, 210], [130, 232], [70, 160], [140, 96], [244, 118], [286, 40], [268, -24]],
+    spots: [[54, 198], [150, 276], [288, 180], [348, 312], [66, 396]],
   },
   {
     // The season's second multiplying case, and the first one authored against the season-shape

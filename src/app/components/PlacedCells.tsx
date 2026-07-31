@@ -43,6 +43,13 @@ const TRADE_SIDES: readonly { readonly gain: boolean; readonly heading: string }
  * State is read straight off the loop rather than mirrored into React. Every command here
  * moves energy, and energy is in the HUD snapshot, so `useHud` re-renders this row on the
  * same tick as the change it caused.
+ *
+ * **The panel names the cell it is acting on, and arrives rather than appearing.** A player who
+ * opens a cell by tapping the *board* is looking at the board, and what used to happen was that
+ * two buttons blinked into existence in the footer with nothing to connect them to the tap — no
+ * motion to follow, and nothing saying which of the five cells they belonged to. The header answers
+ * the second and `PlacedCells.css` answers the first, on the screen-wide rise the sheets already
+ * use, and both drop under reduced motion.
  */
 interface PlacedCellsProps {
   readonly loop: GameLoop;
@@ -98,6 +105,14 @@ export function PlacedCells({ loop, chosenSpot, onChoose }: PlacedCellsProps) {
           );
         })}
       </div>
+
+      {chosen !== null && (
+        <div className="cells-open" data-testid="cell-open">
+          <span className="cells-open-dot" style={{ color: palette[DEFENDERS[chosen.kind].token].css }} />
+          <span className="cells-open-name">{cellName(chosen)}</span>
+          <span className="mono cells-open-hint">WHAT TO DO WITH IT</span>
+        </div>
+      )}
 
       {chosen !== null && (
         <div className="cells-actions" data-testid="cell-actions">

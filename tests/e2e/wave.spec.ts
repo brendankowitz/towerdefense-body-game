@@ -56,14 +56,17 @@ test('wave 1 of the first case is held by starter cells alone', async ({ page })
  * boundary, each with the other half assumed.
  *
  * It was `test.fixme` for as long as no case was winnable. It is not any more: forearm clears on
- * 283 of its 3125 affordable boards, and this is one of them —
- * `anti` on 0, `mast` on 1, phagocytes on 2, 3 and 4, finishing on all five pips with nothing
- * through. Listed cheapest-first, and bought that way, because that is the policy the sweep
- * measured: the board is an intent the economy fills in over the first three waves, not a
- * starting position.
+ * 34 of the 243 boards a first-day dock can build, and this is the best of them — antibodies on
+ * 0 and 1, phagocytes on 2, 3 and 4. Listed cheapest-first, and bought that way, because that is
+ * the policy the sweep measured: the board is an intent the economy fills in over the first three
+ * waves, not a starting position.
+ *
+ * Every cell here is one the *opening* dock offers, and that is now a constraint rather than a
+ * coincidence: day one carries three cells, and this board was rewritten when the mast cell moved
+ * to day 3. `placeCell` would sit there tapping a locked card until it timed out.
  */
 const WINNING_BOARD: readonly (readonly [DefenderKind, number])[] = [
-  ['phago', 2], ['phago', 3], ['phago', 4], ['anti', 0], ['mast', 1],
+  ['phago', 2], ['phago', 3], ['phago', 4], ['anti', 0], ['anti', 1],
 ];
 
 test('clearing a case banks the reward and the clear survives a reload', async ({ page }) => {

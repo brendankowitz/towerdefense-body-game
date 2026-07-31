@@ -56,6 +56,67 @@
   color: var(--ink);
 }
 
+/*
+ * What opening a cell looks like.
+ *
+ * The row rises into place rather than appearing, on the same distance and duration every sheet
+ * in the app uses — a player who opened the cell by tapping the board is looking at the board, and
+ * motion at the bottom of the screen is the only thing that can carry their eye to the actions.
+ * Both the header and the buttons ride it, so they read as one panel arriving.
+ */
+@keyframes cells-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-distance));
+  }
+}
+
+.cells-open,
+.cells-actions,
+.cells-trade {
+  animation: cells-rise var(--rise-duration) ease-out both;
+}
+
+/* Nothing here is information the motion carries, so all of it goes. */
+@media (prefers-reduced-motion: reduce) {
+  .cells-open,
+  .cells-actions,
+  .cells-trade {
+    animation: none;
+  }
+}
+
+/*
+ * Which cell is open. The chip above is already ringed in the cell's colour, but a player who
+ * opened this from the board never looked at the chip row — so the panel says what it is acting on.
+ */
+.cells-open {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.cells-open-dot {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cells-open-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cells-open-hint {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--label);
+}
+
 .cells-actions {
   display: flex;
   align-items: center;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BURST_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_SECONDS, PUFF_SECONDS,
-  burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, clamp01, isPuffAlive,
-  loadRadius, moteAlpha, motePhase, moteScale, moteTravel, phagocyteFullness, puffAlpha,
-  puffScale,
+  BURST_SECONDS, GROWTH_SECONDS, LOAD_MAX_RADIUS, LOAD_MIN_RADIUS, MOTE_COUNT, MOTE_SECONDS,
+  PUFF_SECONDS, burstDiscAlpha, burstProgress, burstRingAlpha, burstRingRadius, clamp01,
+  growthRingAlpha, growthRingRadius, isGrowthAlive, isPuffAlive, loadRadius, moteAlpha, motePhase,
+  moteScale, moteTravel, phagocyteFullness, puffAlpha, puffScale,
 } from './effects';
 
 /** Enough samples to catch a curve that is not a curve. */
@@ -178,6 +178,54 @@ describe('the effects are short', () => {
   it('keeps a puff and a burst under a third of a second each', () => {
     expect(PUFF_SECONDS).toBeLessThan(0.34);
     expect(BURST_SECONDS).toBeLessThan(0.34);
+  });
+
+  /**
+   * The growth flourish is the one effect allowed to be longer, and it is bounded anyway: it runs
+   * in a build phase where nothing is arriving, so the only thing waiting on it is the player.
+   */
+  it('keeps the growth flourish under half a second', () => {
+    expect(GROWTH_SECONDS).toBeLessThan(0.5);
+    expect(GROWTH_SECONDS).toBeGreaterThan(BURST_SECONDS);
+  });
+});
+
+describe('the growth flourish', () => {
+  const FINAL = 25;
+
+  it('is alive the frame the cell grows and over when its life runs out', () => {
+    expect(isGrowthAlive(0)).toBe(true);
+    expect(isGrowthAlive(GROWTH_SECONDS - 0.001)).toBe(true);
+    expect(isGrowthAlive(GROWTH_SECONDS)).toBe(false);
+    expect(isGrowthAlive(-0.01)).toBe(false);
+  });
+
+  it('starts outside the ring it is closing onto', () => {
+    expect(growthRingRadius(0, FINAL)).toBeGreaterThan(FINAL);
+  });
+
+  /** The point of the effect: it lands exactly on the ring the cell keeps, not near it. */
+  it('closes onto the ring the grown cell wears, and never inside it', () => {
+    expect(growthRingRadius(GROWTH_SECONDS, FINAL)).toBeCloseTo(FINAL, 6);
+    for (let age = 0; age <= GROWTH_SECONDS * 2; age += GROWTH_SECONDS / 16) {
+      expect(growthRingRadius(age, FINAL)).toBeGreaterThanOrEqual(FINAL);
+    }
+  });
+
+  it('closes inward the whole way, so it never reads as a burst going out', () => {
+    let previous = growthRingRadius(0, FINAL);
+    for (let age = GROWTH_SECONDS / 16; age <= GROWTH_SECONDS; age += GROWTH_SECONDS / 16) {
+      const radius = growthRingRadius(age, FINAL);
+      expect(radius).toBeLessThanOrEqual(previous);
+      previous = radius;
+    }
+  });
+
+  it('fades from visible to nothing over its life', () => {
+    expect(growthRingAlpha(0)).toBeGreaterThan(0.5);
+    expect(growthRingAlpha(GROWTH_SECONDS / 2)).toBeLessThan(growthRingAlpha(0));
+    expect(growthRingAlpha(GROWTH_SECONDS)).toBe(0);
+    expect(growthRingAlpha(GROWTH_SECONDS * 2)).toBe(0);
   });
 });
 
