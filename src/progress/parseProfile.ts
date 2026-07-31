@@ -43,6 +43,10 @@ function parseFront(value: unknown): Front | null {
   if (infected === null || held === null) return null;
   if (typeof raw.day !== 'number' || !Number.isInteger(raw.day) || raw.day < 1) return null;
   if (typeof raw.rngState !== 'number' || !Number.isFinite(raw.rngState)) return null;
+  // An array also satisfies `typeof === 'object'` and is let through here rather than rejected
+  // outright: it cannot crash and it cannot come from this game, because `Object.entries` over
+  // one yields numeric-index keys, none of which is ever a `BodyNodeId` — a non-empty array
+  // fails the `NODE_IDS.has` check below and an empty one just degrades to `siege: {}`.
   if (typeof raw.siege !== 'object' || raw.siege === null) return null;
 
   const siege: Partial<Record<BodyNodeId, number>> = {};

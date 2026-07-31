@@ -72,4 +72,14 @@ describe('parseProfile', () => {
     const old = { cleared: [], immunity: { staph: 0, film: 0, virus: 0 }, day: 3, bank: 400, kills: 9 };
     expect(parseProfile(old)).toBeNull();
   });
+
+  /**
+   * A siege on ground the save does not claim to hold is not a shape the game can ever produce —
+   * `holdRegion` and `stepSickness` both keep `siege` and `held` in lockstep. It is what a
+   * hand-edited or half-written save looks like, and it is the one cross-field check worth making.
+   */
+  it('rejects a siege entry on a node the save does not claim to hold', () => {
+    const front = { ...valid.front, siege: { forearm: 1 } };
+    expect(parseProfile({ ...valid, front })).toBeNull();
+  });
 });
