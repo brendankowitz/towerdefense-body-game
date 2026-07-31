@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { dwellSeconds } from '../coverage';
-import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from './defenders';
+import {
+  DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER, unlockPhrase,
+} from './defenders';
 import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES, caseHasRule } from './cases';
@@ -540,13 +542,21 @@ describe('brief copy stays true to the stats it describes', () => {
     expect(DEFENDER_BLURBS.anti.text).toContain(shown);
   });
 
-  it('names the real unlock requirement, or stays silent when there is none', () => {
+  /**
+   * Checking for the substring "to unlock" alone would pass copy naming the wrong unit — "Clear
+   * three cases to unlock" contains it just as well as "Live three days to unlock" does, and the
+   * gate reads days. Asserted against `unlockPhrase(stats.unlock)`, the same function and the same
+   * value `isUnlocked` reads off `DEFENDERS[kind].unlock`, so a copy that drifts from the gate it
+   * describes fails here rather than shipping.
+   */
+  it('names the real unlock requirement, its count and its unit, or stays silent when there is none', () => {
     for (const [kind, stats] of Object.entries(DEFENDERS)) {
       const text = DEFENDER_BLURBS[stats.kind].text;
       if (stats.unlock === 0) {
         expect(text, `${kind} is available from the start`).not.toContain('to unlock');
       } else {
-        expect(text, `${kind} unlocks after ${String(stats.unlock)}`).toContain('to unlock');
+        expect(text, `${kind} unlocks after ${unlockPhrase(stats.unlock)}`)
+          .toContain(`${unlockPhrase(stats.unlock)} to unlock`);
       }
     }
   });

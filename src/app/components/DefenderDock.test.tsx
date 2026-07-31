@@ -14,7 +14,7 @@ const ALL_UNLOCKED = Math.max(...DEFENDER_ORDER.map((kind) => DEFENDERS[kind].un
 const base = {
   energy: RICH,
   selected: null,
-  clearedCount: ALL_UNLOCKED,
+  daysElapsed: ALL_UNLOCKED,
   buildPhase: true,
   onSelect: () => undefined,
 };
@@ -42,14 +42,14 @@ describe('DefenderDock', () => {
 
   it('shows LOCK instead of a price for a defender that is not unlocked yet', () => {
     const kind = gated();
-    render(<DefenderDock {...base} clearedCount={DEFENDERS[kind].unlock - 1} />);
+    render(<DefenderDock {...base} daysElapsed={DEFENDERS[kind].unlock - 1} />);
     // Exact comparison: toHaveTextContent substring-matches, so '40' would pass against '140'.
     expect(screen.getByTestId(`dock-cost-${kind}`).textContent).toBe('LOCK');
   });
 
   it('shows the price once the unlock is met', () => {
     const kind = gated();
-    render(<DefenderDock {...base} clearedCount={DEFENDERS[kind].unlock} />);
+    render(<DefenderDock {...base} daysElapsed={DEFENDERS[kind].unlock} />);
     expect(screen.getByTestId(`dock-cost-${kind}`).textContent).toBe(String(DEFENDERS[kind].cost));
   });
 
@@ -120,7 +120,7 @@ describe('DefenderDock', () => {
     const onSelect = vi.fn();
     const kind = gated();
     render(
-      <DefenderDock {...base} clearedCount={DEFENDERS[kind].unlock - 1} onSelect={onSelect} />,
+      <DefenderDock {...base} daysElapsed={DEFENDERS[kind].unlock - 1} onSelect={onSelect} />,
     );
 
     fireEvent.click(screen.getByTestId(`dock-card-${kind}`));

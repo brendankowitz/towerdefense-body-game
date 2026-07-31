@@ -83,10 +83,20 @@ function percent(fraction: number): string {
   return `${String(Math.round(fraction * 100))}%`;
 }
 
+/**
+ * The count and the unit the dock's own gate reads, spelled for the player rather than the
+ * simulation: `isUnlocked` and `unlockSentence` both answer to `DEFENDERS[kind].unlock`, so this
+ * is exported for `content.invariants.test.ts` to hold the copy to the same value the gate does,
+ * rather than to the substring "to unlock" alone.
+ */
+export function unlockPhrase(unlock: number): string {
+  const days = unlock === 1 ? 'day' : 'days';
+  return `${countWord(unlock)} ${days}`;
+}
+
 function unlockSentence(unlock: number): string {
   if (unlock <= 0) return '';
-  const cases = unlock === 1 ? 'case' : 'cases';
-  return ` Clear ${countWord(unlock)} ${cases} to unlock.`;
+  return ` Live ${unlockPhrase(unlock)} to unlock.`;
 }
 
 /**

@@ -32,7 +32,10 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
     caseId,
     immunity: profile.immunity,
     clearedCount: profile.cleared.length,
-    day: profile.front.day,
+    // `profile.front.day` is not this: nothing advances it yet (`endDay` is Task 10). The front
+    // carries a day of its own, but it is the same day as `profile.day` — Task 10 is where the two
+    // stop being two fields and collapse into one. Until then this is the day that actually moves.
+    day: profile.day,
     totalKills: profile.kills,
   }));
 }
@@ -170,7 +173,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               <DefenderDock
                 energy={hud.energy}
                 selected={hud.selected}
-                clearedCount={profile.cleared.length}
+                daysElapsed={loop.state.day - 1}
                 buildPhase={buildPhase}
                 onSelect={(kind) => { run(() => { selectDefender(loop.state, kind); }); }}
               />

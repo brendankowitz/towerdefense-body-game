@@ -27,7 +27,12 @@ const GLYPHS: { readonly [K in DefenderKind]: Glyph } = {
 interface DefenderDockProps {
   readonly energy: number;
   readonly selected: DefenderKind | null;
-  readonly clearedCount: number;
+  /**
+   * Same number `isUnlocked` reads off `SimState` — `state.day - 1` — and from the same source,
+   * so a card the dock offers is never one `selectDefender` turns around and refuses. Not cases
+   * cleared: a run that loses a case still lives the day, and the dock owes it the same dock.
+   */
+  readonly daysElapsed: number;
   /**
    * False during a wave. `selectDefender` and `placeDefender` refuse then, so a live dock would
    * offer a purchase the simulation will not honour — the cards say so rather than failing quietly.
@@ -37,14 +42,14 @@ interface DefenderDockProps {
 }
 
 export function DefenderDock({
-  energy, selected, clearedCount, buildPhase, onSelect,
+  energy, selected, daysElapsed, buildPhase, onSelect,
 }: DefenderDockProps) {
   return (
     <div className="dock">
       {DEFENDER_ORDER.map((kind) => {
         const stats = DEFENDERS[kind];
         const glyph = GLYPHS[kind];
-        const locked = clearedCount < stats.unlock;
+        const locked = daysElapsed < stats.unlock;
         const affordable = energy >= stats.cost;
         const on = selected === kind;
         const color = palette[stats.token].css;
