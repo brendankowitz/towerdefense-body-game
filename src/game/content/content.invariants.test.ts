@@ -5,7 +5,7 @@ import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
 import { CASES, caseHasRule } from './cases';
 import { STRAIN_NAME, STRAIN_ROWS, VACCINES } from './vaccines';
-import { BODY_LINKS, BODY_NODES, CASE_REGIONS } from './body';
+import { BODY_LINKS, BODY_NODES, CASE_REGIONS, ENTRY_REGIONS, INTERIOR_REGIONS } from './body';
 import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TAG_REWARD_MULTIPLIER } from './rules';
 import type { CaseRuleKind, Point } from '../types';
 
@@ -417,6 +417,25 @@ describe('body graph coherence', () => {
         .map((n) => n.id)
         .sort(),
     );
+  });
+
+  /**
+   * Every region a case can be fought over is either a door illness comes in at or somewhere it
+   * only reaches by spreading. Naming the doors here rather than deriving them is deliberate: the
+   * front line's whole shape is which nodes can seed an outbreak, so it answers to a decision
+   * rather than to whatever the table currently says.
+   */
+  it('sorts every case-bearing region into a door or an interior', () => {
+    const doors = ENTRY_REGIONS.map((n) => n.id).sort();
+    expect(doors).toEqual(
+      ['footL', 'footR', 'forearm', 'handR', 'sinus', 'stomach', 'throat'].sort(),
+    );
+
+    const interior = INTERIOR_REGIONS.map((n) => n.id).sort();
+    expect(interior).toEqual(['gut', 'lungL', 'lungR'].sort());
+
+    expect(doors.length + interior.length).toBe(CASE_REGIONS.length);
+    for (const id of doors) expect(interior).not.toContain(id);
   });
 
   it('is connected — every node is reachable from the core', () => {
