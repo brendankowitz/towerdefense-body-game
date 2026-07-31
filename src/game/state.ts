@@ -1,7 +1,7 @@
 import { CASE_BY_ID } from './content/cases';
 import { TISSUE_PIPS } from './content/rules';
 import { compilePath } from './path';
-import type { CaseId, DefenderKind, SimState, StrainId } from './types';
+import type { CaseId, CaseRuleKind, DefenderKind, SimState, StrainId } from './types';
 
 /** What the dock offers before the player has chosen anything — on a new case and on a new wave. */
 export const DEFAULT_SELECTION: DefenderKind = 'phago';
@@ -34,11 +34,23 @@ function immunityFor(
   return wipes === undefined ? immunity : { ...immunity, [wipes]: 0 };
 }
 
+/**
+ * Whether this case is played under a given rule.
+ *
+ * Every hazard asks this rather than comparing a field, which is what lets a case carry two rules
+ * without either hazard knowing the other exists. Stated here beside `createSimState` because this
+ * is where a case's rules become a simulation's, and takes the narrowest shape it can so a HUD
+ * snapshot or a test fixture can be asked the same question as a live state.
+ */
+export function hasRule(state: { readonly rules: readonly CaseRuleKind[] }, kind: CaseRuleKind): boolean {
+  return state.rules.includes(kind);
+}
+
 export function createSimState(input: SimInput): SimState {
   const definition = CASE_BY_ID[input.caseId];
   return {
     caseId: definition.id,
-    rule: definition.rule,
+    rules: definition.rules.map((rule) => rule.kind),
     path: compilePath(definition.path),
     immunity: immunityFor(input.immunity, definition.wipes),
     clearedCount: input.clearedCount,

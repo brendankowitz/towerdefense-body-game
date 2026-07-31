@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CASES } from './cases';
+import { CASES, caseHasRule, ruleLabels } from './cases';
 import { IMMUNITY_MAX, SPAWN_FIRST_DELAY } from './rules';
 import { STRAIN_ROWS, VACCINES } from './vaccines';
 import { createSimState } from '../state';
@@ -46,8 +46,8 @@ function bouncesStaph(caseId: CaseId): boolean {
 }
 
 describe('the Tetanus shield', () => {
-  const shieldedCase = CASES.find((definition) => definition.rule === SHIELDED_RULE);
-  const otherCase = CASES.find((definition) => definition.rule !== SHIELDED_RULE);
+  const shieldedCase = CASES.find((definition) => caseHasRule(definition, SHIELDED_RULE));
+  const otherCase = CASES.find((definition) => !caseHasRule(definition, SHIELDED_RULE));
 
   it('really is conditional, which is the only thing that makes the caveat below worth having', () => {
     expect(shieldedCase, `no ${SHIELDED_RULE} case to bounce a staph in`).toBeDefined();
@@ -60,7 +60,7 @@ describe('the Tetanus shield', () => {
     ).toBe(true);
     expect(
       bouncesStaph(otherCase.id),
-      `${otherCase.id} is a ${otherCase.rule} case and bounced a staph anyway`,
+      `${otherCase.id} is a ${ruleLabels(otherCase)} case and bounced a staph anyway`,
     ).toBe(false);
   });
 

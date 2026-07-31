@@ -48,4 +48,23 @@ export const PATHOGENS: { readonly [K in PathogenKind]: PathogenStats } = {
   // fiction is better for it: pollen is not fragile, it is inert. Your cells wear themselves out
   // on something that was never going to hurt you.
   pollen: { kind: 'pollen', name: 'Pollen', note: 'Harmless, and heavy going — killing it is what costs you', hp: 70, speed: 46, reward: 2, radius: 9, shape: 'diamond', token: 'inert', leak: 0 },
+  // The second splitter, and the first body that carries two of these flags at once.
+  //
+  // Splitting and regeneration answer to opposite plays on their own — a splitter rewards killing
+  // late and in the right order, a regenerator rewards killing fast — and the mark is what resolves
+  // them: a tag stops the knitting, so the cell that does no damage is the one that makes this
+  // killable. It is the reason the season's second multiplying case is not its first one rewritten.
+  //
+  // The flu's vaccine does not touch it. `splitOnDeath` names the strain it suppresses, so a player
+  // holding Flu B still meets everything this leaves behind.
+  strep: { kind: 'strep', name: 'Strep', note: 'Splits when it dies, and knits itself back unless tagged', hp: 40, speed: 46, reward: 9, radius: 9, shape: 'circle', token: 'chaining', splits: true, regen: 5 },
+  // Strain Vesper. Invented, tier 3, and the one body in the table that no vaccine and no mark
+  // touches: `noTag` locks out the antibody entirely, and what the antibody cannot mark it also
+  // cannot stop regenerating.
+  //
+  // That is the finale's whole design, in one row. The antibody is the cell that reaches — it holds
+  // 70 to 89 per cent of the vessel from the spots the season lays, against a phagocyte's 35 to 62
+  // — so every board that works everywhere else is built around it. Here it contributes nothing at
+  // all, and the case has to be won with the short-ranged cells the geometry finally makes room for.
+  vesper: { kind: 'vesper', name: 'Strain Vesper', note: 'Nothing binds to it, and it knits itself back together', hp: 46, speed: 40, reward: 20, radius: 11, shape: 'diamond', token: 'unknown', regen: 2, noTag: true },
 };

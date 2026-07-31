@@ -10,9 +10,16 @@ export interface LaterEntry {
   readonly note: string;
 }
 
-// Measles used to sit here. It is a case now, on the right lung, so the promise is kept rather
-// than repeated: a row here and a case with the same name would put the illness on the timeline
-// twice, once as something to play and once as something still coming.
+// Measles used to sit here, then Strain Vesper. Both are cases now — the right lung and the right
+// foot — so the promises are kept rather than repeated: a row here and a case with the same name
+// would put the illness on the timeline twice, once as something to play and once as something
+// still coming.
+//
+// What is left is the one thing the game still promises and cannot yet do. `vaccines.ts` ships
+// Chickenpox as `later: true`, whose effect is "stops a cleared case reopening later" — so the
+// screen already tells the player a held region can come back, and no rule in `hazards.ts` can
+// reopen one. This row is that promise on the timeline, where the player meets it first. It goes
+// when the rule lands, the way the two before it did.
 export const LATER: readonly LaterEntry[] = [
-  { offset: 7, name: 'Strain Vesper', region: 'Left lung', tier: 3, note: 'Novel — nothing known about it yet' },
+  { offset: 1, name: 'Something you already cleared', region: 'A region you are holding', tier: 2, note: 'Not yet — a region that reopens is still to come' },
 ];

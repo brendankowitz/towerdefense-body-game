@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CASE_BY_ID } from '../../src/game/content/cases';
+import { CASE_BY_ID, ruleLabels } from '../../src/game/content/cases';
 import { BODY_NODES } from '../../src/game/content/body';
 import { FRESH_PROFILE } from '../../src/game/content/rules';
 import { STRAIN_ROWS, VACCINES } from '../../src/game/content/vaccines';
@@ -38,7 +38,7 @@ test('the map, the brief and the fight screen chain together', async ({ page }) 
   await onScreen(page, 'get-in-there').click();
   await expect(page).toHaveURL(`/play/${FOREARM.id}`);
   await expect(onScreen(page, 'fight-region'))
-    .toHaveText(`FOREARM · ${FOREARM.ruleLabel.toUpperCase()}`);
+    .toHaveText(`FOREARM · ${ruleLabels(FOREARM).toUpperCase()}`);
   await expect(onScreen(page, 'fight-wave'))
     .toHaveText(`Wave 1 of ${String(FOREARM.waves.length)}`);
   await expect(onScreen(page, 'board-canvas').locator('canvas')).toBeAttached();

@@ -284,6 +284,24 @@ describe('flu virus — splits on death', () => {
     expect(state.enemies).toHaveLength(0);
   });
 
+  /**
+   * The suppression names the strain, so a vaccine that says "flu" is a vaccine against flu.
+   *
+   * The mutation that fails this and passes everything above it is the line as it originally
+   * shipped — `if (state.immunity.virus >= IMMUNITY_MAX) return;` with no kind on it. That was the
+   * same behaviour while the flu was the only splitter in the table, which is exactly why nothing
+   * caught it: the defect could not exist until a second splitter was authored, and then it
+   * existed silently, on a case whose whole rule is that things split.
+   */
+  it('leaves a second splitter alone when the vaccine held names the first', () => {
+    const state = simFor('bronchitis', { immunity: { virus: IMMUNITY_MAX } });
+    addEnemy(state, 'strep', { hp: 0, distance: CLEAR_OF_START });
+
+    resolveDeaths(state, new Set());
+
+    expect(state.enemies).toHaveLength(SPLIT_COUNT);
+  });
+
   it('still splits while the flu vaccine is one clear short', () => {
     const state = simFor('throat', { immunity: { virus: IMMUNITY_MAX - 1 } });
     addEnemy(state, 'virus', { hp: 0, distance: CLEAR_OF_START });

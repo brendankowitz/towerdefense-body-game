@@ -114,6 +114,37 @@ const SCENARIOS: readonly Scenario[] = [
     board: [['mast', 0], ['nk', 1], ['phago', 2], ['mem', 3], ['anti', 4]],
     matureKind: 'phago',
   },
+  // The second splitter, with the flu's vaccine held. That is the point of the immunity here: the
+  // flu in this wave cannot split and the Strep in it can, so a suppression that stopped naming
+  // the strain it belongs to moves this trajectory and nothing else in the net.
+  {
+    caseId: 'bronchitis',
+    waveIndex: 4,
+    immunity: { staph: 0, film: 0, virus: IMMUNITY_MAX },
+    board: [['anti', 0], ['mast', 1], ['phago', 2], ['nk', 3], ['mem', 4]],
+    matureKind: 'anti',
+  },
+  // Two rules in one step loop: bodies scheduled back onto vessel that was cleared, while poison
+  // eats the cells that cleared it. The only scenario where `applyPoison` and `scheduleDormancy`
+  // both fire on the same run, so a rules list that quietly collapsed to its first entry shows up
+  // here.
+  {
+    caseId: 'relapse',
+    waveIndex: 4,
+    immunity: { staph: 0, film: 0, virus: 0 },
+    board: [['anti', 0], ['nk', 1], ['mem', 2], ['phago', 3], ['mast', 4]],
+    matureKind: 'phago',
+  },
+  // The finale, with every vaccine the season can give held at once — which is the state a real
+  // run reaches it in, and the state in which the untaggable strain is the only thing on the board
+  // that none of them touch.
+  {
+    caseId: 'vesper',
+    waveIndex: 4,
+    immunity: { staph: IMMUNITY_MAX, film: IMMUNITY_MAX, virus: IMMUNITY_MAX },
+    board: [['mast', 0], ['phago', 1], ['nk', 2], ['mem', 3], ['anti', 4]],
+    matureKind: 'anti',
+  },
 ];
 
 function armBoard(scenario: Scenario): SimState {

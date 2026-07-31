@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Brief } from './Brief';
-import { CASE_BY_ID } from '@game/content/cases';
+import { CASES, CASE_BY_ID, caseHasRule } from '@game/content/cases';
 import { DEFENDER_ORDER } from '@game/content/defenders';
 import { IMMUNITY_MAX } from '@game/content/rules';
 import { STRAIN_ROWS } from '@game/content/vaccines';
@@ -20,8 +20,40 @@ describe('Brief', () => {
 
   it('states the case rule and its sub-line', () => {
     render(<Brief definition={forearm} strainClears={0} onStartCase={noop} onBack={noop} />);
-    expect(screen.getByText(forearm.ruleLabel)).toBeInTheDocument();
-    expect(screen.getByText(forearm.ruleSub)).toBeInTheDocument();
+    const [rule] = forearm.rules;
+    expect(screen.getByText(rule.label)).toBeInTheDocument();
+    expect(screen.getByText(rule.sub)).toBeInTheDocument();
+  });
+
+  /**
+   * A compound case is played under two rules, and a brief that showed one of them would be hiding
+   * half of what the case does. Found by rule count rather than by id, so this follows the season.
+   */
+  it('gives a card to every rule a case is played under, not just its first', () => {
+    const compound = CASES.find((definition) => definition.rules.length > 1);
+    expect(compound, 'no case in the season carries more than one rule').toBeDefined();
+    if (compound === undefined) return;
+
+    render(<Brief definition={compound} strainClears={0} onStartCase={noop} onBack={noop} />);
+    expect(screen.getAllByTestId('brief-rule')).toHaveLength(compound.rules.length);
+    for (const rule of compound.rules) {
+      expect(screen.getByText(rule.sub)).toBeInTheDocument();
+    }
+  });
+
+  /**
+   * The novel rule, asserted where it actually lives. It is the only rule in the season with no
+   * effect on the simulation at all — what it changes is this screen — so a test that read the
+   * simulation would prove nothing about it.
+   */
+  it('lists nothing that is coming on a case whose rule is that nobody knows', () => {
+    const novel = CASES.find((definition) => caseHasRule(definition, 'novel'));
+    expect(novel, 'no novel case in the season').toBeDefined();
+    if (novel === undefined) return;
+
+    render(<Brief definition={novel} strainClears={0} onStartCase={noop} onBack={noop} />);
+    expect(screen.queryAllByTestId('brief-enemy')).toHaveLength(0);
+    expect(screen.getByTestId('brief-unknown')).toBeInTheDocument();
   });
 
   it('lists every pathogen kind in the case with its whole-case total', () => {

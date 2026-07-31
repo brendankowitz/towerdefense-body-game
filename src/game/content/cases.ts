@@ -7,12 +7,29 @@ export interface WaveEntry {
   readonly count: number;
 }
 
+/**
+ * One rule a case is played under, with the copy that states it.
+ *
+ * The label and the sentence sit on the rule rather than on the case because a compound case has
+ * two of each, and a case that carried `ruleLabel` and `ruleSub` as its own fields could only ever
+ * name one of them. The brief renders one card per entry, in this order.
+ */
+export interface CaseRule {
+  readonly kind: CaseRuleKind;
+  readonly label: string;
+  readonly sub: string;
+}
+
 export interface CaseDefinition {
   readonly id: CaseId;
   readonly node: BodyNodeId;
   readonly region: string;
   readonly title: string;
-  readonly rule: CaseRuleKind;
+  /**
+   * Non-empty by construction: a case with no rule is a path with a wave table, and every screen
+   * that names what makes this region different would have nothing to print.
+   */
+  readonly rules: readonly [CaseRule, ...CaseRule[]];
   /**
    * The strain this case's clears count toward. The prototype credited `illness === 'virus'
    * ? 'virus' : 'staph'`, so stomach (illness 'poison') always credited staph and film immunity
@@ -39,8 +56,6 @@ export interface CaseDefinition {
    * strain would print "vaccine held" over a board where it does nothing.
    */
   readonly wipes?: StrainId;
-  readonly ruleLabel: string;
-  readonly ruleSub: string;
   readonly story: string;
   readonly startingEnergy: number;
   readonly waves: readonly (readonly WaveEntry[])[];
@@ -48,11 +63,37 @@ export interface CaseDefinition {
   readonly spots: readonly Point[];
 }
 
+/**
+ * The rules a case meets more than once, written once.
+ *
+ * The season's design is that every rule is met alone before it is met again or combined, so three
+ * of them appear in two cases each. Copy that was retyped per case would drift — the bleed line
+ * already existed twice, word for word, and a retune of `BLEED_AMOUNT` would have had to find both
+ * — and a player who reads a rule they have already learned should read the same sentence.
+ */
+const BLEEDING: CaseRule = {
+  kind: 'wound',
+  label: 'Bleeding',
+  sub: 'You lose energy every second until a clot is placed',
+};
+
+const TOXIC: CaseRule = {
+  kind: 'poison',
+  label: 'Toxic',
+  sub: 'Pathogens damage your defenders. Antibodies survive toxins far better than phagocytes',
+};
+
+const RELAPSING: CaseRule = {
+  kind: 'dormant',
+  label: 'Relapsing',
+  sub: 'Some of what you kill goes down instead of away, and gets back up where it fell',
+};
+
 export const CASES: readonly CaseDefinition[] = [
   {
-    id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', rule: 'wound', credits: 'staph', tier: 1,
+    id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', credits: 'staph', tier: 1,
     story: 'Kitchen knife, two hours ago. The skin is open and bacteria are walking straight in.',
-    ruleLabel: 'Bleeding', ruleSub: 'You lose energy every second until a clot is placed',
+    rules: [BLEEDING],
     // Opened at 9.1% of affordable boards clearing, which made the first case of the game the one
     // nine players in ten lose. A season's opening case is the forgiving one — everything after it
     // is measured against it — so this was retuned to 13.2%, inside the band's 15% ceiling with
@@ -87,9 +128,9 @@ export const CASES: readonly CaseDefinition[] = [
     spots: [[70, 118], [206, 88], [292, 196], [69, 282], [186, 372]],
   },
   {
-    id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', rule: 'virus', credits: 'virus', tier: 1,
+    id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', credits: 'virus', tier: 1,
     story: 'Someone coughed on the train. The virus is already copying itself in your throat.',
-    ruleLabel: 'Multiplying', ruleSub: 'Every virus that dies splits into two smaller ones',
+    rules: [{ kind: 'virus', label: 'Multiplying', sub: 'Every virus that dies splits into two smaller ones' }],
     startingEnergy: 300,
     waves: [
       [{ kind: 'virus', count: 6 }],
@@ -102,9 +143,9 @@ export const CASES: readonly CaseDefinition[] = [
     spots: [[64, 62], [220, 148], [107, 218], [258, 286], [232, 372]],
   },
   {
-    id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', rule: 'poison', credits: 'film', tier: 1,
+    id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', credits: 'film', tier: 1,
     story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
-    ruleLabel: 'Toxic', ruleSub: 'Pathogens damage your defenders. Antibodies survive toxins far better than phagocytes',
+    rules: [TOXIC],
     startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'toxin', count: 2 }],
@@ -128,9 +169,9 @@ export const CASES: readonly CaseDefinition[] = [
     // the brief shows the held copy of whichever strain a case credits. That disagreement is
     // settled — the copy now says "in a wound", see `vaccines.ts` — so a later non-wound case is
     // free to credit staph. This one still should not, on the fiction alone.
-    id: 'hand', node: 'handR', region: 'HAND · CASE 07', title: 'Splinter', rule: 'dormant', credits: 'film', tier: 1,
+    id: 'hand', node: 'handR', region: 'HAND · CASE 07', title: 'Splinter', credits: 'film', tier: 1,
     story: 'You pulled the splinter out last week. Something came in with it and stayed.',
-    ruleLabel: 'Relapsing', ruleSub: 'Some of what you kill goes down instead of away, and gets back up where it fell',
+    rules: [RELAPSING],
     // Fifteen measured passes to land inside the band and under the case before it, and two
     // things about the shape of that search are worth the next author's time.
     //
@@ -186,9 +227,9 @@ export const CASES: readonly CaseDefinition[] = [
     // Crediting staph here instead would have left every immunity under three at that point and
     // made the rule after this one inert on a first run. The fiction goes along quietly: a blister
     // that has been walked on for a day is a closed wet pocket, which is where biofilm lives.
-    id: 'blister', node: 'footL', region: 'FOOT · CASE 08', title: 'Blister', rule: 'wound', credits: 'film', tier: 1,
+    id: 'blister', node: 'footL', region: 'FOOT · CASE 08', title: 'Blister', credits: 'film', tier: 1,
     story: 'New boots, eleven kilometres. The skin rubbed through this morning and it has not closed.',
-    ruleLabel: 'Bleeding', ruleSub: 'You lose energy every second until a clot is placed',
+    rules: [BLEEDING],
     startingEnergy: 262,
     waves: [
       [{ kind: 'staph', count: 11 }, { kind: 'film', count: 2 }],
@@ -220,11 +261,14 @@ export const CASES: readonly CaseDefinition[] = [
     // 15.0 was worth **+3.5 points** on its own, which is ten times what either count lever bought.
     // A case losing most of its boards to the first wave is a geometry problem wearing a wave
     // table; check the spot coverage before touching a count.
-    id: 'measles', node: 'lungR', region: 'RIGHT LUNG · CASE 09', title: 'Measles', rule: 'amnesia',
+    id: 'measles', node: 'lungR', region: 'RIGHT LUNG · CASE 09', title: 'Measles',
     credits: 'virus', tier: 2, wipes: 'film',
     story: 'The rash has already faded. What is in the lung now is everything your body used to know how to stop.',
-    ruleLabel: 'Amnesia',
-    ruleSub: `Your ${STRAIN_NAME.film} immunity is wiped for this case — armour holds, and the profile keeps it`,
+    rules: [{
+      kind: 'amnesia',
+      label: 'Amnesia',
+      sub: `Your ${STRAIN_NAME.film} immunity is wiped for this case — armour holds, and the profile keeps it`,
+    }],
     startingEnergy: 305,
     waves: [
       [{ kind: 'virus', count: 6 }, { kind: 'staph', count: 3 }],
@@ -261,10 +305,13 @@ export const CASES: readonly CaseDefinition[] = [
     // The staph line is thin on purpose. Each one is a pip on the way out, so at three per wave a
     // board that ignores them loses on leaks alone, and the shape of a winning board — measured, it
     // is `nk,nk,anti,clot,clot` — is two cells that do nothing but slow.
-    id: 'sinus', node: 'sinus', region: 'SINUS · CASE 10', title: 'Hay fever', rule: 'allergy', credits: 'staph', tier: 1,
+    id: 'sinus', node: 'sinus', region: 'SINUS · CASE 10', title: 'Hay fever', credits: 'staph', tier: 1,
     story: 'Grass season. None of what is drifting through here can hurt you, and your body has not been told.',
-    ruleLabel: 'Overreaction',
-    ruleSub: `The pollen is harmless. Every ${String(INFLAMMATION_PER_PIP)} things you kill inflames the tissue and costs a pip`,
+    rules: [{
+      kind: 'allergy',
+      label: 'Overreaction',
+      sub: `The pollen is harmless. Every ${String(INFLAMMATION_PER_PIP)} things you kill inflames the tissue and costs a pip`,
+    }],
     startingEnergy: 300,
     waves: [
       [{ kind: 'pollen', count: 26 }, { kind: 'staph', count: 1 }],
@@ -276,8 +323,147 @@ export const CASES: readonly CaseDefinition[] = [
     path: [[-24, 150], [64, 96], [150, 62], [244, 78], [300, 146], [268, 236], [176, 268], [96, 240], [76, 322], [160, 372], [252, 396], [252, 430]],
     spots: [[104, 152], [50, 200], [212, 182], [318, 274], [130, 400]],
   },
+  {
+    // The season's second multiplying case, and the first one authored against the season-shape
+    // report rather than only against the clear rate. What that report said about the seven cases
+    // before this one: every vessel entered off the left edge in the upper third and left through
+    // the floor, 32 to 48 per cent of every path ran downward and at most 9 per cent ran up, and
+    // the five spots sat a mean 53 to 65 units off the vessel in all seven — inside a defender
+    // range band 22 units wide. Seven boards, one board.
+    //
+    // So this one is a corridor rather than a serpentine: it comes in through the **roof**, runs
+    // down a narrow column, and the spots sit on the flanks. What that changes for the player is
+    // which cells reach — a column is covered from both sides at once, so a short-ranged cell on
+    // the flank sees the vessel three times as it zigzags past, and the long-ranged antibody gains
+    // far less from its reach than it does on an open board.
+    // **Eight measured passes, and the useful finding is that a wave table is a wage.** This opened
+    // at 1.5% of boards clearing with 7400 of 7776 dying on wave 1, which reads as "wave 1 is too
+    // heavy" and is not. Softening it — six bodies down to five, then to four — moved the rate the
+    // wrong way, 4.5% to 3.9%: a board that meets a smaller opening wave collects less bounty and
+    // arrives at wave 2 with fewer cells. Every case in the season has this shape, and it is the
+    // mirror of the finding the forearm and hand cases record from the other end, where mass
+    // removed from a *late* wave was worth several times the same mass removed early.
+    //
+    // What actually moved it was reach: 10.9 seconds of vessel covered by a phagocyte across the
+    // five spots, the thinnest board in the season, pulled in to 19.1. See the season-shape review
+    // for the general form of that — spot offset is worth roughly ten times what a body is.
+    id: 'bronchitis', node: 'lungL', region: 'LEFT LUNG · CASE 11', title: 'Bronchitis', credits: 'virus', tier: 1,
+    story: 'The cough that stayed a fortnight. The airway is raw, and everything you break apart leaves two behind.',
+    rules: [{ kind: 'virus', label: 'Multiplying', sub: 'Every virus and every Strep that dies splits into two smaller ones' }],
+    startingEnergy: 400,
+    waves: [
+      [{ kind: 'virus', count: 4 }, { kind: 'strep', count: 2 }],
+      [{ kind: 'virus', count: 8 }, { kind: 'strep', count: 3 }, { kind: 'spore', count: 2 }],
+      [{ kind: 'virus', count: 9 }, { kind: 'strep', count: 5 }, { kind: 'film', count: 2 }],
+      [{ kind: 'virus', count: 11 }, { kind: 'strep', count: 6 }, { kind: 'spore', count: 3 }, { kind: 'mrsa', count: 1 }],
+      [{ kind: 'virus', count: 13 }, { kind: 'strep', count: 7 }, { kind: 'film', count: 3 }, { kind: 'mrsa', count: 2 }],
+    ],
+    path: [[150, -24], [158, 96], [92, 168], [200, 240], [96, 312], [186, 372], [176, 454]],
+    spots: [[192, 66], [62, 172], [236, 240], [60, 306], [140, 406]],
+  },
+  {
+    // The compound case: two rules at once, and the first case in the season that asks the player
+    // to hold two answers in mind. It is late for the same reason the design says — every rule is
+    // met alone before it is met together, and both of these have been.
+    //
+    // **The two rules meet in the geometry rather than only in the wave table.** The vessel is a
+    // coil, so a cell in the middle of it covers three passes of the same vessel and is the best
+    // spot on the board by a distance — and the poison rule charges per body in range (decision
+    // D25), so it is also the spot that kills the cell standing on it. Dormancy is what closes the
+    // trap: what dies in the coil wakes up in the coil, beside the cell that killed it.
+    //
+    // **The tuning found the sharpest number in the project, and it has a cliff on both sides.**
+    // A coil gives every spot two or three passes of the same vessel, so this opened at 23.4% of
+    // boards clearing on 27.7 seconds of phagocyte coverage — half again the season's most generous
+    // board. Moving the five spots *out* to 17.0 seconds took it to 4.4%: **eleven points, with the
+    // wave table untouched**, against the 0.3 to 0.8 points one body in a wave is worth.
+    //
+    // Then moving them ~10 units further *in* took it to **0.0%**, and that is the part specific to
+    // this case rather than to geometry. `applyPoison` charges per body within `POISON_RADIUS`, 42
+    // units — so outside that radius a spot buys coverage and inside it a spot buys a dead cell.
+    // Any case carrying the poison rule has an interior optimum for spot distance, and it is narrow.
+    //
+    // Mass is the wrong dial here for the same reason it is on the bronchitis case: cutting waves 2
+    // to 5 by an eighth measured 4.1% to 3.7%. What finally landed it at 5.4% was trading toxins
+    // for staph at equal health — the stun is what makes a partial board fail, not the mass.
+    id: 'relapse', node: 'gut', region: 'GUT · CASE 12', title: 'Relapse', credits: 'staph', tier: 1,
+    story: 'You had this in the spring. It never fully left, and what it makes goes after your own cells.',
+    rules: [RELAPSING, TOXIC],
+    startingEnergy: 400,
+    waves: [
+      [{ kind: 'staph', count: 15 }, { kind: 'toxin', count: 2 }],
+      [{ kind: 'staph', count: 20 }, { kind: 'toxin', count: 3 }, { kind: 'film', count: 4 }],
+      [{ kind: 'staph', count: 23 }, { kind: 'toxin', count: 4 }, { kind: 'spore', count: 6 }],
+      [{ kind: 'staph', count: 26 }, { kind: 'toxin', count: 5 }, { kind: 'film', count: 5 }, { kind: 'mrsa', count: 2 }],
+      [{ kind: 'staph', count: 27 }, { kind: 'toxin', count: 5 }, { kind: 'spore', count: 5 }, { kind: 'mrsa', count: 3 }],
+    ],
+    path: [[398, 84], [318, 78], [64, 66], [50, 250], [304, 262], [316, 366], [140, 372], [130, 286], [236, 292], [244, 214], [-24, 202]],
+    spots: [[186, 146], [180, 34], [356, 318], [186, 410], [18, 116]],
+  },
+  {
+    // The finale, and the one case in the season fought with no vaccine and no brief.
+    //
+    // Three things are new here and each is the last of its kind: the rule hides the wave table,
+    // the strain ignores the mark, and the vessel runs **upward** — in off the floor, out through
+    // the roof, the only case in the season whose flow is against the grain of every other. The
+    // fiction and the mechanic are the same sentence: it is climbing toward the core.
+    //
+    // **The antibody does nothing here.** Strain Vesper is untaggable, so the cell that covers most
+    // of the vessel on every other board contributes nothing to the half of the wave that matters,
+    // and the case has to be won with the short-ranged cells. That is what the geometry is for: the
+    // spots sit closer to the vessel than any other case in the season, because a board that has to
+    // be fought at range 74 needs somewhere to stand.
+    //
+    // **Six measured passes, five of them spent on the strain rather than on this table.** It opened
+    // at 0 of 7776 with Vesper at 90 health and 5 regeneration: an untaggable body that heals has no
+    // counterplay except damage, so its health is not a linear dial — anything the board cannot
+    // out-damage arrives whole however long it was under fire. 46 health and 2 regeneration is where
+    // that stopped being a wall and started being a demand.
+    //
+    // The last pass was geometry and it moved more than every count did: two spots pulled in were
+    // worth **3.6% to 11.1%**, and half that move back landed the case at 6.2%. Which is the season
+    // shape review's finding again, in the one case where it is not a surprise — a board fought
+    // without the longest-ranged cell in the dock is a board where the offsets decide everything.
+    //
+    // It credits staph, which the season has already finished. That is deliberate: by the time this
+    // is played every vaccine the game can give is held, so the familiar half of each wave is as
+    // easy as it will ever be and the unfamiliar half is untouched by any of them.
+    id: 'vesper', node: 'footR', region: 'FOOT · CASE 13', title: 'Strain Vesper', credits: 'staph', tier: 3,
+    story: 'A scratch from the garden, four days ago. Nothing in the body has met this before, and nothing has been written about what is coming.',
+    rules: [{
+      kind: 'novel',
+      label: 'Novel',
+      sub: 'Nothing is known about this strain — the brief cannot list what is coming, and each wave shows you only what it sends',
+    }],
+    startingEnergy: 410,
+    waves: [
+      [{ kind: 'vesper', count: 2 }, { kind: 'staph', count: 7 }],
+      [{ kind: 'vesper', count: 3 }, { kind: 'virus', count: 7 }, { kind: 'staph', count: 6 }],
+      [{ kind: 'vesper', count: 4 }, { kind: 'spore', count: 5 }, { kind: 'film', count: 3 }],
+      [{ kind: 'vesper', count: 4 }, { kind: 'virus', count: 9 }, { kind: 'mrsa', count: 2 }],
+      [{ kind: 'vesper', count: 6 }, { kind: 'staph', count: 12 }, { kind: 'film', count: 4 }, { kind: 'mrsa', count: 3 }],
+    ],
+    path: [[214, 454], [206, 366], [96, 330], [78, 236], [166, 196], [180, 108], [292, 74], [300, -24]],
+    spots: [[142, 396], [40, 296], [148, 262], [100, 154], [252, 148]],
+  },
 ];
 
 export const CASE_BY_ID: Readonly<Record<CaseId, CaseDefinition>> = Object.fromEntries(
   CASES.map((c) => [c.id, c]),
 ) as Record<CaseId, CaseDefinition>;
+
+/**
+ * What the chrome calls this case: every rule it is played under, joined.
+ *
+ * One function rather than three call sites reading `rules[0].label`, because a compound case that
+ * announced one of its two rules on the board and both of them on the brief would be the screen
+ * hiding a rule the player is being charged for.
+ */
+export function ruleLabels(definition: CaseDefinition): string {
+  return definition.rules.map((rule) => rule.label).join(' · ');
+}
+
+/** Whether a case is played under a given rule. The content-side twin of `hasRule`. */
+export function caseHasRule(definition: CaseDefinition, kind: CaseRuleKind): boolean {
+  return definition.rules.some((rule) => rule.kind === kind);
+}

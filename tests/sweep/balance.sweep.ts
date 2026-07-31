@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CASES } from '../../src/game/content/cases';
 import { DEFENDERS } from '../../src/game/content/defenders';
-import { TISSUE_PIPS } from '../../src/game/content/rules';
+import { BOARD_WIDTH, TISSUE_PIPS } from '../../src/game/content/rules';
 import { dwellSeconds } from '../../src/game/coverage';
 import type { CaseId, DefenderKind } from '../../src/game/types';
 import { CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR } from './band';
@@ -183,7 +183,7 @@ function coverageReport(): string {
     );
     const total = perSpot.reduce((sum, seconds) => sum + seconds, 0);
     return [
-      `  ${definition.id.padEnd(8)}`,
+      `  ${definition.id.padEnd(11)}`,
       `${total.toFixed(1).padStart(5)}s total`,
       `[${perSpot.map((seconds) => seconds.toFixed(1).padStart(4)).join(' ')}]`,
     ].join('  ');
@@ -196,12 +196,102 @@ function coverageReport(): string {
   ].join('\n');
 }
 
+/**
+ * What each case's board is *like*, beside what it is worth — and the report that would have made
+ * the season's biggest content defect visible while it was being authored.
+ *
+ * Days 1 to 7 were authored one at a time against a clear rate, and came out as one board seven
+ * times: every vessel entered off the left edge and left through the floor, every path ran down and
+ * to the right, and the five spots sat within twelve units of the same offset in all seven. Nothing
+ * in the harness disagreed, because nothing in the harness was looking at the shape — the sweep
+ * measured how hard each board was and never once said what it looked like.
+ *
+ * Four columns, and each one is a way a case can be a copy of the one before it:
+ *
+ * - **in / out** — which edge the vessel enters and leaves by. Seven cases shared one pair.
+ * - **flow** — the share of the path's length running down against up, as a single signed number.
+ *   Near +100 is a board that drains; near −100 is one that climbs.
+ * - **spots** — the mean distance from a build spot to the vessel. This is the number that decides
+ *   which cells can fight from where, and a season that authors it to one value has one placement
+ *   decision wearing ten sets of coordinates.
+ * - **new** — the pathogens this case sends that no earlier case did. Days 4, 5 and 6 sent nothing
+ *   new at all, which is what "no progression" looks like as data.
+ *
+ * Like the coverage report above, it reports and never gates. What *is* gated is the weakest claim
+ * that would have failed on the seven — that the season does not enter every board from the same
+ * side — and it lives in `content.invariants.test.ts` beside the other structural checks.
+ */
+function shapeReport(): string {
+  const seen = new Set<string>();
+
+  const rows = CASES.map((definition) => {
+    const points = definition.path;
+    let down = 0;
+    let up = 0;
+    let length = 0;
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i];
+      const b = points[i + 1];
+      if (a === undefined || b === undefined) continue;
+      const dy = b[1] - a[1];
+      if (dy > 0) down += dy; else up += -dy;
+      length += Math.hypot(b[0] - a[0], dy);
+    }
+    const flow = down + up === 0 ? 0 : ((down - up) / (down + up)) * 100;
+
+    const offsets = definition.spots.map((spot) => {
+      let best = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const a = points[i];
+        const b = points[i + 1];
+        if (a === undefined || b === undefined) continue;
+        const dx = b[0] - a[0];
+        const dy = b[1] - a[1];
+        const l2 = dx * dx + dy * dy;
+        const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((spot[0] - a[0]) * dx + (spot[1] - a[1]) * dy) / l2));
+        best = Math.min(best, Math.hypot(spot[0] - (a[0] + t * dx), spot[1] - (a[1] + t * dy)));
+      }
+      return best;
+    });
+    const meanOffset = offsets.reduce((sum, value) => sum + value, 0) / offsets.length;
+
+    const kinds = new Set(definition.waves.flat().map((entry) => entry.kind));
+    const fresh = [...kinds].filter((kind) => !seen.has(kind));
+    for (const kind of kinds) seen.add(kind);
+
+    const ends = (point: readonly [number, number] | undefined): string => {
+      if (point === undefined) return '?';
+      const [x, y] = point;
+      if (x <= 0) return 'left';
+      if (x >= BOARD_WIDTH) return 'right';
+      if (y <= 0) return 'top';
+      return 'bottom';
+    };
+
+    return [
+      `  ${definition.id.padEnd(11)}`,
+      `${ends(points[0]).padEnd(7)}→ ${ends(points[points.length - 1]).padEnd(7)}`,
+      `${length.toFixed(0).padStart(4)}u`,
+      `flow ${(flow >= 0 ? '+' : '') + flow.toFixed(0)}`.padEnd(10),
+      `spots ${meanOffset.toFixed(0).padStart(2)}u`,
+      `new: ${fresh.length === 0 ? '—' : fresh.join(',')}`,
+    ].join('  ');
+  });
+
+  return [
+    'SEASON SHAPE — what each board is like, not what it is worth',
+    ...rows,
+    '  (a report, not a gate; what is gated is in content.invariants.test.ts)',
+  ].join('\n');
+}
+
 describe('affordable-board sweep', () => {
   // The sweep itself, run once. In a hook rather than the describe body so its minutes are spent
   // under `hookTimeout` and its output lands with the run rather than with collection.
   let results: readonly SweepResult[] = [];
 
   beforeAll(() => {
+    console.log(shapeReport());
     console.log(coverageReport());
     results = SWEEP.map(sweepCase);
     for (const result of results) console.log(report(result));

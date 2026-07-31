@@ -134,11 +134,22 @@ that could settle at −1 behind a display clamp, an enemy that was not frozen u
 it was engulfed, and placement that was never gated to the build phase — so a destroyed clot
 could be rebuilt mid-wave, turning the wound rule into a pay-as-you-bleed loop.
 
+All seven rules and all ten regions are now authored: bleeding, multiplying, toxic, relapsing,
+amnesia, overreaction and one case that tells you nothing at all. Day 9 is the first case played
+under two rules at once.
+
 `docs/superpowers/` carries the design spec, the implementation plan, a holistic review of the
-finished codebase, and a proposal for the next seven cases.
+finished codebase, the case-rules design the ten cases were built from, and a review of what the
+first seven boards had in common.
 
 ## Known and open
 
+- **Days 1 to 7 are one board, seven times.** Measured in
+  `docs/superpowers/reviews/2026-07-31-season-shape-review.md`: every one of those vessels enters
+  off the left edge and leaves through the floor, and their build spots sit within twelve units of
+  the same offset. Days 8 to 10 are shaped against that finding; the first seven have not been
+  retrofitted, because moving a spot is worth up to eleven points of clear rate and it would be a
+  re-tune of the whole season.
 - **Poison stacks per enemy in range**, and that was never a decision — it is emergent from a
   loop rather than chosen. Stomach sits at the bottom of the band largely because of it.
 - **Maturing is worth measuring per case, and nobody has.** `npm run sweep:maturation` says

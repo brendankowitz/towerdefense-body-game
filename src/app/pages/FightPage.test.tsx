@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
-import { CASE_BY_ID } from '@game/content/cases';
+import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
 import { clearCase, createFreshProfile } from '@game/progression';
 import { FEVER_DURATION, TISSUE_PIPS } from '@game/content/rules';
@@ -134,7 +134,7 @@ describe('FightPage', () => {
     await renderFight();
     const region = CASE.region.split(' · ')[0] ?? '';
     expect(screen.getByTestId('fight-region').textContent)
-      .toBe(`${region} · ${CASE.ruleLabel.toUpperCase()}`);
+      .toBe(`${region} · ${ruleLabels(CASE).toUpperCase()}`);
   });
 
   it('counts the wave against the number of waves the case defines', async () => {
@@ -258,7 +258,7 @@ describe('FightPage', () => {
     act(() => { screen.getByTestId('start-wave').click(); });
 
     const modifier = screen.getByTestId('board-modifier');
-    expect(modifier.textContent).toBe(CASE.ruleLabel.toUpperCase());
+    expect(modifier.textContent).toBe(ruleLabels(CASE).toUpperCase());
     expect(modifier.querySelectorAll('.pulse')).toHaveLength(1);
   });
 

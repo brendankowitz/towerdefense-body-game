@@ -1,9 +1,10 @@
 # Case rules 4–12 — content design
 
 **Date:** 2026-07-26
-**Status:** Partly shipped. Dormancy landed with the hand case; **Amnesia and Overreaction have
-since landed too**, alongside a third case that reuses Bleeding. Sections describing a shipped rule
-are records rather than proposals and say so. Only **Novel** is still a proposal.
+**Status:** Shipped in full. All seven rules and all ten cases are playable; every section here is
+now a record rather than a proposal, and the departures each shipped case made from its proposal are
+noted under it. The season's remaining promise is the one in `later.ts` — a cleared region that
+reopens, which Chickenpox's copy has described since before any of this landed.
 **Depends on:** the shipped ruleset in `src/game/content/`, spec §5
 
 ---
@@ -194,6 +195,21 @@ No vaccine exists, and `vaccines.ts` already says so. The one case fought raw.
 
 *Fiction:* invented strain, tier 3 — never a real outbreak, per the naming policy.
 
+**Shipped** as day 10: `vesper` on the `footR` node, rule `novel`. Two things about it departed
+from this section, both deliberately:
+
+- **It did need a new pathogen after all.** "Unfamiliar combinations of the six that exist" is a
+  claim about the *player's* knowledge, and the player is told what everything does on the brief of
+  the case that introduced it — so a wave of familiar bodies in an unfamiliar order is a case they
+  can still solve on sight, and hiding the list only costs them one read. `vesper` in
+  `pathogens.ts` is the thing the hiding is *for*: untaggable and self-healing, so the antibody —
+  the cell that reaches, and therefore the cell every board in the season is built around —
+  contributes nothing to it at all.
+- **The rule changes no simulation behaviour.** `novel` is the only member of `CaseRuleKind` that
+  no hazard branches on: what it does is stop `Brief` rendering the wave table. The simulation, the
+  sweep and the result sheet all see exactly what is coming; only the player does not. Tested where
+  it lives, in `Brief.test.tsx`, because a test that read the simulation would prove nothing.
+
 ---
 
 ## Ten cases
@@ -212,9 +228,9 @@ that is intact.
 | 5 | Foot | Blister | Bleeding | The rule again, with less room and a longer path. | **Shipped** |
 | 6 | Right lung | Measles | Amnesia | Breadth beats depth. A narrow build stops working. | **Shipped** |
 | 7 | Sinus | Hay fever | Overreaction | Sometimes do less. | **Shipped** |
-| — | Left lung | Bronchitis | Multiplying | Splitting under a real time limit. | |
-| — | Gut | Relapse | Dormancy + Toxic | Two rules at once — the first compound case. | |
-| — | Foot | Strain Vesper | Novel | Everything, unannounced. | |
+| 8 | Left lung | Bronchitis | Multiplying | Splitting with less room to do it in. | **Shipped** |
+| 9 | Gut | Relapse | Dormancy + Toxic | Two rules at once — the first compound case. | **Shipped** |
+| 10 | Right foot | Strain Vesper | Novel | Everything, unannounced, and one thing nothing binds to. | **Shipped** |
 
 There is one hand node, `handR`, and day 4 has taken it. Of the two foot nodes, day 5 takes one and
 the other is where Vesper now goes — the right lung it was pencilled for went to measles, for the
@@ -225,10 +241,39 @@ harder geometry so the rule is understood before the next case takes a tool away
 lands last of the seven, after six cases of killing-is-good. The compound case is deliberately one
 before the finale, so the finale is not the first time two questions are asked at once.
 
-**What the seven measure**, buying and never growing, over every affordable board:
-13.2 / 6.3 / 5.5 / 5.3 / 7.2 / 7.2 / 6.3 per cent of boards clearing.
+**Every strain finishes.** Staph is credited by forearm, sinus and relapse; virus by throat, measles
+and bronchitis; film by stomach, hand and blister — three each, which is `IMMUNITY_MAX`. So a season
+played through fills the immunity screen exactly once, and the finale is played holding all three
+vaccines against a strain none of them touch. That is the reason the last three cases credit what
+they credit, and `content.invariants.test.ts` now asserts it rather than leaving it to arithmetic
+somebody did once.
+
+**What the ten measure**, buying and never growing, over every affordable board:
+13.2 / 6.3 / 5.5 / 5.3 / 7.2 / 7.2 / 6.3 / 5.2 / 5.4 / 6.2 per cent of boards clearing.
+
+**The three new boards are shaped against `2026-07-31-season-shape-review.md`**, which measured what
+the first seven had in common: one entry edge, one exit edge, one flow direction and one spot
+offset, in all seven. Bronchitis enters through the roof and runs down a column; Relapse enters from
+the right and coils; Vesper enters through the floor and climbs. The review also records the two
+things that tuning them taught — that spot offset is worth ten times what a wave count is, and that
+on a poison case it has an interior optimum with a cliff on both sides.
 
 ---
+
+## The compound case needed a shape change, not a rule
+
+A case used to carry one `CaseRuleKind` and one label and one sentence. Day 9 carries two of each,
+so `CaseDefinition.rules` is now a non-empty list of `{ kind, label, sub }` and `SimState.rules` is
+the list of kinds, read through `hasRule`.
+
+The alternative — a `dormantPoison` member of `CaseRuleKind` — was rejected because every hazard
+that already branches on one of the two would have grown a second branch meaning the same thing, and
+the third compound case would have needed a fourth. It also puts the copy beside the rule it
+describes, so a compound case cannot show one card and play two rules.
+
+Both halves are asserted through the hazards themselves in `hazards.test.ts`, against the mutation
+the change is actually exposed to: a `rules` list read as `rules[0]` anywhere in the chain, which
+would leave the case playing whichever rule is written first and silently dropping the other.
 
 ## What this needs in code
 

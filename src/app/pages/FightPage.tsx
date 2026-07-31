@@ -5,7 +5,7 @@ import {
   advanceToNextWave, placeDefender, restartCase, selectDefender, startWave, toggleSpeed,
   triggerFever,
 } from '@game/commands';
-import { CASES, CASE_BY_ID } from '@game/content/cases';
+import { CASES, CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { GameLoop } from '@game/loop';
 import type { Profile } from '@game/progression';
 import { createSimState } from '@game/state';
@@ -115,7 +115,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
           <header className="fight-header">
             <div className="fight-title">
               <span className="mono fight-region" data-testid="fight-region">
-                {`${region} · ${definition.ruleLabel.toUpperCase()}`}
+                {`${region} · ${ruleLabels(definition).toUpperCase()}`}
               </span>
               <span className="fight-wave" data-testid="fight-wave">
                 {`Wave ${String(hud.waveIndex + 1)} of ${String(hud.waveCount)}`}
@@ -158,7 +158,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
             {hud.phase === 'wave' && (
               <span className="mono board-modifier" data-testid="board-modifier">
                 <span className="modifier-dot pulse" />
-                {definition.ruleLabel.toUpperCase()}
+                {ruleLabels(definition).toUpperCase()}
               </span>
             )}
           </div>

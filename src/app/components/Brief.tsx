@@ -1,4 +1,4 @@
-import type { CaseDefinition } from '@game/content/cases';
+import { caseHasRule, type CaseDefinition } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from '@game/content/defenders';
 import { PATHOGENS } from '@game/content/pathogens';
 import { IMMUNITY_MAX } from '@game/content/rules';
@@ -21,6 +21,12 @@ export function Brief({ definition, strainClears, onStartCase, onBack }: BriefPr
     for (const entry of wave) totals.set(entry.kind, (totals.get(entry.kind) ?? 0) + entry.count);
   }
 
+  // The novel rule, and the whole of what it does: this screen exists to be read before a case,
+  // and the finale's rule is that there is nothing to read. Hiding the list here rather than
+  // emptying the wave table keeps the case a case — the simulation, the sweep and the result
+  // sheet all see exactly what is coming; only the player does not.
+  const unknown = caseHasRule(definition, 'novel');
+
   const strainRow = STRAIN_ROWS.find((row) => row.key === definition.credits);
   const shield = strainClears >= IMMUNITY_MAX && strainRow !== undefined
     ? strainRow.heldCopy
@@ -35,28 +41,37 @@ export function Brief({ definition, strainClears, onStartCase, onBack }: BriefPr
           <p className="screen-lede">{definition.story}</p>
         </div>
 
-        <div className="rule-card">
-          <span className="rule-swatch" />
-          <div>
-            <span className="rule-name">{definition.ruleLabel}</span>
-            <span className="rule-sub">{definition.ruleSub}</span>
+        {definition.rules.map((rule) => (
+          <div key={rule.kind} className="rule-card" data-testid="brief-rule">
+            <span className="rule-swatch" />
+            <div>
+              <span className="rule-name">{rule.label}</span>
+              <span className="rule-sub">{rule.sub}</span>
+            </div>
           </div>
-        </div>
+        ))}
 
         <section>
           <span className="mono kicker">COMING THROUGH</span>
-          {[...totals].map(([kind, count]) => (
-            <div key={kind} className="row" data-testid="brief-enemy">
-              <span
-                className="row-swatch"
-                data-shape={PATHOGENS[kind].shape}
-                style={{ background: palette[PATHOGENS[kind].token].css }}
-              />
-              <span className="row-name">{PATHOGENS[kind].name}</span>
-              <span className="row-note">{PATHOGENS[kind].note}</span>
-              <span className="mono">{`×${String(count)}`}</span>
-            </div>
-          ))}
+          {unknown
+            ? (
+              <p className="row-note" data-testid="brief-unknown">
+                Nobody has fought this strain before, so there is nothing to list. You will find out
+                what is in each wave when it arrives.
+              </p>
+            )
+            : [...totals].map(([kind, count]) => (
+              <div key={kind} className="row" data-testid="brief-enemy">
+                <span
+                  className="row-swatch"
+                  data-shape={PATHOGENS[kind].shape}
+                  style={{ background: palette[PATHOGENS[kind].token].css }}
+                />
+                <span className="row-name">{PATHOGENS[kind].name}</span>
+                <span className="row-note">{PATHOGENS[kind].note}</span>
+                <span className="mono">{`×${String(count)}`}</span>
+              </div>
+            ))}
         </section>
 
         <section>

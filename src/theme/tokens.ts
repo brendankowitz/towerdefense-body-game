@@ -22,6 +22,12 @@ const OKLCH: Record<PaletteToken, string> = {
   // Pollen. The one threat token that is not a warning: pale and warm, so the board reads it as
   // something drifting past rather than as something to shoot.
   inert: 'oklch(0.8 0.09 95)',
+  // Strep. A cousin of the splitter and drawn as one — same chroma, twenty degrees warmer — because
+  // the thing a player has to recognise fast is "this one leaves two behind".
+  chaining: 'oklch(0.66 0.15 330)',
+  // Strain Vesper. Dark and nearly colourless, and deliberately outside the warm-to-violet band
+  // every other threat sits in: the finale's whole claim is that nothing about it is familiar.
+  unknown: 'oklch(0.38 0.07 285)',
   fever: 'oklch(0.58 0.16 15)',
   notReached: 'oklch(0.9 0.014 60)',
   vesselCasing: 'oklch(0.87 0.05 20)',

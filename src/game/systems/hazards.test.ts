@@ -5,6 +5,7 @@ import {
 } from './hazards';
 import { resolveDeaths } from './deaths';
 import { advanceToNextWave, startWave } from '../commands';
+import { CASES } from '../content/cases';
 import { PATHOGENS } from '../content/pathogens';
 import {
   BLEED_AMOUNT,
@@ -22,7 +23,7 @@ import {
   TOXIN_STUN_RADIUS,
 } from '../content/rules';
 import { positionAt } from '../path';
-import { distance } from '../state';
+import { distance, hasRule } from '../state';
 import { step } from '../step';
 import { addEnemy, addTower, addTowerOnPath, simFor } from '../testing';
 import type { Enemy, SimState } from '../types';
@@ -30,28 +31,28 @@ import type { Enemy, SimState } from '../types';
 /** The wound rule is the bleed's precondition, so a case reshuffle fails here rather than silently. */
 function wound(): SimState {
   const state = simFor('forearm');
-  expect(state.rule).toBe('wound');
+  expect(hasRule(state, 'wound')).toBe(true);
   return state;
 }
 
 /** Likewise for poison. Only the stomach case damages defenders directly. */
 function poisoned(): SimState {
   const state = simFor('stomach');
-  expect(state.rule).toBe('poison');
+  expect(hasRule(state, 'poison')).toBe(true);
   return state;
 }
 
 /** And for dormancy. */
 function relapsing(): SimState {
   const state = simFor('hand');
-  expect(state.rule).toBe('dormant');
+  expect(hasRule(state, 'dormant')).toBe(true);
   return state;
 }
 
 /** And for overreaction, the one rule where killing is the thing that costs you. */
 function allergic(): SimState {
   const state = simFor('sinus');
-  expect(state.rule).toBe('allergy');
+  expect(hasRule(state, 'allergy')).toBe(true);
   return state;
 }
 
@@ -133,7 +134,7 @@ describe('wound — bleeding', () => {
   it('does not bleed outside a wound case', () => {
     for (const caseId of ['throat', 'stomach'] as const) {
       const state = simFor(caseId);
-      expect(state.rule).not.toBe('wound');
+      expect(hasRule(state, 'wound')).toBe(false);
       const before = state.energy;
 
       applyWoundBleed(state, BLEED_INTERVAL * 3);
@@ -353,7 +354,7 @@ describe('poison — pathogens damage your defenders', () => {
   it('does nothing outside a poison case', () => {
     for (const caseId of ['forearm', 'throat'] as const) {
       const state = simFor(caseId);
-      expect(state.rule).not.toBe('poison');
+      expect(hasRule(state, 'poison')).toBe(false);
       const tower = addTower(state, 'phago', 0, 0, 0);
       const enemy = addEnemy(state, 'staph', { x: 0, y: 0 });
 
@@ -390,6 +391,48 @@ describe('poison — pathogens damage your defenders', () => {
 
     expect(state.towers).toEqual([tower]);
     expect(tower.hp).toBeCloseTo(POISON_DPS_OTHER * STEP_SECONDS, 6);
+  });
+});
+
+/**
+ * A case is played under a list of rules, and the whole point of the list is that a hazard answers
+ * to its own member without knowing what else is on it.
+ *
+ * Found by rule rather than by id, so this follows the season. The mutation it is built against is
+ * a `rules` list read as `rules[0]` anywhere in the chain — `createSimState`, `hasRule`, or a
+ * hazard — which would leave the compound case playing whichever rule happens to be written first
+ * and silently dropping the other.
+ */
+describe('a case played under two rules at once', () => {
+  const compound = CASES.find((definition) => definition.rules.length > 1);
+
+  it('is in the season, so the rest of this block is measuring something', () => {
+    expect(compound, 'no compound case in the season').toBeDefined();
+  });
+
+  it('fires both of its rules, not just the one it names first', () => {
+    if (compound === undefined) return;
+    const state = simFor(compound.id);
+    expect(state.rules.length, `${compound.id} lost a rule on the way into the simulation`)
+      .toBe(compound.rules.length);
+
+    for (const rule of compound.rules) {
+      expect(hasRule(state, rule.kind), `${compound.id} does not play its own ${rule.kind} rule`)
+        .toBe(true);
+    }
+
+    // The two rules the compound case actually carries, exercised through the hazards themselves
+    // rather than through `hasRule` a second time: poison damages a cell standing next to a body,
+    // and dormancy schedules what dies to come back.
+    const tower = addTower(state, 'phago', 0, 0, 0);
+    const enemy = addEnemy(state, 'staph', { x: 0, y: 0, distance: 120 });
+
+    applyPoison(state, enemy, 1);
+    expect(tower.hp, 'the poison half of the compound case did nothing')
+      .toBeCloseTo(TOWER_MAX_HP - POISON_DPS_OTHER, 6);
+
+    scheduleUntilItTakes(state, enemy);
+    expect(state.dormant, 'the dormancy half of the compound case did nothing').not.toEqual([]);
   });
 });
 

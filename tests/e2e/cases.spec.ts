@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CASES } from '../../src/game/content/cases';
+import { CASES, ruleLabels } from '../../src/game/content/cases';
 import { createFreshProfile, type Profile } from '../../src/game/progression';
 import type { CaseId } from '../../src/game/types';
 import { onScreen, openCase, placeCell, screen, seedProfile } from './helpers';
@@ -49,7 +49,7 @@ for (const definition of CASES) {
     await expect(onScreen(page, 'start-wave')).toHaveText('Wave in progress');
     await expect(onScreen(page, 'start-wave')).toHaveAttribute('data-enabled', 'false');
     await expect(onScreen(page, 'board-modifier'))
-      .toContainText(definition.ruleLabel.toUpperCase());
+      .toContainText(ruleLabels(definition).toUpperCase());
     await expect(onScreen(page, 'board-hint')).toContainText(/INCOMING|IN THE VESSEL/);
   });
 }

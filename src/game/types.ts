@@ -1,7 +1,11 @@
 export type DefenderKind = 'phago' | 'clot' | 'anti' | 'nk' | 'mast' | 'mem';
-export type PathogenKind = 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa' | 'pollen';
-export type CaseId = 'forearm' | 'throat' | 'stomach' | 'hand' | 'blister' | 'measles' | 'sinus';
-export type CaseRuleKind = 'wound' | 'virus' | 'poison' | 'dormant' | 'amnesia' | 'allergy';
+export type PathogenKind =
+  | 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa' | 'pollen' | 'strep' | 'vesper';
+export type CaseId =
+  | 'forearm' | 'throat' | 'stomach' | 'hand' | 'blister' | 'measles' | 'sinus'
+  | 'bronchitis' | 'relapse' | 'vesper';
+export type CaseRuleKind =
+  | 'wound' | 'virus' | 'poison' | 'dormant' | 'amnesia' | 'allergy' | 'novel';
 
 /** A strain the immunity screen tracks. Every member has exactly one vaccine and one case that credits it. */
 export type StrainId = 'staph' | 'virus' | 'film';
@@ -22,6 +26,7 @@ export type PaletteToken =
   | 'threat' | 'frontline' | 'support' | 'control' | 'energy'
   | 'execute' | 'burst' | 'learn'
   | 'armoured' | 'splitter' | 'fungal' | 'chemical' | 'resistant' | 'inert'
+  | 'chaining' | 'unknown'
   | 'fever' | 'notReached' | 'vesselCasing' | 'vesselLumen' | 'tissueField' | 'core';
 
 export type Point = readonly [x: number, y: number];
@@ -146,7 +151,15 @@ export interface Beam {
 
 export interface SimState {
   readonly caseId: CaseId;
-  readonly rule: CaseRuleKind;
+  /**
+   * Every rule this case is played under, in the order the brief states them.
+   *
+   * A list rather than one kind because the season's ninth case asks two questions at once, and
+   * the alternative — a `dormantPoison` member of `CaseRuleKind` — would have every hazard that
+   * already branches on one of them grow a second branch that means the same thing. Read through
+   * `hasRule`, never by index: nothing in the simulation cares which rule a case names first.
+   */
+  readonly rules: readonly CaseRuleKind[];
   readonly path: CompiledPath;
   /**
    * Profile facts the simulation reads but never writes — and, on an amnesia case, one strain of

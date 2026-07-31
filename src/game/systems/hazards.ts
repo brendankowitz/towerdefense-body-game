@@ -13,7 +13,7 @@ import {
 } from '../content/rules';
 import { positionAt } from '../path';
 import { createRng } from '../rng';
-import { distance } from '../state';
+import { distance, hasRule } from '../state';
 import type { Dormant, Enemy, SimState } from '../types';
 
 /**
@@ -22,7 +22,7 @@ import type { Dormant, Enemy, SimState } from '../types';
  * (decision D3).
  */
 export function applyWoundBleed(state: SimState, dt: number): void {
-  if (state.rule !== 'wound') return;
+  if (!hasRule(state, 'wound')) return;
   if (state.towers.some((tower) => tower.kind === 'clot')) return;
 
   state.bleedTimer += dt;
@@ -72,7 +72,7 @@ export function applyToxinStun(state: SimState, enemy: Enemy): void {
  * says what matters — antibodies survive toxins far better than phagocytes.
  */
 export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
-  if (state.rule !== 'poison') return;
+  if (!hasRule(state, 'poison')) return;
 
   for (const tower of state.towers) {
     if (tower.kind === 'clot') continue;
@@ -98,7 +98,7 @@ export function applyPoison(state: SimState, enemy: Enemy, dt: number): void {
  * would make it a hidden rule rather than a hard one.
  */
 export function applyInflammation(state: SimState): void {
-  if (state.rule !== 'allergy') return;
+  if (!hasRule(state, 'allergy')) return;
 
   state.inflammation += 1;
   if (state.inflammation < INFLAMMATION_PER_PIP) return;
@@ -123,7 +123,7 @@ export function applyInflammation(state: SimState): void {
  * does, so a run is reproducible from its seed and the sweep measures a case rather than a shuffle.
  */
 export function scheduleDormancy(state: SimState, enemy: Enemy): void {
-  if (state.rule !== 'dormant') return;
+  if (!hasRule(state, 'dormant')) return;
   if (enemy.generation !== 0) return;
 
   const rng = createRng(state.rngState);

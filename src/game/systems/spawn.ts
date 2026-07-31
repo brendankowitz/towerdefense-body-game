@@ -8,6 +8,7 @@ import {
 } from '../content/rules';
 import { positionAt } from '../path';
 import { createRng, waveSeed } from '../rng';
+import { hasRule } from '../state';
 import type { PathogenKind, SimState } from '../types';
 
 /** Entries are expanded in wave-table order, then shuffled with the wave's own seeded generator. */
@@ -47,7 +48,7 @@ export function applySpawn(state: SimState, dt: number): void {
 
   // Decision D2: the spent marker is sim state, so a replayed case gets its bounce back.
   const bounced =
-    state.rule === 'wound' &&
+    hasRule(state, 'wound') &&
     kind === 'staph' &&
     state.immunity.staph >= IMMUNITY_MAX &&
     state.shieldedWave !== state.waveIndex;

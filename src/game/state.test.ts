@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSimState, distance } from './state';
-import { CASES, CASE_BY_ID } from './content/cases';
+import { CASES, CASE_BY_ID, caseHasRule } from './content/cases';
 import { PATHOGENS } from './content/pathogens';
 import { IMMUNITY_MAX, TISSUE_PIPS } from './content/rules';
 import { compilePath } from './path';
@@ -39,7 +39,7 @@ describe('createSimState', () => {
   it('compiles the case path it was asked for', () => {
     for (const shipped of CASES) {
       const state = createSimState({ ...input, caseId: shipped.id });
-      expect(state.rule).toBe(shipped.rule);
+      expect(state.rules).toEqual(shipped.rules.map((rule) => rule.kind));
       expect(state.path.total).toBe(compilePath(shipped.path).total);
     }
   });
@@ -75,7 +75,7 @@ describe('createSimState', () => {
  * id, and says so loudly if no case carries the rule any more.
  */
 describe('amnesia — one immunity does not work here', () => {
-  const wiping = CASES.find((definition) => definition.rule === 'amnesia');
+  const wiping = CASES.find((definition) => caseHasRule(definition, 'amnesia'));
   const held = { staph: IMMUNITY_MAX, film: IMMUNITY_MAX, virus: IMMUNITY_MAX };
 
   it('has a case that carries the rule, naming the strain it takes', () => {
@@ -106,7 +106,7 @@ describe('amnesia — one immunity does not work here', () => {
 
   it('leaves every other case holding everything the profile earned', () => {
     for (const definition of CASES) {
-      if (definition.rule === 'amnesia') continue;
+      if (caseHasRule(definition, 'amnesia')) continue;
       const state = createSimState({ ...input, caseId: definition.id, immunity: held });
       expect(state.immunity, `${definition.id} lost an immunity it was not meant to`).toEqual(held);
     }

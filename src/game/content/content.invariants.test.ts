@@ -3,10 +3,11 @@ import { dwellSeconds } from '../coverage';
 import { DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER } from './defenders';
 import { maturedFormOf } from './maturation';
 import { PATHOGENS } from './pathogens';
-import { CASES } from './cases';
+import { CASES, caseHasRule } from './cases';
 import { STRAIN_NAME, STRAIN_ROWS, VACCINES } from './vaccines';
 import { BODY_LINKS, BODY_NODES, CASE_REGIONS } from './body';
 import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TAG_REWARD_MULTIPLIER } from './rules';
+import type { CaseRuleKind, Point } from '../types';
 
 // Structural invariants only — never gameplay values. A balance pass must be able to change
 // every number in content/ without turning this suite red (spec §4, §9).
@@ -115,6 +116,39 @@ describe('case coherence', () => {
 });
 
 /**
+ * The rules a case declares, held to what makes a list of them meaningful.
+ *
+ * None of this is a balance value: it rules out a case that names one rule twice, and a rule the
+ * union offers that no case ever plays — which is a branch in `hazards.ts` that nothing reaches.
+ */
+describe('case rules', () => {
+  it('never names the same rule twice on one case', () => {
+    for (const c of CASES) {
+      const kinds = c.rules.map((rule) => rule.kind);
+      expect(new Set(kinds).size, `${c.id} carries ${kinds.join(', ')}`).toBe(kinds.length);
+    }
+  });
+
+  /**
+   * Every member of `CaseRuleKind` is played somewhere. The union is the simulation's list of
+   * things a case can do, and a member no case carries is a hazard branch, a copy line and a test
+   * that answer to nothing — the same dead-content defect as an unreachable vaccine, one layer in.
+   *
+   * The list is written out rather than derived from the cases, because deriving it from the thing
+   * under test is the vacuous shape this suite has found sixteen times.
+   */
+  it('plays every rule the simulation can be asked for', () => {
+    const played = new Set(CASES.flatMap((c) => c.rules.map((rule) => rule.kind)));
+    const declared: readonly CaseRuleKind[] = [
+      'wound', 'virus', 'poison', 'dormant', 'amnesia', 'allergy', 'novel',
+    ];
+    for (const kind of declared) {
+      expect(played, `no case is played under the ${kind} rule`).toContain(kind);
+    }
+  });
+});
+
+/**
  * The amnesia rule's data, held to the two things that make it a rule rather than a field.
  *
  * Neither is a gameplay value. What they rule out is a case that carries the label and takes
@@ -123,7 +157,7 @@ describe('case coherence', () => {
 describe('the amnesia wipe', () => {
   it('is carried by every amnesia case and by no other', () => {
     for (const c of CASES) {
-      if (c.rule === 'amnesia') {
+      if (caseHasRule(c, 'amnesia')) {
         expect(c.wipes, `${c.id} is an amnesia case that wipes nothing`).toBeDefined();
       } else {
         expect(c.wipes, `${c.id} wipes an immunity without being an amnesia case`).toBeUndefined();
@@ -203,6 +237,22 @@ describe('vaccine reachability', () => {
     }
   });
 
+  /**
+   * A vaccine needs `IMMUNITY_MAX` clears, and a strain credited by fewer cases than that is a row
+   * the immunity screen can never fill in a single season — earnable in principle, unearnable in a
+   * run. The one-case check above cannot see it: film was credited by exactly one case for three
+   * cases' worth of the season and read as reachable the whole time.
+   */
+  it('credits every strain often enough that a season can actually finish it', () => {
+    for (const row of STRAIN_ROWS) {
+      const credits = CASES.filter((c) => c.credits === row.key).length;
+      expect(
+        credits,
+        `${String(credits)} case(s) credit ${row.key}; ${String(IMMUNITY_MAX)} clears are needed to hold ${row.name}`,
+      ).toBeGreaterThanOrEqual(IMMUNITY_MAX);
+    }
+  });
+
   it('lists a strain row for every earnable vaccine, one to one', () => {
     const strains = VACCINES.map((v) => v.strain).filter((strain) => strain !== undefined).sort();
     expect(STRAIN_ROWS.map((r) => r.key).sort()).toEqual(strains);
@@ -234,9 +284,11 @@ describe('vaccine reachability', () => {
 describe('case copy is assembled, never half-assembled', () => {
   it('never shows the player a hole where a value should be', () => {
     for (const c of CASES) {
+      const ruleCopy = Object.fromEntries(
+        c.rules.flatMap((rule) => [[`${rule.kind}.label`, rule.label], [`${rule.kind}.sub`, rule.sub]]),
+      );
       for (const [field, line] of Object.entries({
-        region: c.region, title: c.title, story: c.story,
-        ruleLabel: c.ruleLabel, ruleSub: c.ruleSub,
+        region: c.region, title: c.title, story: c.story, ...ruleCopy,
       })) {
         expect(line, `${c.id}.${field} reads "${line}"`).not.toMatch(/undefined|NaN/);
       }
@@ -245,11 +297,80 @@ describe('case copy is assembled, never half-assembled', () => {
 
   it('never scolds, exclaims, or uses an emoji — spec copy rules', () => {
     for (const c of CASES) {
-      for (const line of [c.story, c.ruleSub]) {
+      for (const line of [c.story, ...c.rules.map((rule) => rule.sub)]) {
         expect(line, `${c.id}: "${line}"`).not.toContain('!');
         expect(line).not.toMatch(/\p{Extended_Pictographic}/u);
       }
     }
+  });
+});
+
+/**
+ * The shape of the season's boards, and the one thing in this file that is about variety rather
+ * than about coherence.
+ *
+ * **It exists because seven cases were authored without it and came out as one board.** Measured
+ * over days 1 to 7: every vessel entered off the *left* edge in the upper third of the board and
+ * left through the *floor*; between 32 and 48 per cent of every path ran downward and at most 9
+ * per cent ran up; and the five build spots sat a mean 53 to 65 units off the vessel in all seven,
+ * a spread of twelve units inside a defender range band twenty-two units wide. The rule each case
+ * carried was the only thing that changed, and a player who has read the rule has read the case.
+ *
+ * Nothing caught it, and nothing could have: `dwellSeconds` says a spot is usable, the clear-rate
+ * band says a case is winnable, and a season of identical boards satisfies both. So the sameness
+ * survived twelve tuning passes and reached a person instead.
+ *
+ * What is asserted here is deliberately weak — the weakest claim that would have failed on the
+ * seven. Geometry is an author's judgement, and a gate that specified it would be authoring by
+ * assertion. This says only that the season does not enter every board from one side.
+ */
+describe('the season is more than one board', () => {
+  type Edge = 'left' | 'right' | 'top' | 'bottom';
+
+  /**
+   * Which edge a point sits at or beyond, or null for a point inside the board. A point exactly on
+   * an edge counts: the shipped convention is that a vessel enters from off-screen and ends flush
+   * with the floor, and both read as "off the board" to a player.
+   *
+   * A corner reports the axis it is furthest out on, which is the direction a body arrives from.
+   */
+  function edgeOf(point: Point): Edge | null {
+    const [x, y] = point;
+    const out: readonly (readonly [Edge, number])[] = [
+      ['left', -x], ['right', x - BOARD_WIDTH], ['top', -y], ['bottom', y - BOARD_HEIGHT],
+    ];
+    const worst = out.reduce((a, b) => (a[1] >= b[1] ? a : b));
+    return worst[1] >= 0 ? worst[0] : null;
+  }
+
+  function ends(path: readonly Point[]): { readonly entry: Point; readonly exit: Point } {
+    const entry = path[0];
+    const exit = path[path.length - 1];
+    if (entry === undefined || exit === undefined) throw new Error('a case path with no ends');
+    return { entry, exit };
+  }
+
+  /**
+   * A vessel that began or ended inside the board would have bodies appearing out of nothing and
+   * vanishing into it. Every case already does this; it is written down because the two ends are
+   * also what the diversity check below reads, and a path that stopped short would make that check
+   * quietly meaningless rather than red.
+   */
+  it('starts and finishes every vessel off the board, so nothing appears from nowhere', () => {
+    for (const c of CASES) {
+      const { entry, exit } = ends(c.path);
+      expect(edgeOf(entry), `${c.id} enters at [${entry.join(', ')}], which is on the board`).not.toBeNull();
+      expect(edgeOf(exit), `${c.id} leaves at [${exit.join(', ')}], which is on the board`).not.toBeNull();
+    }
+  });
+
+  it('does not bring every case in from the same side of the board', () => {
+    const entries = CASES.map((c) => edgeOf(ends(c.path).entry));
+    const distinct = new Set(entries);
+    expect(
+      distinct.size,
+      `every case in the season enters from the ${[...distinct].join('')} — the board is the same board each time`,
+    ).toBeGreaterThan(1);
   });
 });
 
