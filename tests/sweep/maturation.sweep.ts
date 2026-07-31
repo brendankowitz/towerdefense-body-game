@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CASES } from '../../src/game/content/cases';
+import { maturedFormOf } from '../../src/game/content/maturation';
 import type { CaseId, DefenderKind } from '../../src/game/types';
 import { CLEAR_RATE_FLOOR } from './band';
 import {
@@ -129,6 +130,31 @@ interface RunResult {
   readonly helped: number;
   /** Boards this run loses that `'never'` clears. */
   readonly hurt: number;
+  /**
+   * True when at least one kind this run grows has opened by this case's `clearedCount` —
+   * `maturationOffer` (`stats.ts`) now refuses to grow a kind before its `MaturedForm.unlock`
+   * cases are cleared, the same season gate `unlockedKinds` applies to placement. A run swept
+   * against a case earlier than every one of its kinds' unlocks can never reach the board with a
+   * growable cell, which is the schedule working as intended and not a harness that stopped
+   * measuring anything. See the skip logged in `compareCase` and the trap assertion below, which
+   * only holds a run to growing something when `eligible` is true.
+   */
+  readonly eligible: boolean;
+}
+
+/**
+ * The kinds a run would actually be offered to grow at this `clearedCount` — the intersection of
+ * what the run is willing to grow with what the season has opened. Kept separate from
+ * `unlockedKinds` in `playBoard.ts`, which answers the *placement* question (can this kind be
+ * bought at all); this answers the *growth* one, gated by `MaturedForm.unlock` rather than
+ * `DefenderStats.unlock`, and the two schedules are not the same — every kind here is already
+ * buyable from day one.
+ */
+function openKindsFor(run: Run, clearedCount: number): readonly DefenderKind[] {
+  return run.kinds.filter((kind) => {
+    const form = maturedFormOf(kind);
+    return form !== null && clearedCount >= form.unlock;
+  });
 }
 
 interface CaseComparison {
@@ -183,7 +209,19 @@ function compareCase({ caseId, clearedCount }: SweepCase): CaseComparison {
     if (outcomes.some((outcome) => outcome.cleared)) best += 1;
   }
 
-  const runs = RUNS.map((run, index) => ({ run, ...(tallies[index] ?? emptyTally()) }));
+  const runs = RUNS.map((run, index) => {
+    const eligible = run.policy === 'never' || openKindsFor(run, clearedCount).length > 0;
+    if (!eligible) {
+      // Not a truncation the reader is meant to take on faith: every pair the trap assertion
+      // will not hold to "grew something" is named here, with the unlock that excluded it, so a
+      // narrower comparison still reads as covering everything it claims to.
+      const unlocks = run.kinds
+        .map((kind) => `${kind}:${String(maturedFormOf(kind)?.unlock ?? '—')}`)
+        .join(', ');
+      console.log(`  skipping ${caseId}/${run.label} — none of [${unlocks}] has opened by clearedCount ${String(clearedCount)}`);
+    }
+    return { run, eligible, ...(tallies[index] ?? emptyTally()) };
+  });
   return { caseId, boards, runs, best };
 }
 
@@ -250,13 +288,22 @@ describe('maturation comparison', () => {
    * Without this the whole run could be six identical passes and every number above would agree
    * beautifully about nothing. `'never'` is asserted from the same field, so a run that has
    * quietly stopped being distinguishable fails here rather than reporting a null result.
+   *
+   * Only over `eligible` pairs, though. Growth used to be available from day one; it is now a
+   * season unlock (`MaturedForm.unlock` in `maturation.ts`, enforced by `maturationOffer` in
+   * `stats.ts`), so a case swept before every kind a run grows has opened cannot put a grown cell
+   * on the board no matter how well the run plays it — that is the schedule doing its job, not
+   * the trap this assertion exists to catch. Forearm at `clearedCount` 0 can never grow a
+   * macrophage (unlock 4) or an antibody (unlock 6); asserting `grown > 0` there would be
+   * asserting the gate is a bug. `compareCase` logs every pair this excludes and why, so skipping
+   * here is never silent.
    */
   it('grows cells under the growing runs and none under never', () => {
     for (const comparison of comparisons) {
       for (const result of comparison.runs) {
         if (result.run.policy === 'never') {
           expect(result.grown, `${comparison.caseId} grew a cell under never`).toBe(0);
-        } else {
+        } else if (result.eligible) {
           expect(
             result.grown,
             `${comparison.caseId}/${result.run.label} grew nothing — the run is not reaching the board`,
