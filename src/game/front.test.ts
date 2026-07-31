@@ -61,11 +61,11 @@ describe('the sickness takes one step a day', () => {
 
   /** Held ground is a wall: the step is spent on the siege and takes no new ground. */
   it('cannot walk through ground the player holds', () => {
-    const before: Front = { infected: ['shoulder'], held: ['heart'], siege: {}, day: 1, rngState: 1 };
+    const before: Front = { infected: ['stomach'], held: ['gut'], siege: {}, day: 1, rngState: 1 };
     const after = stepSickness(before, NO_IMMUNITY);
 
     expect(after.infected).toEqual(before.infected);
-    expect(after.siege.heart).toBe(SIEGE_BASE_DAYS - 1 + 0);
+    expect(after.siege.gut).toBe(SIEGE_BASE_DAYS - 1 + 0);
   });
 
   it('takes a wall once its days run out, and the region stops being held', () => {
@@ -88,5 +88,18 @@ describe('the sickness takes one step a day', () => {
 
     const allRoads: Front = { infected: [...CORE_ROADS], held: [], siege: {}, day: 9, rngState: 1 };
     expect(stepSickness(allRoads, NO_IMMUNITY).infected).toContain('heart');
+  });
+
+  /**
+   * A held heart is not ordinary held ground: it must not come under siege either, or the wall
+   * would start coming down the moment any one road opened, which quietly deletes the rule above.
+   */
+  it('leaves a held core alone until every road to it has fallen', () => {
+    const oneRoadOpen: Front = {
+      infected: CORE_ROADS.slice(1), held: ['heart'], siege: {}, day: 9, rngState: 1,
+    };
+    const after = stepSickness(oneRoadOpen, NO_IMMUNITY);
+    expect(after.siege.heart, 'the core was besieged with a road still open').toBeUndefined();
+    expect(after.held).toContain('heart');
   });
 });

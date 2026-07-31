@@ -95,14 +95,14 @@ export function stepSickness(
   // The core is zero steps from the core, so sorting by distance alone would walk onto the heart
   // the moment one road fell — and the campaign this whole layer is built on would never happen.
   // It is off the table until every road is taken; `isCoreBesieged` is that rule, stated once.
-  // A heart the player already holds is exempt: the wall below is what stops a free capture there,
-  // so excluding it too would waste the day's step on a farther front instead of the siege.
+  // That holds even for a heart the player has already fortified: a held heart is not besieged
+  // early either, or the wall would start coming down the moment any one road opened.
   const coreOpen = !isCoreBesieged(front);
 
   const options = front.infected
     .flatMap((from) => neighboursOf(from).map((to) => ({ from, to })))
     .filter(({ to }) => !front.infected.includes(to))
-    .filter(({ to }) => front.held.includes(to) || !(coreOpen && to === 'heart'))
+    .filter(({ to }) => !(coreOpen && to === 'heart'))
     .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
 
   const move = options[0];
