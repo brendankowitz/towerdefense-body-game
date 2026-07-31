@@ -42,12 +42,13 @@ export interface MaturedForm {
   /** Energy to grow the cell, on top of what its placement already cost. */
   readonly cost: number;
   /**
-   * Cases cleared before the season offers this form, the same shape as `DefenderStats.unlock`.
+   * Days elapsed before the season offers this form, the same shape as `DefenderStats.unlock`.
    *
    * Growth used to be available from day one, which meant both of the game's forms were spent
    * before the player had met four of its six cells. Days 5 and 7 are the two days of the season
    * that add no cell and no rule, so they are where the forms belong: `defenders.ts` carries the
-   * whole schedule and why it reads the way it does.
+   * whole schedule and why it reads the way it does. Counted in days rather than cases cleared so
+   * a run that has lost a case still meets the form on the day the season names for it.
    */
   readonly unlock: number;
   readonly stats: Readonly<Partial<Record<MaturedStatField, number>>>;

@@ -12,6 +12,7 @@ function armed(caseId: CaseId = 'forearm'): SimState {
     caseId,
     immunity: { staph: 0, film: 0, virus: 0 },
     clearedCount: 0,
+    day: 1,
     totalKills: 0,
   });
   startWave(state);

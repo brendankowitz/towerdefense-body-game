@@ -13,11 +13,12 @@ import {
 } from './content/rules';
 import type { DefenderKind, SimState } from './types';
 
-function fresh(clearedCount = 0): SimState {
+function fresh(overrides: { day?: number; clearedCount?: number } = {}): SimState {
   return createSimState({
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
-    clearedCount,
+    clearedCount: overrides.clearedCount ?? 0,
+    day: overrides.day ?? 1,
     totalKills: 0,
   });
 }
@@ -40,7 +41,7 @@ const STARTER: DefenderKind = DEFENDER_ORDER.filter((kind) => DEFENDERS[kind].un
 
 describe('selectDefender', () => {
   it('selects an unlocked defender and toggles it off when tapped twice', () => {
-    const state = fresh(MAX_UNLOCK);
+    const state = fresh({ day: MAX_UNLOCK + 1 });
     const [first, second] = DEFENDER_ORDER;
     expect(second).toBeDefined();
     if (second === undefined || first === undefined) return;
@@ -54,7 +55,7 @@ describe('selectDefender', () => {
   });
 
   it('refuses to pick a cell up while a wave is running', () => {
-    const state = fresh(MAX_UNLOCK);
+    const state = fresh({ day: MAX_UNLOCK + 1 });
     const [first] = DEFENDER_ORDER;
     expect(first).toBeDefined();
     if (first === undefined) return;
@@ -68,7 +69,7 @@ describe('selectDefender', () => {
   });
 
   it('picks a cell up again once the wave is held', () => {
-    const state = fresh(MAX_UNLOCK);
+    const state = fresh({ day: MAX_UNLOCK + 1 });
     const [first] = DEFENDER_ORDER;
     expect(first).toBeDefined();
     if (first === undefined) return;
@@ -81,7 +82,7 @@ describe('selectDefender', () => {
   });
 
   it('ignores a defender that is still locked', () => {
-    const state = fresh(0);
+    const state = fresh();
     const locked = DEFENDER_ORDER.find((kind) => DEFENDERS[kind].unlock > 0);
     expect(locked).toBeDefined();
     if (locked === undefined) return;
@@ -96,19 +97,33 @@ describe('unlockedDefenders', () => {
   it('offers exactly the defenders whose unlock tier is met, in dock order', () => {
     for (let cleared = 0; cleared <= MAX_UNLOCK + 1; cleared += 1) {
       const expected = DEFENDER_ORDER.filter((kind) => DEFENDERS[kind].unlock <= cleared);
-      expect(unlockedDefenders(fresh(cleared))).toEqual(expected);
+      expect(unlockedDefenders(fresh({ day: cleared + 1 }))).toEqual(expected);
     }
   });
 
   it('offers every defender once every unlock tier is met', () => {
-    expect(unlockedDefenders(fresh(MAX_UNLOCK))).toEqual(DEFENDER_ORDER);
+    expect(unlockedDefenders(fresh({ day: MAX_UNLOCK + 1 }))).toEqual(DEFENDER_ORDER);
   });
 
   it('agrees with isUnlocked', () => {
-    const state = fresh(1);
+    const state = fresh({ day: 2 });
     for (const kind of DEFENDER_ORDER) {
       expect(unlockedDefenders(state).includes(kind)).toBe(isUnlocked(state, kind));
     }
+  });
+});
+
+describe('isUnlocked', () => {
+  /**
+   * A player can now arrive at day-six content having lost twice, and a three-cell dock against it
+   * is a loss compounding into a worse one. The body learns whether or not you won.
+   */
+  it('opens a cell on the day it is due, however few cases were cleared', () => {
+    const late = fresh({ day: DEFENDERS.mem.unlock + 1, clearedCount: 0 });
+    expect(isUnlocked(late, 'mem')).toBe(true);
+
+    const early = fresh({ day: DEFENDERS.mem.unlock - 1, clearedCount: 99 });
+    expect(isUnlocked(early, 'mem')).toBe(false);
   });
 });
 
@@ -210,7 +225,7 @@ describe('placeDefender', () => {
 
   it('builds the right shape for every defender kind', () => {
     for (const kind of DEFENDER_ORDER) {
-      const state = fresh(MAX_UNLOCK);
+      const state = fresh({ day: MAX_UNLOCK + 1 });
       state.selected = kind;
       state.energy = DEFENDERS[kind].cost;
       expect(placeDefender(state, 0)).toBe(true);
@@ -229,7 +244,7 @@ const UNGROWABLE = DEFENDER_ORDER.filter((kind) => maturedFormOf(kind) === null)
 
 /** Places `kind` on spot 0 of a funded board and hands back the state. */
 function boardWith(kind: DefenderKind, extraEnergy = 0): SimState {
-  const state = fresh(ALL_OPEN);
+  const state = fresh({ day: ALL_OPEN + 1 });
   state.selected = kind;
   state.energy = DEFENDERS[kind].cost + extraEnergy;
   if (!placeDefender(state, 0)) throw new Error(`Could not place ${kind} to set up the test`);
@@ -345,7 +360,7 @@ describe('reabsorbDefender', () => {
   });
 
   it('takes back only the cell asked for', () => {
-    const state = fresh(MAX_UNLOCK);
+    const state = fresh({ day: MAX_UNLOCK + 1 });
     state.energy = DEFENDERS[STARTER].cost * 3;
     state.selected = STARTER;
     placeDefender(state, 0);
@@ -390,7 +405,7 @@ describe('matureDefender', () => {
       const form = maturedFormOf(kind);
       if (form === null || form.unlock === 0) continue;
 
-      const state = fresh(form.unlock - 1);
+      const state = fresh({ day: form.unlock });
       state.selected = kind;
       state.energy = DEFENDERS[kind].cost + form.cost;
       expect(placeDefender(state, 0), `could not place a ${kind} to grow`).toBe(true);

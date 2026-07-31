@@ -24,6 +24,7 @@ function boardState(): SimState {
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
     clearedCount: DEFENDERS.mem.unlock,
+    day: DEFENDERS.mem.unlock + 1,
     totalKills: 0,
   });
 }

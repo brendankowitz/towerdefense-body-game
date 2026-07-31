@@ -28,6 +28,11 @@ export type DefenderStats =
 /**
  * The dock opens one cell at a time, and this is the season's progression schedule.
  *
+ * `unlock` counts days elapsed, not cases cleared: a run that loses a case still lives the day, and
+ * meeting it with a smaller dock than the day names would turn one loss into a harder one. The
+ * schedule below is written the way it always reads on a clean run — day for day, a clear — but it
+ * is the day, and never the win, that opens the next cell.
+ *
  * **It used to open five cells on day one and the sixth on day two**, which left days 3 to 10 with
  * nothing to unlock and made every board after the second a rearrangement of the same six pieces.
  * That was a balance decision before it was a progression one — the holistic review's candidate D

@@ -32,6 +32,7 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
     caseId,
     immunity: profile.immunity,
     clearedCount: profile.cleared.length,
+    day: profile.front.day,
     totalKills: profile.kills,
   }));
 }

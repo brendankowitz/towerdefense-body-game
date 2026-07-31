@@ -53,6 +53,7 @@ function startedLoop(): GameLoop {
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
     clearedCount: 0,
+    day: 1,
     totalKills: 0,
   });
   startWave(state);
@@ -137,6 +138,7 @@ describe('useGameLoop', () => {
       caseId: 'forearm',
       immunity: { staph: 0, film: 0, virus: 0 },
       clearedCount: 0,
+      day: 1,
       totalKills: 0,
     });
     const loop = new GameLoop(state);

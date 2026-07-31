@@ -36,6 +36,7 @@ function bouncesStaph(caseId: CaseId): boolean {
     caseId,
     immunity: { staph: IMMUNITY_MAX, film: 0, virus: 0 },
     clearedCount: 0,
+    day: 1,
     totalKills: 0,
   });
   state.phase = 'wave';

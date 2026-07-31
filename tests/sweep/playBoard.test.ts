@@ -33,7 +33,7 @@ const CLEARED = CASES.length;
 
 function openState(): SimState {
   return createSimState({
-    caseId: CASE_ID, immunity: immunityAfter(0), clearedCount: CLEARED, totalKills: 0,
+    caseId: CASE_ID, immunity: immunityAfter(0), clearedCount: CLEARED, day: CLEARED + 1, totalKills: 0,
   });
 }
 

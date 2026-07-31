@@ -10,6 +10,8 @@ export interface SimInput {
   readonly caseId: CaseId;
   readonly immunity: Readonly<Record<StrainId, number>>;
   readonly clearedCount: number;
+  /** See `SimState.day`. */
+  readonly day: number;
   readonly totalKills: number;
 }
 
@@ -54,6 +56,7 @@ export function createSimState(input: SimInput): SimState {
     path: compilePath(definition.path),
     immunity: immunityFor(input.immunity, definition.wipes),
     clearedCount: input.clearedCount,
+    day: input.day,
 
     phase: 'build',
     result: null,

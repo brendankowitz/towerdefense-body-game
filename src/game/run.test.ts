@@ -28,6 +28,7 @@ function runFor(
     caseId,
     immunity: { staph: 0, film: 0, virus: 0, ...immunity },
     clearedCount: 2,
+    day: 3,
     totalKills: 0,
   });
 }

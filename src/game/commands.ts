@@ -24,7 +24,7 @@ export function isBuildPhase(state: { readonly phase: Phase }): boolean {
 }
 
 export function isUnlocked(state: SimState, kind: DefenderKind): boolean {
-  return state.clearedCount >= DEFENDERS[kind].unlock;
+  return state.day - 1 >= DEFENDERS[kind].unlock;
 }
 
 export function unlockedDefenders(state: SimState): readonly DefenderKind[] {
@@ -95,7 +95,7 @@ export function reabsorbValue(tower: Tower): number {
 /** The form the cell on this spot can still be grown into, or null. */
 export function maturationAt(state: SimState, spotIndex: number): MaturedForm | null {
   const tower = towerAt(state, spotIndex);
-  return tower === null ? null : maturationOffer(tower, state.clearedCount);
+  return tower === null ? null : maturationOffer(tower, state.day - 1);
 }
 
 /** Returns true when a cell was actually taken back. Build phase only. */
@@ -118,7 +118,7 @@ export function matureDefender(state: SimState, spotIndex: number): boolean {
   const tower = towerAt(state, spotIndex);
   if (tower === null) return false;
 
-  const form = maturationOffer(tower, state.clearedCount);
+  const form = maturationOffer(tower, state.day - 1);
   if (form === null) return false;
   if (state.energy < form.cost) return false;
 
@@ -160,6 +160,7 @@ export function restartCase(state: SimState): SimState {
     caseId: state.caseId,
     immunity: state.immunity,
     clearedCount: state.clearedCount,
+    day: state.day,
     totalKills: state.totalKills,
   });
 }

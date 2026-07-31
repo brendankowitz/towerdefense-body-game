@@ -169,6 +169,13 @@ export interface SimState {
    */
   readonly immunity: Readonly<Record<StrainId, number>>;
   readonly clearedCount: number;
+  /**
+   * The profile's `front.day` at the moment this case was entered. Day 1 is zero days elapsed, so
+   * every reader comparing it to an unlock schedule asks for `day - 1` — the dock and growth both
+   * open on the days a body has survived, not the cases it has won, so a run that loses twice
+   * still meets tomorrow's cell with tomorrow's dock.
+   */
+  readonly day: number;
 
   phase: Phase;
   result: ResultKind | null;

@@ -87,7 +87,7 @@ describe('statsFor', () => {
 });
 
 describe('maturationOffer', () => {
-  /** Everything is open to a profile that has cleared the season. */
+  /** Everything is open to a run that has lived the whole season, day for day. */
   const OPEN = CASES.length;
 
   it('offers the form to a cell that has one and has not taken it', () => {
@@ -109,8 +109,8 @@ describe('maturationOffer', () => {
   });
 
   /**
-   * The season gate, asserted at its own edge rather than at a chosen number of clears: a form is
-   * offered from the clear it names and not from the one before it. Reads the gate off the form, so
+   * The season gate, asserted at its own edge rather than at a chosen number of days: a form is
+   * offered from the day it names and not from the one before it. Reads the gate off the form, so
    * moving the schedule moves the test with it.
    */
   it('offers nothing until the season has opened the form', () => {
@@ -121,7 +121,7 @@ describe('maturationOffer', () => {
 
       expect(
         maturationOffer({ kind, matured: false }, form.unlock - 1),
-        `${form.name} was offered one clear before it opens`,
+        `${form.name} was offered one day before it opens`,
       ).toBeNull();
       expect(maturationOffer({ kind, matured: false }, form.unlock)).toBe(form);
     }

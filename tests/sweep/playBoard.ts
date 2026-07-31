@@ -54,8 +54,8 @@ export function immunityAfter(clearedCount: number): Readonly<Record<StrainId, n
 }
 
 /** The kinds the dock offers at this point in progression, in dock order. */
-export function unlockedKinds(clearedCount: number): readonly DefenderKind[] {
-  return DEFENDER_ORDER.filter((kind) => clearedCount >= DEFENDERS[kind].unlock);
+export function unlockedKinds(daysElapsed: number): readonly DefenderKind[] {
+  return DEFENDER_ORDER.filter((kind) => daysElapsed >= DEFENDERS[kind].unlock);
 }
 
 /**
@@ -219,6 +219,9 @@ export function playBoard(
     caseId,
     immunity: immunityAfter(clearedCount),
     clearedCount,
+    // Day and case index track each other one for one — day 1 is zero days elapsed, the case at
+    // index 0 — so this reproduces the schedule `unlockedKinds` above already measures by index.
+    day: clearedCount + 1,
     totalKills: 0,
   });
 

@@ -41,6 +41,7 @@ function boardOf(...kinds: readonly DefenderKind[]): GameLoop {
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
     clearedCount: ALL_UNLOCKED,
+    day: ALL_UNLOCKED + 1,
     totalKills: 0,
   });
   state.energy = Number.MAX_SAFE_INTEGER;
