@@ -433,9 +433,21 @@ describe('body graph coherence', () => {
 
     const interior = INTERIOR_REGIONS.map((n) => n.id).sort();
     expect(interior).toEqual(['gut', 'lungL', 'lungR'].sort());
+  });
 
-    expect(doors.length + interior.length).toBe(CASE_REGIONS.length);
-    for (const id of doors) expect(interior).not.toContain(id);
+  /**
+   * `entry` is documented as never sitting on the core or a joint, but `ENTRY_REGIONS` and
+   * `INTERIOR_REGIONS` are both filtered from `CASE_REGIONS`, which has already dropped the core
+   * and the joints — so `entry: true` on `heart` or a shoulder would vanish from both derived
+   * lists and trip nothing there. This reads `BODY_NODES` directly, before that filtering happens,
+   * so it is the one check that can actually catch that mistake.
+   */
+  it('never marks the core or a joint as a door', () => {
+    for (const node of BODY_NODES) {
+      if (node.core === true || node.connective === true) {
+        expect(node.entry, `${node.id} is the core or a joint and also a door`).not.toBe(true);
+      }
+    }
   });
 
   it('is connected — every node is reachable from the core', () => {
