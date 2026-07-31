@@ -467,12 +467,25 @@ describe('the sickness takes one step a day', () => {
   });
 
   it('takes a wall once its days run out, and the region stops being held', () => {
-    const under: Front = { infected: ['shoulder'], held: ['heart'], siege: { heart: 0 }, day: 1, rngState: 1 };
+    const under: Front = { infected: ['stomach'], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1 };
     const after = stepSickness(under, NO_IMMUNITY);
 
-    expect(after.held).not.toContain('heart');
-    expect(after.infected).toContain('heart');
-    expect(after.siege.heart).toBeUndefined();
+    expect(after.held).not.toContain('gut');
+    expect(after.infected).toContain('gut');
+    expect(after.siege.gut).toBeUndefined();
+  });
+
+  /**
+   * The core is the nearest node to the core, so a step that only sorted by distance would walk
+   * onto the heart the moment the sickness reached any one road — and the campaign the whole
+   * design is built on would never happen. The heart is off the table until every road is taken.
+   */
+  it('will not step onto the core while a single road to it is open', () => {
+    const oneRoad: Front = { infected: ['throat'], held: [], siege: {}, day: 1, rngState: 1 };
+    expect(stepSickness(oneRoad, NO_IMMUNITY).infected).not.toContain('heart');
+
+    const allRoads: Front = { infected: [...CORE_ROADS], held: [], siege: {}, day: 9, rngState: 1 };
+    expect(stepSickness(allRoads, NO_IMMUNITY).infected).toContain('heart');
   });
 });
 ```
@@ -507,9 +520,15 @@ export function wallDays(
 export function stepSickness(
   front: Front, immunity: Readonly<Record<StrainId, number>>,
 ): Front {
+  // The core is zero steps from the core, so sorting by distance alone would walk onto the heart
+  // the moment one road fell — and the campaign this whole layer is built on would never happen.
+  // It is off the table until every road is taken; `isCoreBesieged` is that rule, stated once.
+  const coreOpen = !isCoreBesieged(front);
+
   const options = front.infected
     .flatMap((from) => neighboursOf(from).map((to) => ({ from, to })))
     .filter(({ to }) => !front.infected.includes(to))
+    .filter(({ to }) => !(coreOpen && to === 'heart'))
     .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
 
   const move = options[0];
@@ -1195,7 +1214,30 @@ Expected: FAIL — MMR carries `cost: 'Costs a day you don’t fight'`.
 
 - [ ] **Step 3: Implement**
 
-Drop `cost` from `VaccineEntry` and from the MMR row; drop the cost line from `Season.tsx`. Add `blocksAmnesia(profile)` to `progression.ts`, reading the MMR gate, and have `createSimState` skip the wipe when it is true. Chickenpox loses `later: true`, gains its gate, and `stepSickness` refuses to besiege a held region when it is earned.
+Drop `cost` from `VaccineEntry` and from the MMR row; drop the cost line from `Season.tsx`. Add
+`blocksAmnesia(profile)` to `progression.ts`, reading the MMR gate, and have `createSimState` skip
+the wipe when it is true.
+
+Chickenpox loses `later: true` and gains its gate. Its effect — a region you hold can never be
+reopened — is a fact about the *run*, and `stepSickness` only takes a front and an immunity record,
+so give it the fact rather than the profile:
+
+```ts
+export interface FrontRules {
+  /** Chickenpox: held ground cannot be besieged at all. Earned, so it arrives late or never. */
+  readonly wallsCannotFall: boolean;
+}
+
+export function stepSickness(
+  front: Front,
+  immunity: Readonly<Record<StrainId, number>>,
+  rules: FrontRules = { wallsCannotFall: false },
+): Front {
+```
+
+A held node is dropped from `options` when `rules.wallsCannotFall`, which makes the vaccine what
+its copy says and keeps `front.ts` ignorant of vaccines, profiles and gates. `endDay` takes and
+forwards the same argument. The default keeps every earlier task's tests untouched.
 
 - [ ] **Step 4: Run the suites**
 
