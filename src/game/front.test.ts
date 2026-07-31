@@ -184,6 +184,19 @@ describe('holding and losing the body', () => {
   });
 
   /**
+   * The heart is not a case region, so holding the other ten is not by itself enough to call a
+   * run won — the sickness can be standing on the core at the same time, and a run cannot be won
+   * and lost at once.
+   */
+  it('is not won while the sickness is standing on the core, however much ground is held', () => {
+    const everything = CASE_REGIONS.map((n) => n.id);
+    const occupied: Front = { infected: ['heart'], held: everything, siege: {}, day: 20, rngState: 1 };
+
+    expect(isRunLost(occupied)).toBe(true);
+    expect(isRunWon(occupied), 'a run was won and lost at the same time').toBe(false);
+  });
+
+  /**
    * The run ends when the sickness is *on* the core, which it can only be by winning the heart
    * case — being besieged is not being lost, and that gap is the whole last stand.
    */
@@ -212,10 +225,29 @@ describe('holding and losing the body', () => {
       .toBe(wallDays('throat', NO_IMMUNITY) + 1);
   });
 
-  it('advances the day, steps the sickness and seeds in one call', () => {
+  it('advances the day and steps the sickness', () => {
     const before: Front = { infected: ['footL'], held: [], siege: {}, day: 1, rngState: 1 };
     const after = endDay(before, NO_IMMUNITY);
     expect(after.day).toBe(2);
     expect(after.infected.length).toBeGreaterThan(before.infected.length);
+  });
+
+  /**
+   * `day: 1` alone never proves `endDay` seeds — `2 % OUTBREAK_INTERVAL !== 0`, so that case's
+   * growth is entirely `stepSickness`. This starts one day short of a seeding day so the day
+   * `endDay` advances *to* is one, and counts entry regions specifically: stepping from a foot
+   * walks inward through a connective joint, never onto another door, so only a seed can grow
+   * that count.
+   */
+  it('opens a door as part of ending the day, on a day that seeds', () => {
+    const before: Front = {
+      infected: ['footL'], held: [], siege: {}, day: OUTBREAK_INTERVAL - 1, rngState: 1,
+    };
+    const after = endDay(before, NO_IMMUNITY);
+    const doorsHeld = (front: Front): number => front.infected
+      .filter((id) => ENTRY_REGIONS.some((n) => n.id === id)).length;
+
+    expect(after.day).toBe(OUTBREAK_INTERVAL);
+    expect(doorsHeld(after)).toBeGreaterThan(doorsHeld(before));
   });
 });

@@ -94,6 +94,12 @@ export function holdRegion(front: Front, node: BodyNodeId): Front {
  * The bank's only sink, and the only thing that competes with fighting for a day. Reinforcing
  * ground rather than buying a cell keeps the season screen's rule intact — what immunity does is
  * still earned, and what this buys is time.
+ *
+ * No cap on how many days a wall can be shored up to. It does not need one: every call here is a
+ * day the player did not spend fighting, and the sickness still takes its step that day regardless
+ * of which region is under siege — so a run spent shoring up one wall forever is a run spent
+ * losing every other region to it. The bank itself only grows by clearing cases, which costs days
+ * the same way. A cap here would be a second limit on something the day itself already limits.
  */
 export function shoreUp(
   front: Front, node: BodyNodeId, immunity: Readonly<Record<StrainId, number>>,
@@ -108,11 +114,6 @@ export function isCoreBesieged(front: Front): boolean {
   return CORE_ROADS.every((node) => front.infected.includes(node));
 }
 
-/** Won when every case region — the ground a season is actually fought over — is held at once. */
-export function isRunWon(front: Front): boolean {
-  return CASE_REGIONS.every((node) => front.held.includes(node.id));
-}
-
 /**
  * The sickness standing on the core, which it reaches only by winning the case there. Besieged is
  * not lost: every road being taken is what *starts* the last stand, and the gap between the two is
@@ -120,6 +121,16 @@ export function isRunWon(front: Front): boolean {
  */
 export function isRunLost(front: Front): boolean {
   return front.infected.includes('heart');
+}
+
+/**
+ * Won when every case region — the ground a season is actually fought over — is held, and the
+ * sickness is not standing on the core. The heart is not itself a case region, so holding the ten
+ * without that second check would let a run be won and lost at the same instant: the body is not
+ * saved while the thing it is built around is occupied, however much ground around it is held.
+ */
+export function isRunWon(front: Front): boolean {
+  return !isRunLost(front) && CASE_REGIONS.every((node) => front.held.includes(node.id));
 }
 
 /**
