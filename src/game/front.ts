@@ -1,7 +1,9 @@
 import { CASE_BY_ID, CASES } from './content/cases';
 import { ENTRY_REGIONS } from './content/body';
+import { SIEGE_BASE_DAYS } from './content/rules';
+import { CORE_ROADS, neighboursOf, stepsToCore } from './graph';
 import { createRng } from './rng';
-import type { BodyNodeId, CaseId } from './types';
+import type { BodyNodeId, CaseId, StrainId } from './types';
 
 /**
  * The layer above the fight: which ground the sickness holds, which ground the player does, and
@@ -65,4 +67,63 @@ export function stateOf(front: Front, node: BodyNodeId): RegionState {
 /** Every case the player could fight today, in season order so the list is stable to read. */
 export function hotCases(front: Front): readonly CaseId[] {
   return CASES.filter((c) => front.infected.includes(c.node)).map((c) => c.id);
+}
+
+/** Days a region holds out for: what it was cleared on top of, plus the base every wall has. */
+export function wallDays(
+  node: BodyNodeId, immunity: Readonly<Record<StrainId, number>>,
+): number {
+  const caseId = caseAt(node);
+  const strain = caseId === null ? null : CASE_BY_ID[caseId].credits;
+  return SIEGE_BASE_DAYS + (strain === null ? 0 : immunity[strain]);
+}
+
+/** True once every road to the core is in enemy hands — the one condition that opens the heart. */
+function isCoreBesieged(front: Front): boolean {
+  return CORE_ROADS.every((node) => front.infected.includes(node));
+}
+
+/**
+ * The sickness's whole turn, and deliberately one step however many fronts it has: the day is
+ * one-for-one with the player's, so a run is a race rather than a rout. It steps wherever it is
+ * closest to the core, which makes it predictable — a player can see which fire is about to get
+ * worse and plan against it, and that is the difference between pressure and harassment.
+ */
+export function stepSickness(
+  front: Front, immunity: Readonly<Record<StrainId, number>>,
+): Front {
+  // The core is zero steps from the core, so sorting by distance alone would walk onto the heart
+  // the moment one road fell — and the campaign this whole layer is built on would never happen.
+  // It is off the table until every road is taken; `isCoreBesieged` is that rule, stated once.
+  // A heart the player already holds is exempt: the wall below is what stops a free capture there,
+  // so excluding it too would waste the day's step on a farther front instead of the siege.
+  const coreOpen = !isCoreBesieged(front);
+
+  const options = front.infected
+    .flatMap((from) => neighboursOf(from).map((to) => ({ from, to })))
+    .filter(({ to }) => !front.infected.includes(to))
+    .filter(({ to }) => front.held.includes(to) || !(coreOpen && to === 'heart'))
+    .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
+
+  const move = options[0];
+  if (move === undefined) return front;
+
+  if (!front.held.includes(move.to)) {
+    return { ...front, infected: [...front.infected, move.to] };
+  }
+
+  // A wall. The step is spent on it either way — that is the whole point of holding ground.
+  const left = front.siege[move.to] ?? wallDays(move.to, immunity);
+  if (left > 0) {
+    return { ...front, siege: { ...front.siege, [move.to]: left - 1 } };
+  }
+
+  const siege = { ...front.siege };
+  Reflect.deleteProperty(siege, move.to);
+  return {
+    ...front,
+    infected: [...front.infected, move.to],
+    held: front.held.filter((node) => node !== move.to),
+    siege,
+  };
 }
