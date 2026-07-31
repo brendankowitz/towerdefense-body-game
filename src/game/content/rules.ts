@@ -81,3 +81,19 @@ export const SPLIT_RADIUS_FACTOR = 0.75;
  * day-4 opening (line 466) was demo staging and is not shipped. Prototype line 580.
  */
 export const FRESH_PROFILE = { day: 1, bank: 240 } as const;
+
+/**
+ * The front line, and every number it runs on. All four are pacing values and pacing is a property
+ * of a whole run, so none of them may be chosen by feel — `tests/sweep/runSweep.ts` is the
+ * instrument that measures them and the only thing that should move them.
+ *
+ * `OUTBREAK_INTERVAL` is days between new doors opening. `SIEGE_BASE_DAYS` is how long ground with
+ * no immunity behind it holds, so a wall is `SIEGE_BASE_DAYS + response`. `DOOR_RESIST_PER_CLEAR`
+ * is the chance one clear of a strain buys that an outbreak of it never takes hold.
+ */
+export const OUTBREAK_INTERVAL = 4;
+export const SIEGE_BASE_DAYS = 1;
+export const DOOR_RESIST_PER_CLEAR = 0.25;
+
+/** Bank spent to add one day to a wall. The only thing that competes with fighting for a day. */
+export const SHORE_UP_COST = 120;
