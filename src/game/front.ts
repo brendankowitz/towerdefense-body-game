@@ -1,6 +1,6 @@
 import { CASE_BY_ID, CASES } from './content/cases';
 import { ENTRY_REGIONS } from './content/body';
-import { SIEGE_BASE_DAYS } from './content/rules';
+import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import { CORE_ROADS, neighboursOf, stepsToCore } from './graph';
 import { createRng } from './rng';
 import type { BodyNodeId, CaseId, StrainId } from './types';
@@ -127,3 +127,38 @@ export function stepSickness(
     siege,
   };
 }
+
+/**
+ * A new outbreak, every `OUTBREAK_INTERVAL` days, at a door the sickness is not already in.
+ *
+ * The roll is the one place in this layer where luck decides anything, and it is the right place:
+ * catching something is exactly what immunity is a chance against. What it may never do is undo
+ * work the player did — a wall is days, not a roll — so a bad draw here costs a region the player
+ * had not taken yet and never one they had.
+ */
+export function seedOutbreak(
+  front: Front, immunity: Readonly<Record<StrainId, number>>,
+): Front {
+  if (front.day % OUTBREAK_INTERVAL !== 0) return front;
+
+  const doors = ENTRY_REGIONS.filter((node) => !front.infected.includes(node.id));
+  if (doors.length === 0) return front;
+
+  const rng = createRng(front.rngState);
+  const door = doors[Math.floor(rng.next() * doors.length)];
+  const shrugged = rng.next();
+  const rngState = rng.state;
+  if (door === undefined) return { ...front, rngState };
+
+  const caseId = caseAt(door.id);
+  const strain = caseId === null ? null : CASE_BY_ID[caseId].credits;
+  const resistance = strain === null
+    ? 0
+    : Math.min(1, immunity[strain] * DOOR_RESIST_PER_CLEAR);
+
+  if (shrugged < resistance) return { ...front, rngState };
+  return { ...front, infected: [...front.infected, door.id], rngState };
+}
+
+/** Named so the roll and the copy that explains it read the same number. */
+export const MAX_DOOR_RESISTANCE = Math.min(1, IMMUNITY_MAX * DOOR_RESIST_PER_CLEAR);

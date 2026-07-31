@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CASE_REGIONS } from './content/body';
-import { SIEGE_BASE_DAYS } from './content/rules';
-import { createFront, hotCases, stateOf, stepSickness, type Front } from './front';
+import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
+import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
+import { createFront, hotCases, seedOutbreak, stateOf, stepSickness, type Front } from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
 import type { StrainId } from './types';
 
@@ -37,6 +37,7 @@ describe('a fresh front', () => {
 });
 
 const NO_IMMUNITY: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 } as const;
+const FULL_IMMUNITY = { staph: IMMUNITY_MAX, film: IMMUNITY_MAX, virus: IMMUNITY_MAX } as const;
 
 describe('the sickness takes one step a day', () => {
   it('moves toward the core rather than wandering', () => {
@@ -101,5 +102,52 @@ describe('the sickness takes one step a day', () => {
     const after = stepSickness(oneRoadOpen, NO_IMMUNITY);
     expect(after.siege.heart, 'the core was besieged with a road still open').toBeUndefined();
     expect(after.held).toContain('heart');
+  });
+});
+
+describe('new outbreaks open doors', () => {
+  it('opens nothing on a day that is not a seeding day', () => {
+    const front: Front = { infected: ['footL'], held: [], siege: {}, day: 1, rngState: 3 };
+    expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual(front.infected);
+  });
+
+  it('opens a door on a seeding day', () => {
+    const front: Front = {
+      infected: ['footL'], held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: 3,
+    };
+    const after = seedOutbreak(front, NO_IMMUNITY);
+    expect(after.infected.length).toBe(front.infected.length + 1);
+  });
+
+  /**
+   * The door roll, asserted as a rate rather than as one outcome: a single draw proves nothing
+   * about a probability. Walked over many seeds, a body that has met everything three times must
+   * shrug off far more than a body that has met nothing.
+   */
+  it('shrugs off more outbreaks the more immunity the body carries', () => {
+    const attempts = 400;
+    const caught = (immunity: Readonly<Record<StrainId, number>>): number => {
+      let count = 0;
+      for (let seed = 1; seed <= attempts; seed += 1) {
+        const front: Front = {
+          infected: [], held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: seed,
+        };
+        if (seedOutbreak(front, immunity).infected.length > 0) count += 1;
+      }
+      return count;
+    };
+
+    const naive = caught(NO_IMMUNITY);
+    const seasoned = caught(FULL_IMMUNITY);
+    expect(naive, 'a body with no immunity should catch nearly everything').toBeGreaterThan(attempts * 0.9);
+    expect(seasoned, 'a seasoned body should shrug most of it off').toBeLessThan(naive);
+    expect(DOOR_RESIST_PER_CLEAR * IMMUNITY_MAX).toBeLessThanOrEqual(1);
+  });
+
+  it('never opens a door the sickness is already standing in', () => {
+    const front: Front = {
+      infected: ENTRY_REGIONS.map((n) => n.id), held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: 3,
+    };
+    expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual(front.infected);
   });
 });
