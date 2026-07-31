@@ -2,6 +2,7 @@ import { CASES, CASE_BY_ID } from './content/cases';
 import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
+import { createFront, holdRegion, nodeOf, type Front } from './front';
 import type { CaseId, StrainId, Tier } from './types';
 
 /** Everything a run carries between cases. The simulation reads it; only this module writes it. */
@@ -11,6 +12,12 @@ export interface Profile {
   readonly day: number;
   readonly bank: number;
   readonly kills: number;
+  /**
+   * The run's front line. It lives on the profile because it is what a run *is* now — the day, the
+   * ground held and the ground lost — and a save that restored the cleared list without it would
+   * put the player back on a map with no sickness on it.
+   */
+  readonly front: Front;
 }
 
 /**
@@ -25,6 +32,7 @@ export function createFreshProfile(): Profile {
     day: FRESH_PROFILE.day,
     bank: FRESH_PROFILE.bank,
     kills: 0,
+    front: createFront(FRESH_PROFILE.seed),
   };
 }
 
@@ -44,6 +52,7 @@ export function clearCase(profile: Profile, caseId: CaseId, totalKills: number):
     day: profile.day + 1,
     bank: profile.bank + CASE_CLEAR_BANK,
     kills: totalKills,
+    front: holdRegion(profile.front, nodeOf(caseId)),
   };
 }
 

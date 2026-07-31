@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseProfile } from './parseProfile';
 import { IMMUNITY_MAX } from '@game/content/rules';
+import { createFront } from '@game/front';
 
 const valid = {
   cleared: ['forearm'],
@@ -8,6 +9,7 @@ const valid = {
   day: 5,
   bank: 700,
   kills: 42,
+  front: createFront(1),
 };
 
 describe('parseProfile', () => {
@@ -58,6 +60,16 @@ describe('parseProfile', () => {
   it('drops unknown extra keys rather than carrying them forward', () => {
     const parsed = parseProfile({ ...valid, sneaky: true });
     if (parsed === null) throw new Error('a profile with an unknown key should still parse');
-    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills']);
+    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills', 'front']);
+  });
+
+  /**
+   * A version-1 save has a cleared list and no front — this is what it looks like once the
+   * version check above it has already been stripped away, the way a hand-edited save would
+   * reach `parseProfile` directly.
+   */
+  it('rejects a save written before the body had a front line', () => {
+    const old = { cleared: [], immunity: { staph: 0, film: 0, virus: 0 }, day: 3, bank: 400, kills: 9 };
+    expect(parseProfile(old)).toBeNull();
   });
 });

@@ -1,10 +1,13 @@
+import { BODY_NODES } from '@game/content/body';
 import { CASES } from '@game/content/cases';
 import { IMMUNITY_MAX } from '@game/content/rules';
-import type { CaseId, StrainId } from '@game/types';
+import type { Front } from '@game/front';
+import type { BodyNodeId, CaseId, StrainId } from '@game/types';
 import type { Profile } from '@game/progression';
 
 const CASE_IDS: ReadonlySet<string> = new Set(CASES.map((entry) => entry.id));
 const STRAINS: readonly StrainId[] = ['staph', 'film', 'virus'];
+const NODE_IDS: ReadonlySet<string> = new Set(BODY_NODES.map((node) => node.id));
 
 function isCaseId(value: unknown): value is CaseId {
   return typeof value === 'string' && CASE_IDS.has(value);
@@ -13,6 +16,44 @@ function isCaseId(value: unknown): value is CaseId {
 /** A non-negative integer counter — day, bank, kills, and each immunity value all share this shape. */
 function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
+function parseNodes(value: unknown): BodyNodeId[] | null {
+  if (!Array.isArray(value)) return null;
+  const nodes: BodyNodeId[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string' || !NODE_IDS.has(entry)) return null;
+    nodes.push(entry as BodyNodeId);
+  }
+  return nodes;
+}
+
+/**
+ * Total, like everything else here: anything that is not exactly a front is a corrupt save, and
+ * the repository already turns null into a fresh body rather than a crash. A siege on ground the
+ * save does not claim to hold is the one cross-field check worth making — it is what a
+ * hand-edited or half-written save looks like.
+ */
+function parseFront(value: unknown): Front | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+
+  const infected = parseNodes(raw.infected);
+  const held = parseNodes(raw.held);
+  if (infected === null || held === null) return null;
+  if (typeof raw.day !== 'number' || !Number.isInteger(raw.day) || raw.day < 1) return null;
+  if (typeof raw.rngState !== 'number' || !Number.isFinite(raw.rngState)) return null;
+  if (typeof raw.siege !== 'object' || raw.siege === null) return null;
+
+  const siege: Partial<Record<BodyNodeId, number>> = {};
+  for (const [node, days] of Object.entries(raw.siege)) {
+    if (!NODE_IDS.has(node)) return null;
+    if (typeof days !== 'number' || !Number.isInteger(days) || days < 0) return null;
+    if (!held.includes(node as BodyNodeId)) return null;
+    siege[node as BodyNodeId] = days;
+  }
+
+  return { infected, held, siege, day: raw.day, rngState: raw.rngState };
 }
 
 /**
@@ -45,5 +86,8 @@ export function parseProfile(raw: unknown): Profile | null {
   const { day, bank, kills } = record;
   if (!isCount(day) || !isCount(bank) || !isCount(kills)) return null;
 
-  return { cleared, immunity, day, bank, kills };
+  const front = parseFront(record['front']);
+  if (front === null) return null;
+
+  return { cleared, immunity, day, bank, kills, front };
 }

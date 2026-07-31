@@ -27,7 +27,7 @@ vi.mock('@capacitor/preferences', () => ({
 
 // Imported after the mock so the module under test picks up the mocked binding.
 const { PreferencesProgressRepository } = await import('./PreferencesProgressRepository');
-const { STORAGE_KEY } = await import('./ProgressRepository');
+const { STORAGE_KEY, STORAGE_VERSION } = await import('./ProgressRepository');
 
 describe('PreferencesProgressRepository', () => {
   beforeEach(() => {
@@ -58,7 +58,7 @@ describe('PreferencesProgressRepository', () => {
   });
 
   it('falls back to fresh and reports corruption on a valid-JSON invalid profile', async () => {
-    store.set(STORAGE_KEY, JSON.stringify({ version: 1, profile: { day: 'soon' } }));
+    store.set(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, profile: { day: 'soon' } }));
     const result = await new PreferencesProgressRepository().load();
     expect(result).toEqual({ status: 'fresh', reason: 'corrupt' });
   });

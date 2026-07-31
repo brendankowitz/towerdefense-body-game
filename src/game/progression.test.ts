@@ -7,6 +7,7 @@ import { CASES } from './content/cases';
 import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
+import { createFront, hotCases, nodeOf } from './front';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -47,6 +48,7 @@ describe('createFreshProfile', () => {
       day: FRESH_PROFILE.day,
       bank: FRESH_PROFILE.bank,
       kills: 0,
+      front: createFront(FRESH_PROFILE.seed),
     });
   });
 
@@ -62,6 +64,12 @@ describe('createFreshProfile', () => {
     expect(createFreshProfile()).toEqual(first);
     expect(createFreshProfile()).not.toBe(createFreshProfile());
     expect(createFreshProfile().immunity).not.toBe(createFreshProfile().immunity);
+  });
+
+  it('carries a front line from the first day of a new body', () => {
+    const profile = createFreshProfile();
+    expect(profile.front.day).toBe(1);
+    expect(profile.front.infected).toHaveLength(1);
   });
 });
 
@@ -151,6 +159,17 @@ describe('clearCase', () => {
     clearCase(fresh, requireCase(0).id, 9);
 
     expect(fresh).toEqual(createFreshProfile());
+  });
+
+  it('holds the region a cleared case was fought over', () => {
+    const profile = createFreshProfile();
+    const [firstHot] = hotCases(profile.front);
+    expect(firstHot).toBeDefined();
+    if (firstHot === undefined) return;
+
+    const after = clearCase(profile, firstHot, 12);
+    expect(after.front.held).toContain(nodeOf(firstHot));
+    expect(after.front.infected).not.toContain(nodeOf(firstHot));
   });
 });
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { BODY_NODES } from '../../src/game/content/body';
 import { FRESH_PROFILE, IMMUNITY_MAX } from '../../src/game/content/rules';
+import { createFront, holdRegion, nodeOf } from '../../src/game/front';
 import type { Profile } from '../../src/game/progression';
 import { STORAGE_KEY, STORAGE_VERSION } from '../../src/progress/ProgressRepository';
 import { onScreen, screen, seedProfile } from './helpers';
@@ -31,6 +32,7 @@ const SAVED: Profile = {
   day: 2,
   bank: 420,
   kills: 37,
+  front: holdRegion(createFront(FRESH_PROFILE.seed), nodeOf('forearm')),
 };
 
 test('a saved run is read back, and a run written through the UI outlives a reload', async ({ page }) => {

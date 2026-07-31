@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStorageProgressRepository } from './LocalStorageProgressRepository';
-import { STORAGE_KEY, encode } from './ProgressRepository';
+import { STORAGE_KEY, STORAGE_VERSION, encode } from './ProgressRepository';
 import { createFreshProfile } from '@game/progression';
 
 describe('LocalStorageProgressRepository', () => {
@@ -31,7 +31,7 @@ describe('LocalStorageProgressRepository', () => {
   });
 
   it('falls back to fresh and reports corruption on a valid-JSON invalid profile', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, profile: { day: 'soon' } }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, profile: { day: 'soon' } }));
     const result = await new LocalStorageProgressRepository().load();
     expect(result).toEqual({ status: 'fresh', reason: 'corrupt' });
   });
