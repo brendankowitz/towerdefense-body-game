@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
-import { createFront, hotCases, seedOutbreak, stateOf, stepSickness, type Front } from './front';
+import {
+  createFront, endDay, holdRegion, hotCases, isCoreBesieged, isRunLost, isRunWon, seedOutbreak,
+  shoreUp, stateOf, stepSickness, wallDays, type Front,
+} from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
 import type { StrainId } from './types';
 
@@ -149,5 +152,70 @@ describe('new outbreaks open doors', () => {
       infected: ENTRY_REGIONS.map((n) => n.id), held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: 3,
     };
     expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual(front.infected);
+  });
+});
+
+describe('holding and losing the body', () => {
+  it('turns a region the player cleared from hot to held', () => {
+    const before: Front = { infected: ['forearm'], held: [], siege: {}, day: 1, rngState: 1 };
+    const after = holdRegion(before, 'forearm');
+    expect(after.infected).not.toContain('forearm');
+    expect(after.held).toContain('forearm');
+  });
+
+  it('lifts a siege when the region under it is retaken', () => {
+    const before: Front = {
+      infected: ['stomach'], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1,
+    };
+    expect(holdRegion(before, 'stomach').siege.gut).toBe(0);
+    expect(holdRegion({ ...before, infected: ['gut'] }, 'gut').siege.gut).toBeUndefined();
+  });
+
+  it('besieges the core only when every road to it is taken', () => {
+    const most: Front = { infected: CORE_ROADS.slice(1), held: [], siege: {}, day: 1, rngState: 1 };
+    expect(isCoreBesieged(most)).toBe(false);
+    expect(isCoreBesieged({ ...most, infected: [...CORE_ROADS] })).toBe(true);
+  });
+
+  it('is won when every region is held at once', () => {
+    const all = CASE_REGIONS.map((n) => n.id);
+    expect(isRunWon({ infected: [], held: all, siege: {}, day: 9, rngState: 1 })).toBe(true);
+    expect(isRunWon({ infected: [], held: all.slice(1), siege: {}, day: 9, rngState: 1 })).toBe(false);
+  });
+
+  /**
+   * The run ends when the sickness is *on* the core, which it can only be by winning the heart
+   * case — being besieged is not being lost, and that gap is the whole last stand.
+   */
+  it('is lost only once the sickness is standing on the core', () => {
+    const besieged: Front = { infected: [...CORE_ROADS], held: [], siege: {}, day: 9, rngState: 1 };
+    expect(isCoreBesieged(besieged)).toBe(true);
+    expect(isRunLost(besieged)).toBe(false);
+    expect(isRunLost({ ...besieged, infected: [...CORE_ROADS, 'heart'] })).toBe(true);
+  });
+
+  /**
+   * Winning the heart case does not clear the roads — it puts the player on the core, which the
+   * sickness then has to break like any other wall. One rule, reused, and it means the last stand
+   * buys time rather than resetting the campaign.
+   */
+  it('turns a won heart case into a wall the sickness has to break again', () => {
+    const besieged: Front = { infected: [...CORE_ROADS, 'heart'], held: [], siege: {}, day: 9, rngState: 1 };
+    const after = holdRegion(besieged, 'heart');
+    expect(isRunLost(after)).toBe(false);
+    expect(after.held).toContain('heart');
+  });
+
+  it('adds a day to a wall when a region is shored up', () => {
+    const front: Front = { infected: [], held: ['throat'], siege: {}, day: 2, rngState: 1 };
+    expect(shoreUp(front, 'throat', NO_IMMUNITY).siege.throat)
+      .toBe(wallDays('throat', NO_IMMUNITY) + 1);
+  });
+
+  it('advances the day, steps the sickness and seeds in one call', () => {
+    const before: Front = { infected: ['footL'], held: [], siege: {}, day: 1, rngState: 1 };
+    const after = endDay(before, NO_IMMUNITY);
+    expect(after.day).toBe(2);
+    expect(after.infected.length).toBeGreaterThan(before.infected.length);
   });
 });

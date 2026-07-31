@@ -1,5 +1,5 @@
 import { CASE_BY_ID, CASES } from './content/cases';
-import { ENTRY_REGIONS } from './content/body';
+import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import { CORE_ROADS, neighboursOf, stepsToCore } from './graph';
 import { createRng } from './rng';
@@ -78,9 +78,48 @@ export function wallDays(
   return SIEGE_BASE_DAYS + (strain === null ? 0 : immunity[strain]);
 }
 
+/** A case cleared: the sickness is off that ground and the player is on it. */
+export function holdRegion(front: Front, node: BodyNodeId): Front {
+  const siege = { ...front.siege };
+  Reflect.deleteProperty(siege, node);
+  return {
+    ...front,
+    infected: front.infected.filter((id) => id !== node),
+    held: front.held.includes(node) ? front.held : [...front.held, node],
+    siege,
+  };
+}
+
+/**
+ * The bank's only sink, and the only thing that competes with fighting for a day. Reinforcing
+ * ground rather than buying a cell keeps the season screen's rule intact — what immunity does is
+ * still earned, and what this buys is time.
+ */
+export function shoreUp(
+  front: Front, node: BodyNodeId, immunity: Readonly<Record<StrainId, number>>,
+): Front {
+  if (!front.held.includes(node)) return front;
+  const left = front.siege[node] ?? wallDays(node, immunity);
+  return { ...front, siege: { ...front.siege, [node]: left + 1 } };
+}
+
 /** True once every road to the core is in enemy hands — the one condition that opens the heart. */
-function isCoreBesieged(front: Front): boolean {
+export function isCoreBesieged(front: Front): boolean {
   return CORE_ROADS.every((node) => front.infected.includes(node));
+}
+
+/** Won when every case region — the ground a season is actually fought over — is held at once. */
+export function isRunWon(front: Front): boolean {
+  return CASE_REGIONS.every((node) => front.held.includes(node.id));
+}
+
+/**
+ * The sickness standing on the core, which it reaches only by winning the case there. Besieged is
+ * not lost: every road being taken is what *starts* the last stand, and the gap between the two is
+ * the one fight the whole run has been protecting.
+ */
+export function isRunLost(front: Front): boolean {
+  return front.infected.includes('heart');
 }
 
 /**
@@ -162,3 +201,10 @@ export function seedOutbreak(
 
 /** Named so the roll and the copy that explains it read the same number. */
 export const MAX_DOOR_RESISTANCE = Math.min(1, IMMUNITY_MAX * DOOR_RESIST_PER_CLEAR);
+
+/** The sickness's whole day: it takes its step, then something new may get in. */
+export function endDay(front: Front, immunity: Readonly<Record<StrainId, number>>): Front {
+  const stepped = stepSickness(front, immunity);
+  const advanced = { ...stepped, day: stepped.day + 1 };
+  return seedOutbreak(advanced, immunity);
+}
