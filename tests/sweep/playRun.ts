@@ -43,7 +43,7 @@ import { boardAt, EVERY_GROWABLE, playBoardIn, unlockedKinds, type BoardContext 
  * `'learned'` the player cleared the one fire on the day it appeared, `infected` went empty, and
  * the sickness — which steps from ground it holds, and held none — never moved again. Four hundred
  * days, seven regions held, the other three never so much as alight, at every value of
- * `OUTBREAK_INTERVAL` from 1 to 4. That is not a tuning finding, it is arithmetic: an outbreak
+ * `OUTBREAK_INTERVAL` from 2 to 6. That is not a tuning finding, it is arithmetic: an outbreak
  * seeds at most one door a day and the player clears at most one a day, so a player who wins every
  * fight empties the board every evening and the sickness is never standing anywhere to step from.
  * The front line exists **only on the player's losses**, and the three interior regions — both
@@ -54,6 +54,24 @@ import { boardAt, EVERY_GROWABLE, playBoardIn, unlockedKinds, type BoardContext 
  * happening, and one measured against `'stumbling'` is about a run that is over inside a fortnight.
  * `'learning'` is where the three constants have anything to move. `runSweep.ts` reports all three
  * and `rules.ts` records each number as what it was worth across them.
+ *
+ * **Which direction `'learning'` is wrong in, and the answer is "both, at different points in the
+ * run".** `playBoard.ts` can say its purchasing policy is a *floor* — a player who declines every
+ * option it declines plays exactly it, so best play is at least that good. Nothing of the kind is
+ * true here, and saying so is the difference between a bracket and a bound:
+ *
+ * - **Before a case's first clear it is pessimistic.** The board is drawn uniformly, fresh, every
+ *   single day, forever. Lose the forearm on day 3 and the harness draws again on day 4, day 5,
+ *   day 40 — never getting better at a case it has now seen thirty-seven times. Real players
+ *   improve at the fight they keep losing, and this models none of it.
+ * - **After a case's first clear it is optimistic.** The case is thereafter won with certainty.
+ *   Real players do not win a board because they once won it.
+ *
+ * So `'learning'` is a step function, not a learning curve, and it is **not a bound in either
+ * direction** — it is the middle of a bracket whose two ends are the other policies. Every number
+ * chosen against it is a number about that midpoint. The place this bites hardest is the shape of
+ * the distinct-clear distribution, which comes out bimodal partly because the policy is
+ * discontinuous; `runSweep.ts` says so where it prints it.
  *
  * What both share: the difficulty of an individual case is not what either models — the board sweep
  * is still the instrument for that. The one place that bites is the last stand, and `runSweep.ts`
@@ -81,10 +99,15 @@ import { boardAt, EVERY_GROWABLE, playBoardIn, unlockedKinds, type BoardContext 
  *
  * - `nearestToCore` — fight the one closest to the heart. The defensive read of the map, and the
  *   one the front line is designed to teach: keep a road open.
- * - `cheapest` — fight whatever is easiest, taken as earliest in season order. The season is
- *   authored as a difficulty curve and `curve.ts` gates it as one, so its order is the best
- *   statement of "easiest" the content has; it is also what a player reads off the map when they
- *   pick the region they have already beaten before.
+ * - `cheapest` — the earliest region in season order, which is a **list order and not a difficulty
+ *   read**, and the name is kept only because it is what the brief called for. It was justified
+ *   here as "easiest, because the season is a difficulty curve"; `curve.ts` disclaims exactly that
+ *   property — it removed an adjacent-pair staircase for being "a stronger claim than the design
+ *   makes and a wrong one", and gates only a pushover check and a halves trend. The measured season
+ *   is not monotone (sinus 8.9% sits between measles 5.9% and bronchitis 5.2%), so with sinus and
+ *   hand both alight this policy takes hand, the harder of the two. What it is a good model of is
+ *   the player who works down the map in the order the game listed it, which is a real second
+ *   reading and the reason it stays.
  */
 export type CasePolicy = 'nearestToCore' | 'cheapest';
 
@@ -140,6 +163,20 @@ const SEARCH_STRIDE = 2833;
  * somebody uses that field.
  */
 const LEARNED = new Map<string, readonly DefenderKind[] | null>();
+
+/**
+ * Empties the memo, and it exists for one caller: the test that one run cannot change what another
+ * measures.
+ *
+ * That test used to play a seed forwards and backwards and compare, which **could not fail**. The
+ * memo is module-global and never cleared, so the backwards pass read whatever the forwards pass
+ * wrote — a key missing a field would hand back the same wrong answer to both and the assertion
+ * would still pass. Contamination is only visible against a run played with nothing in the memo, so
+ * the test needs to be able to empty it.
+ */
+export function resetLearned(): void {
+  LEARNED.clear();
+}
 
 function contextKey(context: BoardContext, kinds: readonly DefenderKind[]): string {
   const immunity = (['staph', 'film', 'virus'] as const)
@@ -248,12 +285,38 @@ function contextFor(profile: Profile, caseId: CaseId): BoardContext {
 }
 
 /**
+ * The player's stream, derived from the run's seed rather than *being* it.
+ *
+ * **This is a correction, and the bug it fixes was invisible to every determinism test.** The hand
+ * used to be `createRng(seed)`, the same call `createFront(seed)` makes. mulberry32 advances its
+ * counter by a fixed constant, so two generators started on the same seed are the *same sequence*:
+ * the first variate that chose the run's opening door was the identical variate that chose the
+ * run's first board. Measured before the fix, on seed 7, `0.01170` picked door 0 and board 91 of
+ * 7776; on seed 42, `0.60110` picked door 4 and board 4674. Across every seed in every sweep the
+ * opening door and the first board were perfectly rank-correlated.
+ *
+ * Replay was never affected — a seed still reproduced itself exactly — which is why nothing caught
+ * it. What was affected is the **sample**, in the one fight policy all four pacing constants were
+ * chosen against. Every number in `rules.ts` was re-measured after this landed.
+ *
+ * A multiply-xor rather than an offset: two mulberry32 streams whose counters differ by a constant
+ * re-collide the moment their draw counts differ by the right amount, and an offset makes that
+ * amount small and reachable. Hashing the seed puts the two starts far enough apart that no run
+ * this harness plays gets near it.
+ */
+function handSeed(seed: number): number {
+  return (Math.imul(seed ^ 0x9e3779b1, 0x85ebca6b) ^ 0x27d4eb2f) >>> 0;
+}
+
+/**
  * The board a player who has learned nothing brings: one drawn from the space, fresh every fight.
  *
  * The draw runs off a generator of its own rather than off `front.rngState`, because the front's
  * rng is the sickness's and threading the player's coin flips through it would change which door
- * every outbreak lands at. Two seeds, one run: the sickness plays out identically whichever fight
- * policy is measured against it, which is what makes the two comparable at all.
+ * every outbreak lands at. The sickness therefore plays out identically whichever fight policy is
+ * measured against it, which is what makes the three comparable at all — and, since `handSeed`
+ * above, the player's draws are also independent of the sickness's rather than a relabelling of
+ * them.
  */
 function drawnBoard(rng: Rng, context: BoardContext): readonly DefenderKind[] {
   const kinds = unlockedKinds(context.day - 1);
@@ -262,16 +325,21 @@ function drawnBoard(rng: Rng, context: BoardContext): readonly DefenderKind[] {
   return boardAt(kinds, spots, Math.floor(rng.next() * total));
 }
 
+/**
+ * `'learning'` and not `'learned'`, which is what this defaulted to: a default that resolves no run
+ * at all is the wrong one to hand a caller who did not state a preference, and it put the one policy
+ * the file says measures nothing into the tests that omitted the argument.
+ */
 export function playRun(
   seed: number,
   policy: CasePolicy,
-  fightPolicy: FightPolicy = 'learned',
+  fightPolicy: FightPolicy = 'learning',
 ): RunOutcome {
   // The fresh profile, on the door this seed opens on. Everything else about a new body — the
   // bank, the empty immunity, the empty cleared list — is the shipped one rather than a fixture,
   // so a run measured here starts where a player's does.
   let profile: Profile = { ...createFreshProfile(), front: createFront(seed) };
-  const hand = createRng(seed);
+  const hand = createRng(handSeed(seed));
 
   let fights = 0;
   let lostFights = 0;

@@ -539,6 +539,39 @@ export const CASES: readonly CaseDefinition[] = [
     // At the board sweep's own entry it now clears **13.0%**, inside the band — so the ceiling
     // exemption `band.ts` carried for this case, and named this measurement as the thing that would
     // settle it, is retired.
+    //
+    // **5.3% is the bottom of a range, not a point, and the range is what to tune against.**
+    // `runSweep.ts` enumerates this board space at the extremes of the arrivals runs make, and
+    // measured over 200 seeds those extremes are:
+    //
+    //     day  14   0 cleared  immunity 0/0/0   415/7776 =  5.3%
+    //     day  16   1 cleared  immunity 0/1/0   415/7776 =  5.3%
+    //     day  39   1 cleared  immunity 3/0/0   415/7776 =  5.3%
+    //     day 166   6 cleared  immunity 3/3/3  1013/7776 = 13.0%
+    //
+    // **The range is 5.3% to 13.0%, and what moves it is holding all three strains at once.** Three
+    // points of staph alone is worth nothing — 3/0/0 reads the same 5.3% as an empty profile —
+    // because this table sends staph, virus, film, spore, toxin and vesper together and a single
+    // vaccine answers one column of it. The top of the range is the board sweep's own entry, which
+    // is what a run that has already nearly won arrives with.
+    //
+    // An earlier pass recorded "5.3%, stable across arrivals". That was four head-of-list contexts
+    // that all happened to carry two points of immunity or fewer, and it was wrong. `runSweep.ts`
+    // now picks the ends of the range on purpose rather than the front of a map.
+    //
+    // **What a real run arrives with is the bottom of that range**: median day 14 to 16 with zero
+    // or one case cleared, on both case policies. The 13.0% end is reachable and rare.
+    //
+    // **The run-level target this case owes, and currently misses.** The other three pacing numbers
+    // each had a target stated before they were measured; this one was anchored to the *board*
+    // band's floor and its run-level consequence found afterwards. Measured: the last stand is
+    // fought in 28 to 43 per cent of runs and **won in 2 to 3 per cent** — so reaching the core is,
+    // in practice, how a run ends, and `holdCore`'s whole reprieve-and-second-siege rule fires
+    // about once in forty runs. A defensible target is **a last stand won by a quarter of the runs
+    // that fight it**, which is what would make the reprieve a thing players see rather than a
+    // branch that exists in code. Meeting it means this case sitting well above the board band's
+    // floor at the arrival entry, which is a content decision the next pass owns. It is written
+    // here rather than left in a report so that pass starts from a number.
     id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',
     credits: 'staph', tier: 3,
     story: 'Every road to the core has fallen. Whatever is arriving here already got past everything else, all of it, at once.',

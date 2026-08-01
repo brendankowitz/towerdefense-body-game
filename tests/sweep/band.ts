@@ -27,11 +27,17 @@ export const CLEAR_RATE_CEILING = 0.15;
  * one.
  *
  * **That instrument landed and the deferral is over.** `tests/sweep/runSweep.ts` plays the heart's
- * whole board space at the arrivals runs actually make — day 14, nothing cleared, no immunity —
- * and the case was retuned against that number rather than this one (`cases.ts` records the three
- * passes). At the arrival entry it clears 5.3% of boards, the band floor, which is what a last
- * stand should be. At *this* harness's entry it clears 13.0%, inside the band on its own, so there
- * is nothing left to exempt.
+ * whole board space at the arrivals runs actually make — median day 14 to 16, nothing or almost
+ * nothing cleared — and the case was retuned against that rather than against this one (`cases.ts`
+ * records the three passes and the range). Across the extremes of those arrivals it clears **5.3%
+ * to 13.0%**, the floor of that range being the band floor and the ceiling of it being this
+ * harness's own entry — which a run only reaches by having nearly won already. So the case is
+ * inside the band at both ends and there is nothing left to exempt.
+ *
+ * The range is stated rather than the floor alone because an earlier pass recorded "5.3%, stable"
+ * off four head-of-list arrival contexts that all happened to carry two points of immunity or
+ * fewer. What actually moves this case is holding all three strains at once; one strain at its cap
+ * is worth nothing. `runSweep.ts` now picks the extremes on purpose.
  *
  * Named rather than derived, and `band.test.ts` fails if this set grows — the same reason
  * `content.invariants.test.ts` names the four joints. Widening an exemption should cost a

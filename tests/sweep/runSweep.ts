@@ -45,6 +45,13 @@ import {
 const SEEDS = Number(process.env.RUN_SWEEP_SEEDS ?? '200');
 
 /**
+ * The one fight policy the gates below are asked of, and the one every number in `rules.ts` was
+ * chosen against. Named here rather than written `'learning'` at each use, so the gate and the
+ * tuning cannot come to disagree about which player the season answers to.
+ */
+const TUNING_POLICY: FightPolicy = 'learning';
+
+/**
  * How many distinct ways of arriving at the last stand get their board space fully enumerated.
  *
  * The heart is the one case whose difficulty a run sweep can say something about that a board
@@ -65,12 +72,21 @@ interface RunGroup {
   readonly outcomes: readonly RunOutcome[];
 }
 
-function median(values: readonly number[]): number {
-  if (values.length === 0) return 0;
+/**
+ * Null for an empty list rather than 0, because a group with no wins and a group whose wins all
+ * landed on day 0 are different facts and this used to print both as `0`. `show` is what turns the
+ * distinction into something a reader sees.
+ */
+function median(values: readonly number[]): number | null {
+  if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[middle] ?? 0;
+  if (sorted.length % 2 === 1) return sorted[middle] ?? null;
   return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
+function show(value: number | null, width: number): string {
+  return (value === null ? '—' : String(value)).padStart(width);
 }
 
 function share(outcomes: readonly RunOutcome[], predicate: (o: RunOutcome) => boolean): string {
@@ -90,10 +106,10 @@ function groupReport(group: RunGroup): string {
     `won ${share(outcomes, (o) => o.result === 'won').padStart(4)}`,
     `lost ${share(outcomes, (o) => o.result === 'lost').padStart(4)}`,
     `unresolved ${share(outcomes, (o) => o.stalled).padStart(4)}`,
-    `days ${String(median(of(outcomes, (o) => o.days))).padStart(4)}`,
-    `days to win ${String(median(of(won, (o) => o.days))).padStart(4)}`,
-    `held ${String(median(of(outcomes, (o) => o.held))).padStart(3)}/${String(CASE_REGIONS.length)}`,
-    `cleared ${String(median(of(outcomes, (o) => o.cleared))).padStart(3)}`,
+    `days ${show(median(of(outcomes, (o) => o.days)), 4)}`,
+    `days to win ${show(median(of(won, (o) => o.days)), 4)}`,
+    `held ${show(median(of(outcomes, (o) => o.held)), 3)}/${String(CASE_REGIONS.length)}`,
+    `cleared ${show(median(of(outcomes, (o) => o.cleared)), 3)}`,
     `core reached ${share(outcomes, (o) => o.reachedCore).padStart(4)}`,
     // Three different facts, and a run can be any one without the next: the sickness reaching the
     // core, the case being played, and the case being survived. A run that wins one last stand and
@@ -102,7 +118,7 @@ function groupReport(group: RunGroup): string {
     `stand fought ${share(outcomes, (o) => o.lastStands > 0).padStart(4)}`,
     `stand won ${share(outcomes, (o) => o.lastStands > 0 && !o.lostAtCore).padStart(4)}`,
     `lost there ${share(outcomes, (o) => o.lostAtCore).padStart(4)}`,
-    `idle ${String(median(of(outcomes, (o) => o.idleDays))).padStart(4)}d`,
+    `idle ${show(median(of(outcomes, (o) => o.idleDays)), 4)}d`,
   ].join('  |  ');
 }
 
@@ -135,8 +151,8 @@ function gateReport(groups: readonly RunGroup[]): string {
         `  ${vaccine.name.padEnd(24)} gate ${String(gate).padStart(2)}`,
         `${group.casePolicy.padEnd(14)} ${group.fightPolicy.padEnd(10)}`,
         `reached ${share(group.outcomes, (o) => o.cleared >= gate).padStart(4)}`,
-        `on day ${String(median(reachedOn.map((entry) => entry.day))).padStart(4)}`,
-        `left ${String(median(left)).padStart(4)}d`,
+        `on day ${show(median(reachedOn.map((entry) => entry.day)), 4)}`,
+        `left ${show(median(left), 4)}d`,
       ].join('  ');
     });
   });
@@ -156,8 +172,54 @@ function gateReport(groups: readonly RunGroup[]): string {
     ...rows,
     'DISTINCT CLEARS — where each policy finishes, against the ten regions that is the ceiling',
     ...spreads,
+    '  READ THIS BEFORE USING THE SHAPE: the bimodality — nearly nothing between 3 and 7 clears —',
+    '  is partly the fight policy and not only the content. `learning` never improves at a case it',
+    '  has not cleared and never loses one it has, so a run either fails to land a first clear or',
+    '  goes on to clear almost everything. A model with a real learning curve would fill the middle.',
     '  (a report, not a gate; what a vaccine should cost is an author\'s judgement)',
   ].join('\n');
+}
+
+/**
+ * Which arrivals get enumerated, and why it is not the first `HEART_CONTEXTS` of them.
+ *
+ * **It was `slice(0, 4)`, and that produced a false conclusion that got written into three files.**
+ * `Map` insertion order here is group order, so the first four distinct keys all came from one
+ * policy and all happened to carry two or fewer points of immunity. All four cleared 415/7776, and
+ * "5.3% is stable across the arrivals runs actually make" was recorded in `cases.ts`, `band.ts` and
+ * the task report on the strength of it. At a different seed count the head of the list contains an
+ * arrival at three points of virus immunity, which clears **11.4%** — more than double. The claim
+ * was false and the head-of-list sample is the only reason it looked true.
+ *
+ * So the selection is deliberately the extremes: least and most immunity, fewest and most cases
+ * cleared. Four contexts is a quarter of an hour of enumeration and that budget is better spent on
+ * the ends of the range than on four neighbours, because what the report has to support is a
+ * **range** rather than a point.
+ */
+function spreadOf(arrivals: readonly CoreArrival[]): readonly CoreArrival[] {
+  const total = (arrival: CoreArrival): number =>
+    arrival.immunity.staph + arrival.immunity.film + arrival.immunity.virus;
+
+  const byImmunity = [...arrivals].sort((a, b) => total(a) - total(b) || a.day - b.day);
+  const byCleared = [...arrivals].sort((a, b) => a.cleared - b.cleared || a.day - b.day);
+
+  const picked: CoreArrival[] = [];
+  const wanted = [
+    byImmunity[0], byImmunity[byImmunity.length - 1],
+    byCleared[0], byCleared[byCleared.length - 1],
+  ];
+  for (const arrival of wanted) {
+    if (arrival === undefined) continue;
+    if (picked.includes(arrival)) continue;
+    picked.push(arrival);
+  }
+  // Backfilled in insertion order only once the four ends are in, so a season whose arrivals are all
+  // alike still spends the whole budget rather than reporting one context four times over.
+  for (const arrival of arrivals) {
+    if (picked.length >= HEART_CONTEXTS) break;
+    if (!picked.includes(arrival)) picked.push(arrival);
+  }
+  return picked.slice(0, HEART_CONTEXTS);
 }
 
 /**
@@ -196,13 +258,13 @@ function heartReport(groups: readonly RunGroup[]): string {
       return [
         `  ${group.casePolicy.padEnd(14)} ${group.fightPolicy.padEnd(10)}`,
         `${String(seen.length).padStart(3)} arrivals`,
-        `median day ${String(median(seen.map((arrival) => arrival.day))).padStart(4)}`,
-        `median cleared ${String(median(seen.map((arrival) => arrival.cleared))).padStart(3)}`,
+        `median day ${show(median(seen.map((arrival) => arrival.day)), 4)}`,
+        `median cleared ${show(median(seen.map((arrival) => arrival.cleared)), 3)}`,
       ].join('  ');
     });
 
   const spots = CASE_BY_ID.heart.spots.length;
-  const rows = [...arrivals.values()].slice(0, HEART_CONTEXTS).map((arrival) => {
+  const rows = spreadOf([...arrivals.values()]).map((arrival) => {
     const kinds = unlockedKinds(arrival.day - 1);
     let boards = 0;
     let clears = 0;
@@ -223,9 +285,9 @@ function heartReport(groups: readonly RunGroup[]): string {
   return [
     'LAST STAND — what runs arrive at the core with',
     ...typical,
-    `  the heart's whole board space at ${String(Math.min(arrivals.size, HEART_CONTEXTS))} of those ${String(arrivals.size)} distinct arrivals:`,
+    `  the heart's whole board space at ${String(Math.min(arrivals.size, HEART_CONTEXTS))} of those ${String(arrivals.size)} distinct arrivals — chosen as the extremes of immunity and clears, not the head of the list:`,
     ...(rows.length === 0 ? ['  no run reached the core'] : rows),
-    '  (a report, not a gate; this is the number the last stand was tuned against, not the board sweep\'s)',
+    '  (a report, not a gate; this is the range the last stand was tuned against, not the board sweep\'s single number)',
   ].join('\n');
 }
 
@@ -254,19 +316,37 @@ describe('whole-run sweep', () => {
     console.log(heartReport(groups));
   });
 
-  const everyOutcome = (): readonly RunOutcome[] => groups.flatMap((group) => group.outcomes);
+  /**
+   * The gates run per case policy, on `TUNING_POLICY` alone, and both halves of that matter.
+   *
+   * **Pooled across all six pairs they could not fail for the right reason.** `'stumbling'` loses
+   * 99 to 100 per cent of runs at every setting of every constant and `'learning'` wins about half,
+   * so "losable" was satisfied by a policy this file explicitly rules out for tuning and "winnable"
+   * by another. A season that had become unlosable *for a person* would have sailed through on the
+   * random-board player's losses. The two gates are the right two gates; they have to be asked of
+   * the player the numbers were chosen against.
+   *
+   * Per case policy rather than pooled across the two, for the same reason: a season winnable only
+   * by working down the list, or only by defending the core, is a season with one policy in it.
+   */
+  const tuning = (): readonly RunGroup[] =>
+    groups.filter((group) => group.fightPolicy === TUNING_POLICY);
 
   it('leaves a run winnable — a season nobody can finish is not a season', () => {
-    expect(
-      everyOutcome().filter((outcome) => outcome.result === 'won').length,
-      'no seed under any policy ever held the body',
-    ).toBeGreaterThan(0);
+    for (const group of tuning()) {
+      expect(
+        group.outcomes.filter((outcome) => outcome.result === 'won').length,
+        `no seed ever held the body under ${group.casePolicy} / ${group.fightPolicy}`,
+      ).toBeGreaterThan(0);
+    }
   });
 
   it('leaves a run losable — a season nobody can lose is not a race', () => {
-    expect(
-      everyOutcome().filter((outcome) => outcome.result === 'lost').length,
-      'no seed under any policy ever lost the core',
-    ).toBeGreaterThan(0);
+    for (const group of tuning()) {
+      expect(
+        group.outcomes.filter((outcome) => outcome.result === 'lost').length,
+        `no seed ever lost the core under ${group.casePolicy} / ${group.fightPolicy}`,
+      ).toBeGreaterThan(0);
+    }
   });
 });

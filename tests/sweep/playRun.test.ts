@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CASE_REGIONS } from '../../src/game/content/body';
 import {
-  CASE_POLICIES, FIGHT_POLICIES, MAX_RUN_DAYS, playRun,
+  CASE_POLICIES, MAX_RUN_DAYS, playRun, resetLearned,
   type CasePolicy, type RunOutcome,
 } from './playRun';
 
@@ -62,14 +62,17 @@ beforeAll(() => {
 }, PLAY_BUDGET);
 
 describe('playRun', () => {
+  /**
+   * `stalled` is not asserted against `result === 'unfinished'` here, though it was: `finish` sets
+   * one from the other on the same line, so the assertion restated the implementation and could not
+   * go red. What can is the day ceiling, which is a claim about the loop rather than about a field.
+   */
   it('always terminates, and says which of the three things happened', () => {
     for (const { seed, outcome } of RUNS) {
       expect(['won', 'lost', 'unfinished']).toContain(outcome.result);
-      expect(
-        outcome.stalled,
-        `run ${String(seed)} is ${outcome.result} and stalled is ${String(outcome.stalled)}`,
-      ).toBe(outcome.result === 'unfinished');
-      expect(outcome.days).toBeLessThanOrEqual(MAX_RUN_DAYS + 1);
+      expect(outcome.days, `run ${String(seed)} ran past the ceiling`)
+        .toBeLessThanOrEqual(MAX_RUN_DAYS + 1);
+      expect(outcome.days).toBeGreaterThan(0);
     }
   });
 
@@ -101,10 +104,31 @@ describe('playRun', () => {
     }
   });
 
-  it('never reaches the last stand without the sickness having stood on the core', () => {
-    for (const { outcome } of RUNS) {
-      if (outcome.lastStands > 0) expect(outcome.reachedCore).toBe(true);
-      if (outcome.coreArrival === null) expect(outcome.lastStands).toBe(0);
+  /**
+   * The arrival is what `runSweep.ts` enumerates the heart's board space at, so a context recorded
+   * from the wrong day or the wrong profile would silently move the one number the last stand is
+   * tuned to. This asserts it against the run that produced it — which crosses into `progression.ts`
+   * and can fail.
+   *
+   * What is *not* asserted any more: "a last stand implies the sickness stood on the core". Both
+   * directions of that are true by construction — `reachedCore` is set from `infected.includes` at
+   * the top of the same iteration that can write `coreArrival`, and the heart can only be chosen
+   * when it is in `infected` — so neither clause could go red.
+   */
+  it('records an arrival the run could actually have made', () => {
+    for (const { seed, outcome } of RUNS) {
+      const arrival = outcome.coreArrival;
+      if (arrival === null) {
+        expect(outcome.lastStands, `run ${String(seed)} fought with no arrival recorded`).toBe(0);
+        continue;
+      }
+      expect(arrival.day, `run ${String(seed)} arrived after it ended`)
+        .toBeLessThanOrEqual(outcome.days);
+      expect(arrival.cleared, `run ${String(seed)} arrived with clears it never made`)
+        .toBeLessThanOrEqual(outcome.cleared);
+      const earned = arrival.immunity.staph + arrival.immunity.film + arrival.immunity.virus;
+      expect(earned, `run ${String(seed)} arrived with immunity no clear paid for`)
+        .toBeGreaterThanOrEqual(arrival.cleared);
     }
   });
 
@@ -124,25 +148,40 @@ describe('playRun', () => {
     }
   });
 
-  /** Its own plays: what is being asserted is that a second play of a seed matches the first. */
+  /**
+   * Its own plays, from a cleared memo both times: what is being asserted is that a second play of a
+   * seed matches the first, and a second play that only re-read a cache would assert the cache.
+   */
   it('replays a seed identically, so a measurement is a measurement', () => {
-    expect(playRun(4, 'nearestToCore')).toEqual(playRun(4, 'nearestToCore'));
-    expect(playRun(4, 'cheapest', 'learning')).toEqual(playRun(4, 'cheapest', 'learning'));
+    resetLearned();
+    const first = playRun(4, 'nearestToCore', 'learning');
+    resetLearned();
+    expect(playRun(4, 'nearestToCore', 'learning')).toEqual(first);
   }, PLAY_BUDGET);
 
   /**
-   * Its own plays, and the only test here that touches all three fight policies. The memo in
-   * `learnedBoard` is keyed on the fight's context, and a key missing a field would show up first as
-   * one run being contaminated by another — runs meet the same cases on different days, at different
-   * immunity, in a different order. Playing the same seed in both orders proves the order they were
-   * played in cannot change what any of them reports.
+   * **The version of this test that shipped could not fail.** It played one seed under three fight
+   * policies forwards, then backwards, and compared. `LEARNED` is module-global and never cleared,
+   * so by the time the backwards pass ran it read what the forwards pass had written: a memo key
+   * missing a field would have returned the same wrong answer to both orderings and the assertion
+   * would still have passed. It could only fail on nondeterminism the memo does not mask, which is
+   * precisely not the property it claimed to guard.
+   *
+   * Contamination is only visible against a run played with **nothing in the memo**, so that is what
+   * this compares against. `alone` is seed 7 on an empty memo. `after` is the same seed played once
+   * two other runs have filled the memo with entries for the same cases at different days, different
+   * immunity and a different case policy — which is exactly the shape a missing key field would
+   * cross-read. If `learnedBoard` ever keys on less than it decides on, these two diverge.
    */
   it('does not let one run change what another one measures', () => {
-    const forwards = FIGHT_POLICIES.map((fight) => playRun(7, 'nearestToCore', fight));
-    const backwards = [...FIGHT_POLICIES]
-      .reverse()
-      .map((fight) => playRun(7, 'nearestToCore', fight))
-      .reverse();
-    expect(forwards).toEqual(backwards);
+    resetLearned();
+    const alone = playRun(7, 'nearestToCore', 'learning');
+
+    resetLearned();
+    playRun(3, 'nearestToCore', 'learning');
+    playRun(11, 'cheapest', 'learning');
+    const after = playRun(7, 'nearestToCore', 'learning');
+
+    expect(after).toEqual(alone);
   }, PLAY_BUDGET);
 });
