@@ -2,8 +2,11 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
-import { nextCaseId, strainRows } from '@game/progression';
+import { SHORE_UP_COST } from '@game/content/rules';
+import { caseAt, hotCases } from '@game/front';
+import { strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
+import type { BodyNodeId, CaseId } from '@game/types';
 import { BodyMap } from '@app/components/BodyMap';
 import { MapProgress } from '@app/components/MapProgress';
 import { useProfile } from '@app/state/ProfileProvider';
@@ -11,13 +14,17 @@ import '../screens.css';
 
 export function MapPage() {
   const history = useHistory();
-  const { profile } = useProfile();
-  const nextId = nextCaseId(profile);
-  const next = nextId === null ? null : CASE_BY_ID[nextId];
+  const { profile, shoreUp } = useProfile();
+  const front = profile.front;
 
-  const region = next === null ? '' : next.region.split(' · ')[0]?.toLowerCase() ?? '';
-  const accent = next === null ? palette.frontline.css : palette.threat.css;
-  const goToBrief = () => { if (nextId !== null) history.push(`/brief/${nextId}`); };
+  const goToBrief = (caseId: CaseId): void => { history.push(`/brief/${caseId}`); };
+  const onSelectNode = (node: BodyNodeId): void => {
+    const caseId = caseAt(node);
+    if (caseId !== null) goToBrief(caseId);
+  };
+
+  const today = hotCases(front).map((id) => CASE_BY_ID[id]);
+  const canAffordShoreUp = profile.bank >= SHORE_UP_COST;
 
   return (
     <IonPage>
@@ -36,9 +43,13 @@ export function MapPage() {
 
           <div className="map-field">
             <BodyMap
-              cleared={profile.cleared}
-              activeNode={next?.node ?? null}
-              onSelectCase={goToBrief}
+              front={front}
+              onSelectCase={onSelectNode}
+              canShoreUp={canAffordShoreUp}
+              // Reinforcing costs the day, the same as fighting does. Task 10 owns `endDay`,
+              // so for now this only moves the bank and the wall — `shoreUp` on the context
+              // will route through the same day-ending path the fight uses once it exists.
+              onShoreUp={(node) => { shoreUp(node); }}
             />
             <div className="map-legend">
               <span><i style={{ background: palette.threat.css }} />UNDER ATTACK</span>
@@ -54,27 +65,54 @@ export function MapPage() {
           </div>
 
           <footer className="screen-footer">
-            <div className="pick">
-              <span className="pick-swatch" style={{ background: accent }} />
-              <div className="pick-text">
-                <span className="pick-name">{next?.title ?? 'All clear'}</span>
-                <span className="pick-sub">
-                  {next === null
-                    ? 'Nothing needs you today'
-                    : `${region.charAt(0).toUpperCase()}${region.slice(1)} · ${ruleLabels(next).toLowerCase()} · ${String(next.waves.length)} waves`}
-                </span>
-              </div>
-            </div>
+            {today.length === 0
+              ? (
+                <div className="pick">
+                  <span className="pick-swatch" style={{ background: palette.frontline.css }} />
+                  <div className="pick-text">
+                    <span className="pick-name">All clear</span>
+                    <span className="pick-sub">Nothing needs you today</span>
+                  </div>
+                </div>
+              )
+              : (
+                <div className="day-choices" data-testid="day-choices">
+                  {today.map((definition) => {
+                    const region = definition.region.split(' · ')[0]?.toLowerCase() ?? '';
+                    return (
+                      <button
+                        key={definition.id}
+                        type="button"
+                        className="pick pick-choice"
+                        data-testid={`pick-${definition.id}`}
+                        onClick={() => { goToBrief(definition.id); }}
+                      >
+                        <span className="pick-swatch" style={{ background: palette.threat.css }} />
+                        <div className="pick-text">
+                          <span className="pick-name">{definition.title}</span>
+                          <span className="pick-sub">
+                            {`${region.charAt(0).toUpperCase()}${region.slice(1)} · ${ruleLabels(definition).toLowerCase()} · ${String(definition.waves.length)} waves`}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             <div className="footer-actions">
-              <button
-                type="button"
-                className="primary"
-                data-testid="go-there"
-                style={{ background: accent }}
-                onClick={goToBrief}
-              >
-                {next === null ? 'Sleep' : 'Go there'}
-              </button>
+              {today.length === 0 && (
+                // Nothing is on fire, so there is nothing to fight into — but sleeping still
+                // costs the day, and Task 10's `endDay` is what will make this button do that.
+                <button
+                  type="button"
+                  className="primary"
+                  data-testid="sleep"
+                  style={{ background: palette.frontline.css }}
+                  disabled
+                >
+                  Sleep
+                </button>
+              )}
               <button type="button" className="tertiary" onClick={() => { history.push('/season'); }}>
                 Season
               </button>

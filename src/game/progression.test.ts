@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clearCase, createFreshProfile, nextCaseId, seasonRows, strainRows, vaccineRows,
+  clearCase, createFreshProfile, nextCaseId, seasonRows, shoreUpRegion, strainRows, vaccineRows,
   type Profile,
 } from './progression';
 import { CASES } from './content/cases';
 import { LATER } from './content/later';
-import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX } from './content/rules';
+import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, hotCases, nodeOf } from './front';
+import { createFront, hotCases, nodeOf, wallDays } from './front';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -170,6 +170,41 @@ describe('clearCase', () => {
     const after = clearCase(profile, firstHot, 12);
     expect(after.front.held).toContain(nodeOf(firstHot));
     expect(after.front.infected).not.toContain(nodeOf(firstHot));
+  });
+});
+
+describe('shoreUpRegion', () => {
+  function profileWithHeldRegion(): { readonly profile: Profile; readonly node: ReturnType<typeof nodeOf> } {
+    const fresh = createFreshProfile();
+    const [firstHot] = hotCases(fresh.front);
+    if (firstHot === undefined) throw new Error('fixture expects an open front');
+    return { profile: clearCase(fresh, firstHot, 0), node: nodeOf(firstHot) };
+  }
+
+  it('spends the bank', () => {
+    const { profile, node } = profileWithHeldRegion();
+    const after = shoreUpRegion(profile, node);
+    expect(after.bank).toBe(profile.bank - SHORE_UP_COST);
+  });
+
+  it('adds a day to the region\'s wall', () => {
+    const { profile, node } = profileWithHeldRegion();
+    const after = shoreUpRegion(profile, node);
+    expect(after.front.siege[node]).toBe(wallDays(node, profile.immunity) + 1);
+  });
+
+  it('leaves the profile it was given untouched', () => {
+    const { profile, node } = profileWithHeldRegion();
+    const before = { ...profile };
+    shoreUpRegion(profile, node);
+    expect(profile).toEqual(before);
+  });
+
+  /** Ground the player does not hold cannot be shored up, and the bank is not spent trying. */
+  it('changes nothing for ground that is not held', () => {
+    const fresh = createFreshProfile();
+    const after = shoreUpRegion(fresh, 'gut');
+    expect(after).toEqual(fresh);
   });
 });
 

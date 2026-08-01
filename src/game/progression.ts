@@ -1,9 +1,9 @@
 import { CASES, CASE_BY_ID } from './content/cases';
 import { LATER } from './content/later';
-import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX } from './content/rules';
+import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, holdRegion, nodeOf, type Front } from './front';
-import type { CaseId, StrainId, Tier } from './types';
+import { createFront, holdRegion, shoreUp, nodeOf, type Front } from './front';
+import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
 /** Everything a run carries between cases. The simulation reads it; only this module writes it. */
 export interface Profile {
@@ -59,6 +59,24 @@ export function clearCase(profile: Profile, caseId: CaseId, totalKills: number):
 /** The case the body needs next, or null when nothing is left today. */
 export function nextCaseId(profile: Profile): CaseId | null {
   return CASES.find((definition) => !profile.cleared.includes(definition.id))?.id ?? null;
+}
+
+/**
+ * Reinforcing a wall: the bank pays `SHORE_UP_COST` and the front adds a day to the region's
+ * siege. This is the whole of what changes today — spending the day itself is Task 10's, which
+ * will route the choice through the same `endDay` the fight takes when a case is cleared.
+ *
+ * `shoreUp` itself already refuses ground the player does not hold; mirrored here so the bank
+ * is never spent on a call that changed nothing, whatever calls this beyond the map's own
+ * button, which only ever offers held ground in the first place.
+ */
+export function shoreUpRegion(profile: Profile, node: BodyNodeId): Profile {
+  if (!profile.front.held.includes(node)) return profile;
+  return {
+    ...profile,
+    bank: profile.bank - SHORE_UP_COST,
+    front: shoreUp(profile.front, node, profile.immunity),
+  };
 }
 
 export interface StrainRow {

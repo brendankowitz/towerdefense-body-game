@@ -84,6 +84,19 @@
   pointer-events: none;
 }
 
+.map-siege {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  fill: var(--threat);
+  pointer-events: none;
+}
+
+.map-shoreup {
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  fill: var(--energy);
+}
+
 .map-legend {
   position: absolute;
   left: 16px;
@@ -191,6 +204,23 @@
   display: flex;
   align-items: center;
   gap: 13px;
+}
+
+.day-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pick-choice {
+  width: 100%;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick-choice:active {
+  opacity: 0.85;
 }
 
 .pick-swatch {

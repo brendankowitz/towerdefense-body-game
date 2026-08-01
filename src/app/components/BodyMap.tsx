@@ -1,20 +1,30 @@
 import { BODY_LINKS, BODY_MAP_VIEWBOX, BODY_NODES } from '@game/content/body';
-import { CASES } from '@game/content/cases';
+import { stateOf as frontStateOf, type Front } from '@game/front';
 import { NEUTRALS, palette } from '@theme/tokens';
-import type { BodyNodeId, CaseId } from '@game/types';
+import type { BodyNodeId } from '@game/types';
 import { ORBIT_KEYFRAMES } from './orbit';
 
-type NodeState = 'held' | 'hot' | 'core' | 'link' | 'cold';
+type NodeState = 'held' | 'hot' | 'besieged' | 'core' | 'link' | 'cold';
 
 interface BodyMapProps {
-  readonly cleared: readonly CaseId[];
-  readonly activeNode: BodyNodeId | null;
-  readonly onSelectCase: () => void;
+  readonly front: Front;
+  readonly onSelectCase: (node: BodyNodeId) => void;
+  /**
+   * Shoring up only ever makes sense on ground the page already knows is held and the bank
+   * already knows it can afford — the map is just where that ground is drawn. Both are optional
+   * and only ever supplied together: a map with neither draws itself with nothing to press,
+   * which is what every render that only cares about the front line still expects.
+   */
+  readonly canShoreUp?: boolean;
+  readonly onShoreUp?: (node: BodyNodeId) => void;
 }
 
 const STATE_TOKEN: Record<NodeState, string> = {
   held: palette.frontline.css,
   hot: palette.threat.css,
+  // Besieged ground is still the player's, so it wears the held colour — the ring around it,
+  // not the ground itself, is what says a wall is coming down.
+  besieged: palette.frontline.css,
   core: palette.core.css,
   link: palette.notReached.css,
   cold: palette.notReached.css,
@@ -27,20 +37,21 @@ const STATE_TOKEN: Record<NodeState, string> = {
  * only routes through. A joint is drawn faintly and without the ring a region carries, because the
  * legend beside this reads NOT REACHED and a joint is never going to be reached — it is not
  * somewhere the season is failing to take you. Which nodes those are is content's to say.
+ *
+ * State is read straight off `Front` through `stateOf` rather than kept here, so the map and the
+ * model it draws can never disagree about which ground is whose.
  */
-export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
-  const clearedNodes = new Set(
-    CASES.filter((c) => cleared.includes(c.id)).map((c) => c.node),
-  );
+export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapProps) {
   const joints = new Set(BODY_NODES.filter((node) => node.connective === true).map((n) => n.id));
 
   const stateOf = (id: BodyNodeId): NodeState => {
-    if (clearedNodes.has(id)) return 'held';
-    if (id === 'heart') return 'core';
-    if (joints.has(id)) return 'link';
-    if (id === activeNode) return 'hot';
-    return 'cold';
+    if (id === 'heart' && !front.infected.includes('heart')) return 'core';
+    if (joints.has(id) && !front.infected.includes(id)) return 'link';
+    return frontStateOf(front, id);
   };
+
+  const isHeld = (state: NodeState): boolean => state === 'held' || state === 'besieged';
+  const shoreUpOffered = canShoreUp === true && onShoreUp !== undefined;
 
   return (
     <svg
@@ -59,7 +70,7 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
         const b = BODY_NODES.find((n) => n.id === to);
         if (a === undefined || b === undefined) return null;
         const hot = stateOf(from) === 'hot' || stateOf(to) === 'hot';
-        const held = stateOf(from) === 'held' || stateOf(to) === 'held';
+        const held = isHeld(stateOf(from)) || isHeld(stateOf(to));
         return (
           <line
             key={`${from}-${to}`}
@@ -77,13 +88,18 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
       {BODY_NODES.map((node) => {
         const state = stateOf(node.id);
         const interactive = state === 'hot';
+        const shoreable = isHeld(state) && shoreUpOffered;
         return (
           <g key={node.id}>
-            {/* The sickness itself, circling the region it has taken. Still the only thing
-                on this screen that moves, and still only ever on a threat. */}
-            {state === 'hot' && (
+            {/* The sickness itself, circling the region it has taken. Still the only thing on
+                this screen that moves, and still only ever on a threat.
+                Besieged ground wears the same ring — the danger reads the same way at a glance
+                — but it never orbits. The orbit is the sickness circling ground it already
+                holds; a besieged region is still the player's, so there is nothing there to
+                circle, and the board's one rule is that only a threat pulses. */}
+            {(state === 'hot' || state === 'besieged') && (
               <circle
-                className="orbit"
+                className={state === 'hot' ? 'orbit' : undefined}
                 cx={node.x}
                 cy={node.y}
                 r={node.r + 16}
@@ -102,9 +118,9 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
               stroke={state === 'link' ? 'none' : NEUTRALS.screenPaper}
               strokeWidth={state === 'core' ? 5 : 4}
               style={{ cursor: interactive ? 'pointer' : 'default' }}
-              onClick={interactive ? onSelectCase : undefined}
+              onClick={interactive ? () => { onSelectCase(node.id); } : undefined}
             />
-            {(state === 'held' || state === 'hot' || state === 'core') && (
+            {(state === 'held' || state === 'hot' || state === 'core' || state === 'besieged') && (
               <circle
                 cx={node.x}
                 cy={node.y}
@@ -112,6 +128,30 @@ export function BodyMap({ cleared, activeNode, onSelectCase }: BodyMapProps) {
                 fill={NEUTRALS.screenPaper}
                 pointerEvents="none"
               />
+            )}
+            {state === 'besieged' && (
+              <text
+                className="mono map-siege"
+                data-testid={`map-siege-${node.id}`}
+                x={node.x}
+                y={node.y + node.r + 16}
+                textAnchor="middle"
+              >
+                {String(front.siege[node.id] ?? 0)}
+              </text>
+            )}
+            {shoreable && (
+              <text
+                className="mono map-shoreup"
+                data-testid={`map-shoreup-${node.id}`}
+                x={node.x}
+                y={node.y + node.r + (state === 'besieged' ? 28 : 16)}
+                textAnchor="middle"
+                style={{ cursor: 'pointer' }}
+                onClick={() => { onShoreUp(node.id); }}
+              >
+                SHORE UP
+              </text>
             )}
             {node.label !== undefined && (
               <text

@@ -1,14 +1,15 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
-import { clearCase, createFreshProfile, type Profile } from '@game/progression';
+import { clearCase, createFreshProfile, shoreUpRegion, type Profile } from '@game/progression';
 import { createProgressRepository } from '@progress/createProgressRepository';
-import type { CaseId } from '@game/types';
+import type { BodyNodeId, CaseId } from '@game/types';
 
 interface ProfileContextValue {
   readonly profile: Profile;
   readonly saveError: boolean;
   readonly recordClear: (caseId: CaseId, totalKills: number) => void;
+  readonly shoreUp: (node: BodyNodeId) => void;
   readonly resetRun: () => void;
   readonly dismissSaveError: () => void;
 }
@@ -53,6 +54,7 @@ export function ProfileProvider({ children }: { readonly children: ReactNode }) 
     profile,
     saveError,
     recordClear: (caseId, totalKills) => { persist(clearCase(profile, caseId, totalKills)); },
+    shoreUp: (node) => { persist(shoreUpRegion(profile, node)); },
     resetRun: () => { persist(createFreshProfile()); },
     dismissSaveError: () => { setSaveError(false); },
   }), [profile, saveError, persist]);

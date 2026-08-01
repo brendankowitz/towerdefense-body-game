@@ -4,8 +4,10 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { MapPage } from './MapPage';
 import { BODY_NODES } from '@game/content/body';
-import { createFreshProfile, nextCaseId, strainRows } from '@game/progression';
 import { CASE_BY_ID } from '@game/content/cases';
+import { SHORE_UP_COST } from '@game/content/rules';
+import { hotCases } from '@game/front';
+import { createFreshProfile, strainRows } from '@game/progression';
 import { ProfileProvider } from '@app/state/ProfileProvider';
 
 function LocationProbe() {
@@ -27,6 +29,7 @@ async function renderMap() {
 }
 
 const PROFILE = createFreshProfile();
+const TODAY = hotCases(PROFILE.front).map((id) => CASE_BY_ID[id]);
 
 beforeEach(() => {
   localStorage.clear();
@@ -58,28 +61,29 @@ describe('MapPage', () => {
     );
   });
 
-  it('names the next case in the day pick', async () => {
+  /** A fresh body opens with exactly one door under attack — this is the fixture, not a guess. */
+  it('lists the case at the door the front line opened on as today\'s choice', async () => {
     await renderMap();
-    const nextId = nextCaseId(PROFILE);
-    expect(nextId).not.toBeNull();
-    if (nextId !== null) {
-      expect(screen.getByText(CASE_BY_ID[nextId].title)).toBeInTheDocument();
-    }
+    expect(TODAY).toHaveLength(1);
+    const only = TODAY[0];
+    if (only === undefined) throw new Error('fixture expects an open front');
+    expect(screen.getByText(only.title)).toBeInTheDocument();
   });
 
-  it('navigates to the brief for the next case when "Go there" is tapped', async () => {
+  it('navigates to the brief when a day choice is tapped', async () => {
     await renderMap();
-    const nextId = nextCaseId(PROFILE);
-    fireEvent.click(screen.getByTestId('go-there'));
-    expect(screen.getByTestId('location').textContent).toBe(`/brief/${String(nextId)}`);
+    const only = TODAY[0];
+    if (only === undefined) throw new Error('fixture expects an open front');
+    fireEvent.click(screen.getByTestId(`pick-${only.id}`));
+    expect(screen.getByTestId('location').textContent).toBe(`/brief/${only.id}`);
   });
 
   it('navigates to the brief when the region under attack is tapped on the map', async () => {
     await renderMap();
-    const nextId = nextCaseId(PROFILE);
-    if (nextId === null) throw new Error('fixture expects an open case');
-    fireEvent.click(screen.getByTestId(`map-node-${CASE_BY_ID[nextId].node}`));
-    expect(screen.getByTestId('location').textContent).toBe(`/brief/${nextId}`);
+    const only = TODAY[0];
+    if (only === undefined) throw new Error('fixture expects an open front');
+    fireEvent.click(screen.getByTestId(`map-node-${only.node}`));
+    expect(screen.getByTestId('location').textContent).toBe(`/brief/${only.id}`);
   });
 
   it('navigates to the season screen when "Season" is tapped', async () => {
@@ -103,5 +107,16 @@ describe('MapPage', () => {
     await renderMap();
     fireEvent.click(screen.getByTestId('map-progress'));
     expect(screen.getByTestId('location').textContent).toBe('/immunity');
+  });
+
+  /**
+   * A fresh body opens with `FRESH_PROFILE.bank = 240` and `SHORE_UP_COST = 120`, so shoring up
+   * is affordable from day one — the map has no held ground yet to offer it on, though, which is
+   * what this actually proves: the affordance is gated on ground held, not only on the bank.
+   */
+  it('offers no shore up affordance before any ground is held', async () => {
+    await renderMap();
+    expect(PROFILE.bank).toBeGreaterThanOrEqual(SHORE_UP_COST);
+    expect(screen.queryByText('SHORE UP')).not.toBeInTheDocument();
   });
 });
