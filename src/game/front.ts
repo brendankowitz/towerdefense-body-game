@@ -291,19 +291,34 @@ export function stepSickness(
 }
 
 /**
- * A new outbreak, every `OUTBREAK_INTERVAL` days, at a door the sickness is not already in.
+ * A new outbreak, every `OUTBREAK_INTERVAL` days, at a door the sickness is not already in and
+ * the player is not standing on.
  *
  * The roll is the one place in this layer where luck decides anything, and it is the right place:
  * catching something is exactly what immunity is a chance against. What it may never do is undo
  * work the player did — a wall is days, not a roll — so a bad draw here costs a region the player
  * had not taken yet and never one they had.
+ *
+ * **Held doors are defended, not overwritten.** A door the player cleared is a door with earned
+ * immunity and a standing wall behind it, and that is exactly what stops a new infection taking
+ * hold there — so it is dropped from the candidates rather than rolled against. Anything else
+ * would put the same node in `infected` and `held` at once, which is a state the rest of this
+ * module has no reading of: `stateOf` would call the ground `hot` while the map lists its wall,
+ * `stepSickness` never opens a siege against ground already infected so nothing would ever take
+ * it back out of `held`, and `isRunWon` would count it toward a win with the sickness on it.
+ *
+ * Chickenpox needs no separate thread through here for the same reason. `wallsCannotFall` is the
+ * promise that cleared ground does not reopen; held ground is off this roll for every body, with
+ * or without the vaccine, so the promise holds at the door as well as at the wall.
  */
 export function seedOutbreak(
   front: Front, immunity: Readonly<Record<StrainId, number>>,
 ): Front {
   if (front.day % OUTBREAK_INTERVAL !== 0) return front;
 
-  const doors = ENTRY_REGIONS.filter((node) => !front.infected.includes(node.id));
+  const doors = ENTRY_REGIONS.filter(
+    (node) => !front.infected.includes(node.id) && !front.held.includes(node.id),
+  );
   if (doors.length === 0) return front;
 
   const rng = createRng(front.rngState);

@@ -155,6 +155,25 @@ describe('Chickenpox: walls that cannot fall', () => {
     expect(after.held).toContain('gut');
     expect(after.infected).not.toContain('gut');
   });
+
+  /**
+   * "Stops a cleared case reopening" is a promise about the whole day, and a wall coming down is
+   * only one of the two ways a cleared region can reopen — a new outbreak at the door is the
+   * other, and every case region the sickness can enter at is a door. Walked over many seeds
+   * because the door a seeding day picks is a roll: one seed proves nothing about the ones the
+   * player will actually get.
+   */
+  it('never lets a new outbreak reopen a cleared door', () => {
+    const doors = ENTRY_REGIONS.map((n) => n.id);
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const held: Front = {
+        infected: [], held: doors, siege: {}, day: OUTBREAK_INTERVAL - 1, rngState: seed, lost: false,
+      };
+      const after = endDay(held, FULL_IMMUNITY, { wallsCannotFall: true });
+      const reopened = after.infected.filter((node) => doors.includes(node));
+      expect(reopened, `a cleared door reopened at seed ${String(seed)}`).toEqual([]);
+    }
+  });
 });
 
 describe('new outbreaks open doors', () => {
@@ -201,6 +220,37 @@ describe('new outbreaks open doors', () => {
       infected: ENTRY_REGIONS.map((n) => n.id), held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: 3, lost: false,
     };
     expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual(front.infected);
+  });
+
+  /** The counterpart: a door the player is standing on is a door the sickness cannot come back in at. */
+  it('never opens a door on ground the player holds', () => {
+    const front: Front = {
+      infected: [], held: ENTRY_REGIONS.map((n) => n.id), siege: {}, day: OUTBREAK_INTERVAL, rngState: 3, lost: false,
+    };
+    expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual([]);
+  });
+
+  /**
+   * The state the whole filter exists to keep out of reach, walked rather than argued: a node in
+   * `infected` and `held` at once. Nothing in this module can undo it — `stepSickness` only ever
+   * opens a siege against ground that is not already infected, so no siege is ever opened against
+   * such a region and it never leaves `held` — and while it sits there `stateOf` reads `hot` over
+   * a wall the map still offers to reinforce, and `isRunWon` counts it toward a win with the
+   * sickness standing on it.
+   *
+   * Walked at full immunity because that is the *most* resistant body the game can produce: if
+   * the strongest body still reaches the state, every weaker one reaches it sooner.
+   */
+  it('never leaves a region in both lists, over a long run at full immunity', () => {
+    const doors = ENTRY_REGIONS.map((n) => n.id);
+    for (let seed = 1; seed <= 40; seed += 1) {
+      let front: Front = { infected: [], held: doors, siege: {}, day: 1, rngState: seed, lost: false };
+      for (let step = 0; step < 60; step += 1) {
+        front = endDay(front, FULL_IMMUNITY);
+        const both = front.held.filter((node) => front.infected.includes(node));
+        expect(both, `seed ${String(seed)}, day ${String(front.day)}`).toEqual([]);
+      }
+    }
   });
 });
 

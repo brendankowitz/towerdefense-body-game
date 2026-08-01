@@ -78,7 +78,10 @@ cost it a day, but carry no case — they are the corridor between an arm and th
 **Separately, every few days a new outbreak opens a door.** That is the second pressure, and it is
 what stops the run collapsing into a single wedge: a season of illness is things happening to you,
 not one thing walking slowly inward. Which door is a seeded roll over the entry points that are not
-already hot.
+already hot **and that the player is not holding**. A cleared door has earned immunity and a
+standing wall behind it, and that is exactly what stops a new infection taking hold there — so a
+held door is defended rather than rolled against. Ground the player took is only ever lost the way
+any other held ground is lost, by a siege that costs the sickness days.
 
 ---
 
