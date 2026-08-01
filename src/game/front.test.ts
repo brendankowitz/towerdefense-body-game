@@ -3,7 +3,7 @@ import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import {
   createFront, endDay, holdRegion, hotCases, isCoreBesieged, isRunLost, isRunWon, seedOutbreak,
-  shoreUp, stateOf, stepSickness, wallDays, type Front,
+  shoreUp, stateOf, stepSickness, wallDays, wallStatus, type Front,
 } from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
 import type { StrainId } from './types';
@@ -200,6 +200,35 @@ describe('new outbreaks open doors', () => {
       infected: ENTRY_REGIONS.map((n) => n.id), held: [], siege: {}, day: OUTBREAK_INTERVAL, rngState: 3,
     };
     expect(seedOutbreak(front, NO_IMMUNITY).infected).toEqual(front.infected);
+  });
+});
+
+/**
+ * The one place a wall's countdown is put into words — `MapPage.tsx`'s wall list and
+ * `progression.ts`'s `seasonRows` both call this rather than each spelling out the same
+ * pluralisation rule, which is what let the two of them say different things about the same wall
+ * before this was written.
+ */
+describe('wallStatus', () => {
+  it('reads an unbesieged wall as holding', () => {
+    const front: Front = { infected: [], held: ['gut'], siege: {}, day: 1, rngState: 1 };
+    expect(wallStatus(front, 'gut')).toBe('Holding');
+  });
+
+  it('reads a wall with one day left as singular', () => {
+    const front: Front = { infected: [], held: ['gut'], siege: { gut: 1 }, day: 1, rngState: 1 };
+    expect(wallStatus(front, 'gut')).toBe('1 day left');
+  });
+
+  it('reads a wall with more than one day left as plural', () => {
+    const front: Front = { infected: [], held: ['gut'], siege: { gut: 3 }, day: 1, rngState: 1 };
+    expect(wallStatus(front, 'gut')).toBe('3 days left');
+  });
+
+  /** Zero is not undefined: the wall is still held, one hit from falling, and still plural. */
+  it('reads a wall at zero days left as plural, not as holding', () => {
+    const front: Front = { infected: [], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1 };
+    expect(wallStatus(front, 'gut')).toBe('0 days left');
   });
 });
 
