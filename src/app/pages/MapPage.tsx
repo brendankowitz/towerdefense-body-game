@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { SHORE_UP_COST } from '@game/content/rules';
-import { caseAt, hotCases } from '@game/front';
+import { caseAt, hotCases, isRunLost } from '@game/front';
 import { strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
 import type { BodyNodeId, CaseId } from '@game/types';
@@ -14,17 +14,25 @@ import '../screens.css';
 
 export function MapPage() {
   const history = useHistory();
-  const { profile, shoreUp, endDay } = useProfile();
+  const { profile, shoreUp, endDay, resetRun } = useProfile();
   const front = profile.front;
+  /**
+   * The sickness standing on the core. Nothing in the app read this before — a run could reach
+   * it and the map would keep offering the day's choices forever, with no signal the body was
+   * gone. Once it is true, the map stops being an offer of anything: no case to tap into, no
+   * wall to shore up, no day to sleep through.
+   */
+  const lost = isRunLost(front);
 
   const goToBrief = (caseId: CaseId): void => { history.push(`/brief/${caseId}`); };
   const onSelectNode = (node: BodyNodeId): void => {
+    if (lost) return;
     const caseId = caseAt(node);
     if (caseId !== null) goToBrief(caseId);
   };
 
   const today = hotCases(front).map((id) => CASE_BY_ID[id]);
-  const canAffordShoreUp = profile.bank >= SHORE_UP_COST;
+  const canAffordShoreUp = !lost && profile.bank >= SHORE_UP_COST;
 
   /**
    * Every region held, named from the case it was won. The map draws a hint of this on the
@@ -73,84 +81,113 @@ export function MapPage() {
           </div>
 
           <footer className="screen-footer">
-            {today.length === 0
-              ? (
-                <div className="pick">
-                  <span className="pick-swatch" style={{ background: palette.frontline.css }} />
+            {lost ? (
+              // The one screen a lost run shows: what happened, stated once, and the one action
+              // left — never the day's choices, a wall to shore up, or a day to sleep through,
+              // because none of those exist for a body that is already gone.
+              <>
+                <div className="pick" data-testid="run-lost">
+                  <span className="pick-swatch" style={{ background: palette.threat.css }} />
                   <div className="pick-text">
-                    <span className="pick-name">All clear</span>
-                    <span className="pick-sub">Nothing needs you today</span>
+                    <span className="pick-name">The sickness reached the heart</span>
+                    <span className="pick-sub">This run is over</span>
                   </div>
                 </div>
-              )
-              : (
-                <div className="day-choices" data-testid="day-choices">
-                  {today.map((definition) => {
-                    const region = definition.region.split(' · ')[0]?.toLowerCase() ?? '';
-                    return (
-                      <button
-                        key={definition.id}
-                        type="button"
-                        className="pick pick-choice"
-                        data-testid={`pick-${definition.id}`}
-                        onClick={() => { goToBrief(definition.id); }}
-                      >
-                        <span className="pick-swatch" style={{ background: palette.threat.css }} />
-                        <div className="pick-text">
-                          <span className="pick-name">{definition.title}</span>
-                          <span className="pick-sub">
-                            {`${region.charAt(0).toUpperCase()}${region.slice(1)} · ${ruleLabels(definition).toLowerCase()} · ${String(definition.waves.length)} waves`}
+                <div className="footer-actions">
+                  <button
+                    type="button"
+                    className="primary"
+                    data-testid="reset-run"
+                    style={{ background: palette.threat.css }}
+                    onClick={() => { resetRun(); }}
+                  >
+                    Start a new body
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {today.length === 0
+                  ? (
+                    <div className="pick">
+                      <span className="pick-swatch" style={{ background: palette.frontline.css }} />
+                      <div className="pick-text">
+                        <span className="pick-name">All clear</span>
+                        <span className="pick-sub">Nothing needs you today</span>
+                      </div>
+                    </div>
+                  )
+                  : (
+                    <div className="day-choices" data-testid="day-choices">
+                      {today.map((definition) => {
+                        const region = definition.region.split(' · ')[0]?.toLowerCase() ?? '';
+                        return (
+                          <button
+                            key={definition.id}
+                            type="button"
+                            className="pick pick-choice"
+                            data-testid={`pick-${definition.id}`}
+                            onClick={() => { goToBrief(definition.id); }}
+                          >
+                            <span className="pick-swatch" style={{ background: palette.threat.css }} />
+                            <div className="pick-text">
+                              <span className="pick-name">{definition.title}</span>
+                              <span className="pick-sub">
+                                {`${region.charAt(0).toUpperCase()}${region.slice(1)} · ${ruleLabels(definition).toLowerCase()} · ${String(definition.waves.length)} waves`}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                {walls.length > 0 && (
+                  <div className="wall-list" data-testid="wall-list">
+                    {walls.map(({ node, title, siegeDays }) => (
+                      <div key={node} className="wall-row" data-testid={`wall-${node}`}>
+                        <div className="wall-text">
+                          <span className="wall-name">{title}</span>
+                          <span className="mono wall-days">
+                            {siegeDays === undefined
+                              ? 'Holding'
+                              : `${String(siegeDays)} day${siegeDays === 1 ? '' : 's'} left`}
                           </span>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            {walls.length > 0 && (
-              <div className="wall-list" data-testid="wall-list">
-                {walls.map(({ node, title, siegeDays }) => (
-                  <div key={node} className="wall-row" data-testid={`wall-${node}`}>
-                    <div className="wall-text">
-                      <span className="wall-name">{title}</span>
-                      <span className="mono wall-days">
-                        {siegeDays === undefined
-                          ? 'Holding'
-                          : `${String(siegeDays)} day${siegeDays === 1 ? '' : 's'} left`}
-                      </span>
-                    </div>
-                    {canAffordShoreUp && (
-                      <button
-                        type="button"
-                        className="wall-shoreup"
-                        data-testid={`shoreup-${node}`}
-                        onClick={() => { shoreUp(node); }}
-                      >
-                        {`Shore up ${title} · ${String(SHORE_UP_COST)}`}
-                      </button>
-                    )}
+                        {canAffordShoreUp && (
+                          <button
+                            type="button"
+                            className="wall-shoreup"
+                            data-testid={`shoreup-${node}`}
+                            onClick={() => { shoreUp(node); }}
+                          >
+                            {`Shore up ${title} · ${String(SHORE_UP_COST)}`}
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+                <div className="footer-actions">
+                  {today.length === 0 && (
+                    // Nothing is on fire, so there is nothing to fight into — but the sickness
+                    // still gets its step, the same as it would on a day spent fighting or
+                    // shoring up.
+                    <button
+                      type="button"
+                      className="primary"
+                      data-testid="sleep"
+                      style={{ background: palette.frontline.css }}
+                      onClick={() => { endDay(); }}
+                    >
+                      Sleep
+                    </button>
+                  )}
+                  <button type="button" className="tertiary" onClick={() => { history.push('/season'); }}>
+                    Season
+                  </button>
+                </div>
+              </>
             )}
-            <div className="footer-actions">
-              {today.length === 0 && (
-                // Nothing is on fire, so there is nothing to fight into — but the sickness still
-                // gets its step, the same as it would on a day spent fighting or shoring up.
-                <button
-                  type="button"
-                  className="primary"
-                  data-testid="sleep"
-                  style={{ background: palette.frontline.css }}
-                  onClick={() => { endDay(); }}
-                >
-                  Sleep
-                </button>
-              )}
-              <button type="button" className="tertiary" onClick={() => { history.push('/season'); }}>
-                Season
-              </button>
-            </div>
           </footer>
         </div>
       </IonContent>

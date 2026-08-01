@@ -359,10 +359,66 @@ describe('FightPage', () => {
     expect(screen.getByTestId('speed').textContent).toBe('1×');
   });
 
-  it('leaves the region when the header control is used', async () => {
+  it('leaves the region for free when the header control is used before the fight begins', async () => {
     await renderFight();
     act(() => { screen.getByTestId('leave').click(); });
     expect(screen.getByTestId('location').textContent).toBe('/');
+    // Nothing was read, nothing was fought — nothing should have been written either.
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  /**
+   * Reported from review: the header's own leave icon rendered through every phase, including
+   * over a result sheet, and its handler was a bare route push — no day, no `endDay`, nothing.
+   * Losing and tapping it instead of the sheet's own button was a completely free retry; winning
+   * and tapping it threw the clear away along with the reward and the held region. The rule is
+   * that a day is spent once the fight has begun, and it has to hold everywhere off this screen,
+   * not just through the sheet.
+   */
+  it('spends the day when the header control is used after the first wave has started', async () => {
+    await renderFight();
+    act(() => { screen.getByTestId('start-wave').click(); });
+    act(() => { screen.getByTestId('leave').click(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(persistedProfile().front.day).toBe(2);
+  });
+
+  /**
+   * The other half of the same finding: once a result is showing, the header icon must not be a
+   * second, cheaper way off the page beside the sheet's own buttons — especially not on a win,
+   * where a bare route push would silently discard the clear, the reward and the held region.
+   */
+  it('hides the header leave control once a result is on screen', async () => {
+    await renderFight();
+    if (captured.state === undefined) throw new Error('createSimState was never called');
+    captured.state.totalKills = 1;
+    captured.state.result = 'case';
+    tickFrame(0);
+    tickFrame(0.2);
+
+    expect(screen.queryByTestId('leave')).not.toBeInTheDocument();
+  });
+
+  /**
+   * The rule reaches a held-but-unfinished wave too: the "Leave the region" button on a `'wave'`
+   * result is reached only after the first wave was already fought and held, so the player has
+   * committed exactly as much as a loss did, and walking away from here costs the same day.
+   */
+  it('spends the day when the result sheet\'s own leave control is used after a wave is held', async () => {
+    await renderFight();
+    if (captured.state === undefined) throw new Error('createSimState was never called');
+    captured.state.phase = 'built';
+    captured.state.result = 'wave';
+    tickFrame(0);
+    tickFrame(0.2);
+
+    act(() => { screen.getByTestId('result-leave').click(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(persistedProfile().front.day).toBe(2);
   });
 
   it('states the loss and offers the case again when every pathogen walks through', async () => {

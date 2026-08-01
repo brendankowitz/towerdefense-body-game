@@ -170,7 +170,7 @@ describe('MapPage', () => {
       expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('Holding');
     });
 
-    it('spends the bank and reinforces the wall when the control is activated', async () => {
+    it('spends the bank, reinforces the wall and moves the day when the control is activated', async () => {
       const { profile, node } = heldProfile();
       localStorage.setItem(STORAGE_KEY, encode(profile));
       await renderMap();
@@ -180,6 +180,9 @@ describe('MapPage', () => {
 
       expect(screen.getByTestId('bank').textContent).toBe(String(profile.bank - SHORE_UP_COST));
       expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('day');
+      // Reinforcing costs exactly as much of the day as fighting does — the wall growing on its
+      // own proves nothing about that; only the header's own day count does.
+      expect(screen.getByText(`DAY ${String(profile.front.day + 1)} · MORNING`)).toBeInTheDocument();
     });
 
     it('still lists the wall, and its countdown as reachable text, when the bank cannot afford it', async () => {
@@ -189,6 +192,57 @@ describe('MapPage', () => {
 
       expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('Holding');
       expect(screen.queryByTestId(`shoreup-${node}`)).not.toBeInTheDocument();
+    });
+  });
+
+  /**
+   * `isRunLost` used to be read by nothing in the app — a run could reach the core and the map
+   * would keep offering the day's choices forever, with no signal the body was gone. This is
+   * the one place that reads it.
+   */
+  describe('when the run is lost', () => {
+    function lostProfile(): Profile {
+      const fresh = createFreshProfile();
+      const [firstHot] = hotCases(fresh.front);
+      if (firstHot === undefined) throw new Error('fixture expects an open front');
+      return { ...fresh, front: { ...fresh.front, infected: ['heart', nodeOf(firstHot)] } };
+    }
+
+    it('says the sickness reached the heart and offers only starting a new body', async () => {
+      localStorage.setItem(STORAGE_KEY, encode(lostProfile()));
+      await renderMap();
+
+      expect(screen.getByTestId('run-lost')).toHaveTextContent('The sickness reached the heart');
+      expect(screen.queryByTestId('day-choices')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('wall-list')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('sleep')).not.toBeInTheDocument();
+      expect(screen.queryByText('Season')).not.toBeInTheDocument();
+      expect(screen.getByTestId('reset-run')).toHaveTextContent('Start a new body');
+    });
+
+    it('does not let a map node lead to a fight once the run is lost', async () => {
+      const lost = lostProfile();
+      localStorage.setItem(STORAGE_KEY, encode(lost));
+      await renderMap();
+
+      const [, hotNode] = lost.front.infected;
+      if (hotNode === undefined) throw new Error('fixture expects a second hot node');
+      fireEvent.click(screen.getByTestId(`map-node-${hotNode}`));
+
+      expect(screen.getByTestId('location').textContent).toBe('/');
+    });
+
+    it('starts a new body from the run-over screen', async () => {
+      localStorage.setItem(STORAGE_KEY, encode(lostProfile()));
+      await renderMap();
+
+      fireEvent.click(screen.getByTestId('reset-run'));
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+      const fresh = createFreshProfile();
+      expect(screen.getByText(`DAY ${String(fresh.front.day)} · MORNING`)).toBeInTheDocument();
+      expect(screen.queryByTestId('run-lost')).not.toBeInTheDocument();
+      expect(screen.getByTestId('day-choices')).toBeInTheDocument();
     });
   });
 });

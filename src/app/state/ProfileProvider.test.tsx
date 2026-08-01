@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { CASE_BY_ID } from '@game/content/cases';
 import { endDay as gameEndDay } from '@game/front';
-import { clearCase, createFreshProfile, type Profile } from '@game/progression';
+import { clearCase, createFreshProfile, shoreUpRegion, type Profile } from '@game/progression';
 import type { LoadResult, ProgressRepository } from '@progress/ProgressRepository';
 
 /**
@@ -62,6 +62,13 @@ function Probe() {
         onClick={() => { shoreUp('gut'); }}
       >
         shore up
+      </button>
+      <button
+        type="button"
+        data-testid="shore-up-held"
+        onClick={() => { shoreUp(CASE.node); }}
+      >
+        shore up held ground
       </button>
       <button type="button" data-testid="reset" onClick={() => { resetRun(); }}>reset</button>
       <button type="button" data-testid="dismiss" onClick={() => { dismissSaveError(); }}>
@@ -218,6 +225,29 @@ describe('ProfileProvider', () => {
     expect(screen.getByTestId('bank').textContent).toBe(String(fresh.bank));
     expect(screen.getByTestId('day').textContent).toBe(String(fresh.front.day));
     expect(state.saveCalls).toHaveLength(0);
+  });
+
+  /**
+   * The end-to-end path finding 3 named as untested: `shoreUp` on ground the player actually
+   * holds has to both grow the wall (`shoreUpRegion`) and spend the day (`endDay`) — not just
+   * one or the other. Reinforcing costs exactly as much of the day as fighting does.
+   */
+  it('grows the wall and spends the day when shoreUp is called on ground the player holds', async () => {
+    render(<ProfileProvider><Probe /></ProfileProvider>);
+    await settle();
+
+    act(() => { screen.getByTestId('clear').click(); });
+    await settle();
+    const held = clearCase(createFreshProfile(), CASE.id, 7);
+
+    act(() => { screen.getByTestId('shore-up-held').click(); });
+    await settle();
+
+    const shored = shoreUpRegion(held, CASE.node);
+    const expected: Profile = { ...shored, front: gameEndDay(shored.front, shored.immunity) };
+    expect(screen.getByTestId('bank').textContent).toBe(String(expected.bank));
+    expect(screen.getByTestId('day').textContent).toBe(String(expected.front.day));
+    expect(state.saveCalls.at(-1)).toEqual(expected);
   });
 
   it('returns reset to exactly the fresh profile, matching first run', async () => {

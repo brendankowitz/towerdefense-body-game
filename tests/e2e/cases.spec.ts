@@ -52,6 +52,27 @@ test('the map offers each case in turn as the ones before it are cleared', async
   await expect(onScreen(page, 'sleep')).toHaveText('Sleep');
 });
 
+/**
+ * Reported from review: the fight screen's own header icon left through every phase, including
+ * over a result sheet, with a bare route push and nothing else. Leaving through it after the
+ * first wave had started cost nothing — a free retry no unit test happened to exercise, because
+ * every unit test that reached the header used it before starting a wave. A browser is what
+ * proves the whole page, header included, agrees on the rule.
+ */
+test('leaving through the header after a wave has started still spends the day', async ({ page }) => {
+  await seedProfile(page, profileWith([], 'forearm'));
+  await onScreen(page, 'pick-forearm').click();
+  await onScreen(page, 'get-in-there').click();
+  await expect(onScreen(page, 'board-canvas').locator('canvas')).toBeAttached();
+
+  await onScreen(page, 'start-wave').click();
+  await expect(onScreen(page, 'start-wave')).toHaveText('Wave in progress');
+
+  await onScreen(page, 'leave').click();
+  await expect(page).toHaveURL('/');
+  await expect(screen(page).getByText('DAY 2 · MORNING', { exact: true })).toBeVisible();
+});
+
 for (const definition of CASES) {
   test(`${definition.id}: a cell can be placed and its wave started`, async ({ page }) => {
     await openCase(page, definition.id);

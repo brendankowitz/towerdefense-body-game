@@ -83,8 +83,11 @@ export const SPLIT_RADIUS_FACTOR = 0.75;
  * `seed` picks which door the front line opens on. One fixed seed rather than a random draw:
  * `src/game` may not touch `Math.random`, and a fresh body is meant to be the same fresh body
  * every time (decision D7) — the door it opens on is part of that.
+ *
+ * No `day` here: `front.day` (set by `createFront`) is the only day a profile has. A second
+ * `day` on this constant would be exactly the orphaned duplicate this file used to carry.
  */
-export const FRESH_PROFILE = { day: 1, bank: 240, seed: 1 } as const;
+export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
 
 /**
  * The front line, and every number it runs on. All four are pacing values and pacing is a property

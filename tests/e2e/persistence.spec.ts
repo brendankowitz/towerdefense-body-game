@@ -2,9 +2,14 @@ import { expect, test } from '@playwright/test';
 import { BODY_NODES } from '../../src/game/content/body';
 import { FRESH_PROFILE, IMMUNITY_MAX } from '../../src/game/content/rules';
 import { createFront, holdRegion, nodeOf } from '../../src/game/front';
-import type { Profile } from '../../src/game/progression';
+import { createFreshProfile, type Profile } from '../../src/game/progression';
 import { STORAGE_KEY, STORAGE_VERSION } from '../../src/progress/ProgressRepository';
 import { onScreen, screen, seedProfile } from './helpers';
+
+// The day a fresh body opens on — `front.day`, the only day a profile has. Read off
+// `createFreshProfile()` rather than a rules constant, so this follows the actual mechanism
+// that decides it rather than a number that happens to agree with it.
+const FRESH_DAY = createFreshProfile().front.day;
 
 /**
  * Spec §13.7 — progress survives a reload, and a save that cannot be read yields a fresh
@@ -63,7 +68,7 @@ test('a saved run is read back, and a run written through the UI outlives a relo
   await expect(onScreen(page, 'held-count')).toHaveText(`0 / ${String(REGION_COUNT)}`);
 
   await page.goto('/immunity');
-  await expect(onScreen(page, 'stat-days')).toHaveText(String(FRESH_PROFILE.day));
+  await expect(onScreen(page, 'stat-days')).toHaveText(String(FRESH_DAY));
   await expect(onScreen(page, 'stat-kills')).toHaveText('0');
   await expect(onScreen(page, 'strain-staph')).toContainText(`0/${String(IMMUNITY_MAX)}`);
 });
@@ -89,7 +94,7 @@ for (const [description, raw] of UNREADABLE) {
     );
 
     await page.goto('/');
-    await expect(screen(page).getByText(`DAY ${String(FRESH_PROFILE.day)} · MORNING`)).toBeVisible();
+    await expect(screen(page).getByText(`DAY ${String(FRESH_DAY)} · MORNING`)).toBeVisible();
     await expect(onScreen(page, 'bank')).toHaveText(String(FRESH_PROFILE.bank));
     await expect(onScreen(page, 'held-count')).toHaveText(`0 / ${String(REGION_COUNT)}`);
     expect(failures).toEqual([]);

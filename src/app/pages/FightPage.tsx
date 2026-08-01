@@ -93,6 +93,27 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
   const buildPhase = hud.phase === 'build' || hud.phase === 'built';
   const region = definition.region.split(' · ')[0] ?? definition.region;
 
+  /**
+   * A day is spent once the fight has begun, not once it is resolved. Reading the brief and
+   * backing out during the opening build costs nothing — nothing has happened yet for the
+   * sickness to take advantage of. `startWave` moves the phase off `'build'` and it never comes
+   * back to a first-ever build once it has: a case that returns to `'build'` between waves is at
+   * `waveIndex > 0`, so this stays true for the rest of the case either way, win or lose.
+   */
+  const fightHasBegun = hud.phase !== 'build' || hud.waveIndex > 0;
+
+  /**
+   * The only way off this screen once the fight has begun, and the header icon's whole handler
+   * before then too — so there is exactly one place that decides whether leaving costs a day,
+   * not a copy of the rule at every exit. "Try this case again" was a free retry; a header icon
+   * that skipped this same check would just be a second one, and a win discarded through it
+   * would be worse than a free retry — the clear, the reward and the held region gone with it.
+   */
+  const leaveFight = (): void => {
+    if (fightHasBegun) endDay();
+    history.push('/');
+  };
+
   const onResultPrimary = (): void => {
     switch (hud.result) {
       case 'wave':
@@ -104,11 +125,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         history.push('/');
         return;
       case 'lost':
-        // A lost day is a day the sickness got. "Try this case again" was a free retry, which is
-        // the one thing a front line cannot allow — the whole layer is that a day is spent either
-        // way. Coming back tomorrow is the retry now.
-        endDay();
-        history.push('/');
+        leaveFight();
         return;
       case null:
         return;
@@ -129,16 +146,20 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               </span>
             </div>
             <EnergyPill energy={hud.energy} />
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Leave the region"
-              data-testid="leave"
-              onClick={() => { history.push('/'); }}
-            >
-              <span className="pause-bar" />
-              <span className="pause-bar" />
-            </button>
+            {hud.result === null && (
+              // Hidden rather than disabled once a result is on screen — the sheet is the only
+              // way off the page from there, never a second, cheaper door beside it.
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Leave the region"
+                data-testid="leave"
+                onClick={leaveFight}
+              >
+                <span className="pause-bar" />
+                <span className="pause-bar" />
+              </button>
+            )}
           </header>
 
           <TissuePips tissue={hud.tissue} />
@@ -218,13 +239,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               tissue={hud.tissue}
               caseTitle={definition.title}
               onPrimary={onResultPrimary}
-              onLeave={() => {
-                // "Leave the region" is a second door out of a lost case's result, and a day the
-                // sickness got is spent whichever door is used — otherwise leaving would be the
-                // free retry the primary action was just closed off from being.
-                if (hud.result === 'lost') endDay();
-                history.push('/');
-              }}
+              onLeave={leaveFight}
             />
           )}
 

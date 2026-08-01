@@ -69,7 +69,7 @@ test('the season and immunity screens reach each other and the map', async ({ pa
 
   await screen(page).getByRole('button', { name: "What I'm immune to" }).click();
   await expect(page).toHaveURL('/immunity');
-  await expect(onScreen(page, 'stat-days')).toHaveText(String(FRESH_PROFILE.day));
+  await expect(onScreen(page, 'stat-days')).toHaveText(String(createFreshProfile().front.day));
   await expect(onScreen(page, 'stat-kills')).toHaveText('0');
   await expect(onScreen(page, 'stat-regions')).toHaveText('0');
   for (const row of STRAIN_ROWS) {
