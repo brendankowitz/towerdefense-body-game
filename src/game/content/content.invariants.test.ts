@@ -471,6 +471,53 @@ describe('body graph coherence', () => {
     }
   });
 
+  /**
+   * The claim connectivity-from-the-core cannot make, and the one the season actually depends on:
+   * a sickness that starts at a door has to be able to walk to every region a case is fought over
+   * *without* going through the core.
+   *
+   * Nothing asserted this, and the body failed it. `lungL` and `lungR` hung off the heart alone,
+   * so the only step into a lung was out of the core — which `stepSickness` forbids until every
+   * road, both lungs included, has already fallen. Neither lung could ever catch fire, so the core
+   * could never be besieged, the last stand could never be fought, `isRunWon` could never be true,
+   * and two authored cases were dead content. Every test in the suite passed: the graph was
+   * connected, the cases were anchored, the doors were doors. Reachability *in the direction the
+   * sickness actually spreads* is the thing none of them said.
+   *
+   * The core is exempt because it is what the walk is not allowed to pass through — it is reached
+   * by taking the roads, which is the ending this rule exists to make possible, not by spreading
+   * into like a region. The four joints are exempt because nobody fights over them: they are
+   * pass-through, they hold no case, and they do not count toward the map's denominator, so a
+   * joint the sickness could not enter would cost the season nothing.
+   */
+  it('lets a sickness reach every case-bearing region from a door without passing through the core', () => {
+    const adjacency = new Map<string, string[]>();
+    for (const node of BODY_NODES) adjacency.set(node.id, []);
+    for (const [from, to] of BODY_LINKS) {
+      adjacency.get(from)?.push(to);
+      adjacency.get(to)?.push(from);
+    }
+
+    const [core] = BODY_NODES.filter((n) => n.core === true);
+    expect(core).toBeDefined();
+    if (core === undefined) return;
+
+    const reached = new Set<string>(ENTRY_REGIONS.map((n) => n.id));
+    const queue: string[] = [...reached];
+    let current: string | undefined;
+    while ((current = queue.shift()) !== undefined) {
+      for (const neighbour of adjacency.get(current) ?? []) {
+        if (neighbour === core.id || reached.has(neighbour)) continue;
+        reached.add(neighbour);
+        queue.push(neighbour);
+      }
+    }
+
+    const stranded = CASE_REGIONS.map((n) => n.id).filter((id) => !reached.has(id));
+    expect(stranded, `no illness can ever reach ${stranded.join(', ')}, so its case can never be played`)
+      .toEqual([]);
+  });
+
   it('is connected — every node is reachable from the core', () => {
     const [core] = BODY_NODES.filter((n) => n.core === true);
     expect(core).toBeDefined();

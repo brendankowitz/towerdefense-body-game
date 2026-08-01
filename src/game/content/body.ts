@@ -62,8 +62,25 @@ export const ENTRY_REGIONS: readonly BodyNode[] = CASE_REGIONS.filter((n) => n.e
 /** Regions the sickness can only reach by spreading into them. */
 export const INTERIOR_REGIONS: readonly BodyNode[] = CASE_REGIONS.filter((n) => n.entry !== true);
 
+/**
+ * How the body joins up, and it is two systems rather than one.
+ *
+ * Most of these links are the blood: everything hangs off the heart, which is what makes the core
+ * the thing every distance is measured to. The airway is the exception, and it has to be here or
+ * the lungs are cul-de-sacs *behind* the core — reachable only by stepping out of a heart the
+ * sickness cannot enter until every road, lungs included, has already fallen. That circle meant no
+ * lung could ever catch fire, so the core could never be besieged, the last stand could never be
+ * fought and two authored cases could never be played.
+ *
+ * `throat → lungL` and `throat → lungR` are the fix, and they are what a chest infection actually
+ * does: in at the nose or the mouth, down the throat, into a lung. It is what both lung cases'
+ * own fiction already says — a cough that stayed a fortnight, and measles settling in the lung
+ * behind a wiped memory. `content.invariants.test.ts` holds the general rule this restores: every
+ * region a case is fought over can be reached from a door without passing through the core.
+ */
 export const BODY_LINKS: readonly (readonly [BodyNodeId, BodyNodeId])[] = [
-  ['sinus', 'throat'], ['throat', 'heart'], ['heart', 'lungL'], ['heart', 'lungR'],
+  ['sinus', 'throat'], ['throat', 'lungL'], ['throat', 'lungR'],
+  ['throat', 'heart'], ['heart', 'lungL'], ['heart', 'lungR'],
   ['heart', 'stomach'], ['stomach', 'gut'], ['heart', 'shoulder'], ['shoulder', 'forearm'],
   ['heart', 'shoulderR'], ['shoulderR', 'handR'], ['gut', 'kneeL'], ['gut', 'kneeR'],
   ['kneeL', 'footL'], ['kneeR', 'footR'],
