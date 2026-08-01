@@ -18,8 +18,9 @@ export const CLEAR_RATE_CEILING = 0.15;
 /**
  * The cases the *ceiling* does not apply to, and nothing else. **Empty, and it should stay empty.**
  *
- * It held the heart, for one reason: this harness enters every case at `clearedCount` cases
- * cleared, and for the last stand that is every one of them — the full dock, immunity at its cap,
+ * It held the heart, for one reason: this harness enters every case at the day and the clears a
+ * clean season walk would reach it on, and for the last stand that is the whole season behind it
+ * — the full dock, immunity at its cap,
  * and the largest bank the season can hand over. That is the most forgiving state any run could
  * arrive at the core in, and a real run arrives at the last stand having *lost* ground, so it
  * arrives with less of all three. Holding a ceiling against a number no run plays would have held

@@ -55,8 +55,8 @@ const BAND_EXCEPTIONS: Partial<Record<CaseId, number>> = {};
 
 interface SweepCase {
   readonly caseId: CaseId;
-  /** Cases cleared before this one — what decides which cells the dock offers. */
-  readonly clearedCount: number;
+  /** Days elapsed when a clean run meets this case — what decides which cells the dock offers. */
+  readonly daysElapsed: number;
 }
 
 /**
@@ -70,7 +70,7 @@ interface SweepCase {
 const ONLY = process.env.SWEEP_CASES?.split(',').map((id) => id.trim()).filter((id) => id !== '');
 
 const SWEEP: readonly SweepCase[] = CASES
-  .map((definition, index) => ({ caseId: definition.id, clearedCount: index }))
+  .map((definition, index) => ({ caseId: definition.id, daysElapsed: index }))
   .filter(({ caseId }) => ONLY === undefined || ONLY.includes(caseId));
 
 /** Whether this run swept the season rather than a slice of it. Gates the two curve assertions. */
@@ -89,11 +89,11 @@ interface SweepResult {
   readonly bestBoard: readonly DefenderKind[] | null;
 }
 
-function sweepCase({ caseId, clearedCount }: SweepCase): SweepResult {
+function sweepCase({ caseId, daysElapsed }: SweepCase): SweepResult {
   const definition = CASES.find((c) => c.id === caseId);
   if (definition === undefined) throw new Error(`Unknown case ${caseId}`);
 
-  const kinds = unlockedKinds(clearedCount);
+  const kinds = unlockedKinds(daysElapsed);
   const lastWaveHistogram = Array.from({ length: definition.waves.length + 1 }, () => 0);
   const clearPips = Array.from({ length: TISSUE_PIPS + 1 }, () => 0);
 
@@ -107,7 +107,7 @@ function sweepCase({ caseId, clearedCount }: SweepCase): SweepResult {
     // `'never'` grows nothing, so the set it is handed cannot change the outcome. Passed as
     // every growable kind rather than as nothing, so this line says "a player who declines the
     // offers" and not "a player the harness never offers anything to".
-    const outcome = playBoard(caseId, clearedCount, board, 'never', EVERY_GROWABLE);
+    const outcome = playBoard(caseId, daysElapsed, board, 'never', EVERY_GROWABLE);
     boards += 1;
     if (outcome.stalled) stalls += 1;
 

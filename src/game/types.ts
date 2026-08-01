@@ -168,7 +168,6 @@ export interface SimState {
    * anything downstream needing to know the rule exists.
    */
   readonly immunity: Readonly<Record<StrainId, number>>;
-  readonly clearedCount: number;
   /**
    * The profile's `front.day` at the moment this case was entered. Day 1 is zero days elapsed, so
    * every reader comparing it to an unlock schedule asks for `day - 1` — the dock and growth both

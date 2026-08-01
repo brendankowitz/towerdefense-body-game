@@ -157,10 +157,12 @@ const SEARCH_STRIDE = 2833;
  * played through the shipped step loop — and what the memo saves is replaying a board whose result
  * is already known.
  *
- * The key names every input to `createSimState` this could possibly turn on, `clearedCount`
- * included even though nothing in the simulation reads it today. A cache key that leaves out a
- * field because the code behind it happens to ignore it is a cache that starts lying the day
- * somebody uses that field.
+ * The key names every input to `createSimState` this could possibly turn on. The day is in it
+ * through `kinds`, which is `unlockedKinds(day - 1)` and the only thing the day decides for a
+ * search played under `'never'`. A cache key that leaves out a field because the code behind it
+ * happens to ignore it is a cache that starts lying the day somebody uses that field, so a field
+ * leaves this key only when it leaves `createSimState` — which is what happened to the clear
+ * count.
  */
 const LEARNED = new Map<string, readonly DefenderKind[] | null>();
 
@@ -186,7 +188,6 @@ function contextKey(context: BoardContext, kinds: readonly DefenderKind[]): stri
     context.caseId,
     kinds.join(','),
     immunity,
-    String(context.clearedCount),
     context.blocksAmnesia ? 'mmr' : 'raw',
   ].join('|');
 }
@@ -278,7 +279,6 @@ function contextFor(profile: Profile, caseId: CaseId): BoardContext {
   return {
     caseId,
     immunity: profile.immunity,
-    clearedCount: profile.cleared.length,
     day: profile.front.day,
     blocksAmnesia: blocksAmnesia(profile),
   };
@@ -383,7 +383,7 @@ export function playRun(
         lastStands += 1;
         coreArrival ??= {
           day: context.day,
-          cleared: context.clearedCount,
+          cleared: profile.cleared.length,
           immunity: context.immunity,
           blocksAmnesia: context.blocksAmnesia,
         };

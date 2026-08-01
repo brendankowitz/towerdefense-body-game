@@ -13,11 +13,10 @@ import {
 } from './content/rules';
 import type { DefenderKind, SimState } from './types';
 
-function fresh(overrides: { day?: number; clearedCount?: number } = {}): SimState {
+function fresh(overrides: { day?: number } = {}): SimState {
   return createSimState({
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
-    clearedCount: overrides.clearedCount ?? 0,
     day: overrides.day ?? 1,
     totalKills: 0,
   });
@@ -119,10 +118,10 @@ describe('isUnlocked', () => {
    * is a loss compounding into a worse one. The body learns whether or not you won.
    */
   it('opens a cell on the day it is due, however few cases were cleared', () => {
-    const late = fresh({ day: DEFENDERS.mem.unlock + 1, clearedCount: 0 });
+    const late = fresh({ day: DEFENDERS.mem.unlock + 1 });
     expect(isUnlocked(late, 'mem')).toBe(true);
 
-    const early = fresh({ day: DEFENDERS.mem.unlock - 1, clearedCount: 99 });
+    const early = fresh({ day: DEFENDERS.mem.unlock - 1 });
     expect(isUnlocked(early, 'mem')).toBe(false);
   });
 });

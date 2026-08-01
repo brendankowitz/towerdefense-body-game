@@ -113,11 +113,12 @@ const ONLY = process.env.SWEEP_CASES?.split(',').map((id) => id.trim()).filter((
 
 interface SweepCase {
   readonly caseId: CaseId;
-  readonly clearedCount: number;
+  /** Days elapsed when a clean run meets this case — what both unlock schedules read now. */
+  readonly daysElapsed: number;
 }
 
 const SWEEP: readonly SweepCase[] = CASES
-  .map((definition, index) => ({ caseId: definition.id, clearedCount: index }))
+  .map((definition, index) => ({ caseId: definition.id, daysElapsed: index }))
   .filter(({ caseId }) => ONLY === undefined || ONLY.includes(caseId));
 
 interface RunResult {
@@ -131,9 +132,9 @@ interface RunResult {
   /** Boards this run loses that `'never'` clears. */
   readonly hurt: number;
   /**
-   * True when at least one kind this run grows has opened by this case's `clearedCount` —
+   * True when at least one kind this run grows has opened by this case's `daysElapsed` —
    * `maturationOffer` (`stats.ts`) now refuses to grow a kind before its `MaturedForm.unlock`
-   * cases are cleared, the same season gate `unlockedKinds` applies to placement. A run swept
+   * days have passed, the same season gate `unlockedKinds` applies to placement. A run swept
    * against a case earlier than every one of its kinds' unlocks can never reach the board with a
    * growable cell, which is the schedule working as intended and not a harness that stopped
    * measuring anything. See the skip logged in `compareCase` and the trap assertion below, which
@@ -143,17 +144,17 @@ interface RunResult {
 }
 
 /**
- * The kinds a run would actually be offered to grow at this `clearedCount` — the intersection of
+ * The kinds a run would actually be offered to grow at this `daysElapsed` — the intersection of
  * what the run is willing to grow with what the season has opened. Kept separate from
  * `unlockedKinds` in `playBoard.ts`, which answers the *placement* question (can this kind be
  * bought at all); this answers the *growth* one, gated by `MaturedForm.unlock` rather than
  * `DefenderStats.unlock`, and the two schedules are not the same — every kind here is already
  * buyable from day one.
  */
-function openKindsFor(run: Run, clearedCount: number): readonly DefenderKind[] {
+function openKindsFor(run: Run, daysElapsed: number): readonly DefenderKind[] {
   return run.kinds.filter((kind) => {
     const form = maturedFormOf(kind);
-    return form !== null && clearedCount >= form.unlock;
+    return form !== null && daysElapsed >= form.unlock;
   });
 }
 
@@ -177,7 +178,7 @@ function emptyTally(): Tally {
   return { clears: 0, stalls: 0, grown: 0, helped: 0, hurt: 0 };
 }
 
-function compareCase({ caseId, clearedCount }: SweepCase): CaseComparison {
+function compareCase({ caseId, daysElapsed }: SweepCase): CaseComparison {
   const definition = CASES.find((c) => c.id === caseId);
   if (definition === undefined) throw new Error(`Unknown case ${caseId}`);
 
@@ -185,13 +186,13 @@ function compareCase({ caseId, clearedCount }: SweepCase): CaseComparison {
   let boards = 0;
   let best = 0;
 
-  for (const board of everyBoard(unlockedKinds(clearedCount), definition.spots.length)) {
+  for (const board of everyBoard(unlockedKinds(daysElapsed), definition.spots.length)) {
     boards += 1;
 
     // Every run is played before anything is counted, so `helped` and `hurt` compare against the
     // baseline rather than against whichever run the loop happened to reach first.
     const outcomes = RUNS.map(
-      (run) => playBoard(caseId, clearedCount, board, run.policy, run.kinds),
+      (run) => playBoard(caseId, daysElapsed, board, run.policy, run.kinds),
     );
     const baseline = outcomes[RUNS.findIndex((run) => run.policy === 'never')];
     if (baseline === undefined) throw new Error('the comparison has no never run to compare to');
@@ -210,7 +211,7 @@ function compareCase({ caseId, clearedCount }: SweepCase): CaseComparison {
   }
 
   const runs = RUNS.map((run, index) => {
-    const eligible = run.policy === 'never' || openKindsFor(run, clearedCount).length > 0;
+    const eligible = run.policy === 'never' || openKindsFor(run, daysElapsed).length > 0;
     if (!eligible) {
       // Not a truncation the reader is meant to take on faith: every pair the trap assertion
       // will not hold to "grew something" is named here, with the unlock that excluded it, so a
@@ -218,7 +219,7 @@ function compareCase({ caseId, clearedCount }: SweepCase): CaseComparison {
       const unlocks = run.kinds
         .map((kind) => `${kind}:${String(maturedFormOf(kind)?.unlock ?? '—')}`)
         .join(', ');
-      console.log(`  skipping ${caseId}/${run.label} — none of [${unlocks}] has opened by clearedCount ${String(clearedCount)}`);
+      console.log(`  skipping ${caseId}/${run.label} — none of [${unlocks}] has opened by day ${String(daysElapsed + 1)}`);
     }
     return { run, eligible, ...(tallies[index] ?? emptyTally()) };
   });
@@ -293,8 +294,8 @@ describe('maturation comparison', () => {
    * season unlock (`MaturedForm.unlock` in `maturation.ts`, enforced by `maturationOffer` in
    * `stats.ts`), so a case swept before every kind a run grows has opened cannot put a grown cell
    * on the board no matter how well the run plays it — that is the schedule doing its job, not
-   * the trap this assertion exists to catch. Forearm at `clearedCount` 0 can never grow a
-   * macrophage (unlock 4) or an antibody (unlock 6); asserting `grown > 0` there would be
+   * the trap this assertion exists to catch. Forearm on day 1, at zero days elapsed, can never
+   * grow a macrophage (unlock 4) or an antibody (unlock 6); asserting `grown > 0` there would be
    * asserting the gate is a bug. `compareCase` logs every pair this excludes and why, so skipping
    * here is never silent.
    */

@@ -223,17 +223,16 @@ export function runBuildPhase(
  * Everything about a run that decides how a board plays, handed in rather than derived from a
  * count of cleared cases.
  *
- * `playBoard` derives all of this from `clearedCount`, which is exactly right for a board sweep:
- * it walks the season in order, so the day, the immunity and the clears are one number. A run is
- * the case where they come apart — a day is spent whether the case was won or lost, ground is
- * retaken and re-cleared, and the last stand is reached on whatever day the roads happened to
- * fall. `runSweep.ts` is that caller, and this is the shape it needs.
+ * `playBoard` derives all of this from one number, which is exactly right for a board sweep: it
+ * walks the season in order, so the day, the immunity and the clears behind a case are the same
+ * number. A run is the case where they come apart — a day is spent whether the case was won or
+ * lost, ground is retaken and re-cleared, and the last stand is reached on whatever day the roads
+ * happened to fall. `runSweep.ts` is that caller, and this is the shape it needs.
  */
 export interface BoardContext {
   readonly caseId: CaseId;
   /** What the profile has earned, not what the season order implies. */
   readonly immunity: Readonly<Record<StrainId, number>>;
-  readonly clearedCount: number;
   /** 1-based, and the only thing that decides which cells the dock offers. */
   readonly day: number;
   /** MMR, earned. False everywhere the board sweep plays, since it enters no case with a profile. */
@@ -249,7 +248,6 @@ export function playBoardIn(
   const state = createSimState({
     caseId: context.caseId,
     immunity: context.immunity,
-    clearedCount: context.clearedCount,
     day: context.day,
     totalKills: 0,
     blocksAmnesia: context.blocksAmnesia,
@@ -296,26 +294,30 @@ export function playBoardIn(
 
 /**
  * The season-order board play, and the one every recorded clear rate in this repo was measured
- * under: the case at index `clearedCount`, met on the day a clean run would meet it, with the
+ * under: the case at index `daysElapsed`, met on the day a clean run would meet it, with the
  * immunity a clean run would have earned by then and no vaccine blocking anything.
+ *
+ * Named for the days because that is what the dock's unlock schedule reads now — it opens cells on
+ * the days a body has survived, not the cases it has won. A clean season walk meets the case at
+ * index n on day n+1 having cleared n cases, so the one number is all three at once; the immunity
+ * below is the only place it is still genuinely a count of clears.
  *
  * A thin wrapper rather than the other way round, so nothing about the board sweep changed when
  * the run sweep needed a context of its own.
  */
 export function playBoard(
   caseId: CaseId,
-  clearedCount: number,
+  daysElapsed: number,
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
   kinds: GrowableSet,
 ): BoardOutcome {
   return playBoardIn({
     caseId,
-    immunity: immunityAfter(clearedCount),
-    clearedCount,
+    immunity: immunityAfter(daysElapsed),
     // Day and case index track each other one for one — day 1 is zero days elapsed, the case at
     // index 0 — so this reproduces the schedule `unlockedKinds` above already measures by index.
-    day: clearedCount + 1,
+    day: daysElapsed + 1,
     blocksAmnesia: false,
   }, board, policy, kinds);
 }

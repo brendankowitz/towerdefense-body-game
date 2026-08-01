@@ -13,7 +13,6 @@ function build(caseId: CaseId = 'forearm'): SimState {
   return createSimState({
     caseId,
     immunity: { staph: 0, film: 0, virus: 0 },
-    clearedCount: 0,
     day: 1,
     totalKills: 0,
   });

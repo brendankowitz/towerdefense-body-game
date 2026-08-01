@@ -27,7 +27,6 @@ function runFor(
   return createSimState({
     caseId,
     immunity: { staph: 0, film: 0, virus: 0, ...immunity },
-    clearedCount: 2,
     day: 3,
     totalKills: 0,
   });
@@ -269,7 +268,7 @@ describe('restartCase', () => {
     expect(restarted.result).toBeNull();
     expect(restarted.caseId).toBe(spent.caseId);
     expect(restarted.immunity).toEqual(spent.immunity);
-    expect(restarted.clearedCount).toBe(spent.clearedCount);
+    expect(restarted.day).toBe(spent.day);
   });
 
   /**

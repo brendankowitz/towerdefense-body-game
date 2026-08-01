@@ -11,7 +11,6 @@ import type { SimInput } from './state';
 const input: SimInput = {
   caseId: 'forearm',
   immunity: { staph: 0, film: 0, virus: 0 },
-  clearedCount: 0,
   day: 1,
   totalKills: 0,
 };
@@ -46,9 +45,9 @@ describe('createSimState', () => {
   });
 
   it('carries profile facts in without letting the case override them', () => {
-    const state = createSimState({ ...input, immunity: { staph: 2, film: 1, virus: 3 }, clearedCount: 2, totalKills: 41 });
+    const state = createSimState({ ...input, immunity: { staph: 2, film: 1, virus: 3 }, day: 9, totalKills: 41 });
     expect(state.immunity).toEqual({ staph: 2, film: 1, virus: 3 });
-    expect(state.clearedCount).toBe(2);
+    expect(state.day).toBe(9);
     expect(state.totalKills).toBe(41);
   });
 

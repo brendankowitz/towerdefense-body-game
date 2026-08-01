@@ -167,7 +167,7 @@ describe('playRun', () => {
    * The first played a seed forwards and backwards and compared; `LEARNED` is module-global, so the
    * backwards pass read what the forwards pass wrote. The second played whole *runs* against a
    * cleared memo — better, and still vacuous: reducing `contextKey` to `caseId` plus the dock size,
-   * dropping immunity, `clearedCount` and `blocksAmnesia`, left every test green with byte-identical
+   * dropping immunity, the day and `blocksAmnesia`, left every test green with byte-identical
    * output. The reason is the call site. `playRun` only reads `learnedBoard(...) !== null`, and
    * whether a case is winnable *at all* barely moves across those fields — the band floor is 5%, so
    * almost every context has some winning board. A run-level assertion cannot see the difference.
@@ -182,16 +182,19 @@ describe('playRun', () => {
    * if a content change ever made the two immunity states agree, the test would become vacuous
    * silently, so it fails loudly instead.
    *
-   * **What this does not guard, stated rather than implied.** `clearedCount` and `blocksAmnesia` are
-   * in the key and are **not observable through it**: nothing in the simulation reads `clearedCount`,
-   * and `blocksAmnesia` returned an identical board on the amnesia case with film at its cap at every
-   * day from 4 to 20. They are carried defensively, for the reason `learnedBoard` gives — a key that
-   * omits a field because today's code ignores it starts lying the day somebody uses it — and no test
-   * here can hold them to it.
+   * **What this does not guard, stated rather than implied.** `blocksAmnesia` is in the key and is
+   * **not observable through it**: it returned an identical board on the amnesia case with film at
+   * its cap at every day from 4 to 20. It is carried defensively, for the reason `learnedBoard`
+   * gives — a key that omits a field because today's code ignores it starts lying the day somebody
+   * uses it — and no test here can hold it to that.
+   *
+   * The clear count used to sit beside it in the same paragraph. It is gone from the key because it
+   * is gone from `createSimState`: nothing in the simulation had read it since the unlocks moved to
+   * days, so it was a dead field rather than merely an unobservable one.
    */
   it('does not let one context change what another one measures', () => {
     const at = (immunity: Readonly<Record<StrainId, number>>): BoardContext =>
-      ({ caseId: 'vesper', immunity, clearedCount: 0, day: 11, blocksAmnesia: false });
+      ({ caseId: 'vesper', immunity, day: 11, blocksAmnesia: false });
     const cold: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
     const full: Readonly<Record<StrainId, number>> = { staph: 3, film: 3, virus: 3 };
 

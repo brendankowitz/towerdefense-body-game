@@ -16,7 +16,6 @@ function armed(caseId: CaseId, immunity: Partial<Record<StrainId, number>> = {})
   const state = createSimState({
     caseId,
     immunity: { staph: 0, film: 0, virus: 0, ...immunity },
-    clearedCount: 0,
     day: 1,
     totalKills: 0,
   });

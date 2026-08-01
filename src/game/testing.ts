@@ -12,13 +12,12 @@ import type { CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainId, Tow
 export function simFor(
   caseId: CaseId = 'forearm',
   overrides: {
-    immunity?: Partial<Record<StrainId, number>>; clearedCount?: number; day?: number;
+    immunity?: Partial<Record<StrainId, number>>; day?: number;
   } = {},
 ): SimState {
   const state = createSimState({
     caseId,
     immunity: { staph: 0, film: 0, virus: 0, ...overrides.immunity },
-    clearedCount: overrides.clearedCount ?? 2,
     day: overrides.day ?? 3,
     totalKills: 0,
   });

@@ -40,7 +40,6 @@ function boardOf(...kinds: readonly DefenderKind[]): GameLoop {
   const state = createSimState({
     caseId: 'forearm',
     immunity: { staph: 0, film: 0, virus: 0 },
-    clearedCount: ALL_UNLOCKED,
     day: ALL_UNLOCKED + 1,
     totalKills: 0,
   });

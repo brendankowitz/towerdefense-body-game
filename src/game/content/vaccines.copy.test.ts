@@ -35,7 +35,6 @@ function bouncesStaph(caseId: CaseId): boolean {
   const state = createSimState({
     caseId,
     immunity: { staph: IMMUNITY_MAX, film: 0, virus: 0 },
-    clearedCount: 0,
     day: 1,
     totalKills: 0,
   });

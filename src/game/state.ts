@@ -9,7 +9,6 @@ export const DEFAULT_SELECTION: DefenderKind = 'phago';
 export interface SimInput {
   readonly caseId: CaseId;
   readonly immunity: Readonly<Record<StrainId, number>>;
-  readonly clearedCount: number;
   /** See `SimState.day`. */
   readonly day: number;
   readonly totalKills: number;
@@ -62,7 +61,6 @@ export function createSimState(input: SimInput): SimState {
     rules: definition.rules.map((rule) => rule.kind),
     path: compilePath(definition.path),
     immunity: immunityFor(input.immunity, definition.wipes, input.blocksAmnesia === true),
-    clearedCount: input.clearedCount,
     day: input.day,
 
     phase: 'build',

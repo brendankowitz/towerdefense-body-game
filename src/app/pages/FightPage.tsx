@@ -31,7 +31,6 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
   return new GameLoop(createSimState({
     caseId,
     immunity: profile.immunity,
-    clearedCount: profile.cleared.length,
     day: profile.front.day,
     totalKills: profile.kills,
     blocksAmnesia: blocksAmnesia(profile),

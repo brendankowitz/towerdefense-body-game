@@ -129,8 +129,10 @@ function groupReport(group: RunGroup): string {
  * Chickenpox's 8 was chosen by an implementer and flagged as provisional, and it is the one gate a
  * run can fail to reach: `cleared` counts distinct case regions, retaking ground re-credits immunity
  * but never grows the list, and the ceiling is therefore the ten regions the body has. A gate a run
- * never reaches is a row that reads LOCKED for the whole game — the same broken promise `vaccines.ts`
- * already refuses for a gate above `CASES.length`, one step subtler.
+ * never reaches is a row that reads LOCKED for the whole game — the same broken promise
+ * `content.invariants.test.ts` now refuses for a gate above `CASE_REGIONS.length`, one step
+ * subtler: that guard rules out a gate no run *can* satisfy, this column watches for one no run
+ * *does*.
  *
  * **`left` is the column that answers it.** A gate reached on the second-to-last day of a run the
  * player was already winning is reached and still worthless, and a share alone cannot tell those
@@ -275,7 +277,6 @@ function heartReport(groups: readonly RunGroup[]): string {
       const outcome = playBoardIn({
         caseId: 'heart',
         immunity: arrival.immunity,
-        clearedCount: arrival.cleared,
         day: arrival.day,
         blocksAmnesia: arrival.blocksAmnesia,
       }, board, 'never', EVERY_GROWABLE);

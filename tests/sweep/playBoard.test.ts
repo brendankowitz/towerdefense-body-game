@@ -33,7 +33,7 @@ const CLEARED = CASES.length;
 
 function openState(): SimState {
   return createSimState({
-    caseId: CASE_ID, immunity: immunityAfter(0), clearedCount: CLEARED, day: CLEARED + 1, totalKills: 0,
+    caseId: CASE_ID, immunity: immunityAfter(0), day: CLEARED + 1, totalKills: 0,
   });
 }
 
@@ -179,7 +179,7 @@ describe('runBuildPhase', () => {
 describe('playBoard', () => {
   /**
    * The last case of the season, played with the season behind it — so every cell is in the dock
-   * and both matured forms are open. A run at `clearedCount: 0` would measure the unlock schedule
+   * and both matured forms are open. A run on day 1 would measure the unlock schedule
    * rather than the policy, and would read as the policy declining to grow.
    */
   const LATE_CASE = CASES[CASES.length - 1]?.id ?? CASE_ID;

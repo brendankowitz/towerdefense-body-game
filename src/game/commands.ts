@@ -159,7 +159,6 @@ export function restartCase(state: SimState): SimState {
   return createSimState({
     caseId: state.caseId,
     immunity: state.immunity,
-    clearedCount: state.clearedCount,
     day: state.day,
     totalKills: state.totalKills,
   });
