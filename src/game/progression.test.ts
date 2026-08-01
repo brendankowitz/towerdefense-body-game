@@ -246,13 +246,18 @@ describe('shoreUpRegion', () => {
   /**
    * `{ ...profile }` alone would not catch an in-place mutation of `profile.front` — the copy
    * is shallow, so `before.front` and `profile.front` would still be the same object and an
-   * `shoreUpRegion` that mutated the siege map in place would pass this unnoticed. A structured
-   * clone captures the front's contents by value, which is the only way this test can tell "a
-   * new front was returned" apart from "the old one was quietly edited".
+   * `shoreUpRegion` that mutated the siege map in place would pass this unnoticed. A deep copy
+   * captures the front's contents by value, which is the only way this test can tell "a new
+   * front was returned" apart from "the old one was quietly edited".
+   *
+   * Round-tripped through JSON rather than `structuredClone`: this file compiles under
+   * `tsconfig.game.json`, which is what keeps `src/game/**` free of host globals, and
+   * `structuredClone` is one. A profile is required to survive exactly this round trip anyway —
+   * that is what `parseProfile` reads back off storage — so nothing about the shape is lost.
    */
   it('leaves the profile it was given untouched', () => {
     const { profile, node } = profileWithHeldRegion();
-    const before = structuredClone(profile);
+    const before: Profile = JSON.parse(JSON.stringify(profile)) as Profile;
     shoreUpRegion(profile, node);
     expect(profile).toEqual(before);
   });
