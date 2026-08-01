@@ -96,6 +96,21 @@ describe('amnesia — one immunity does not work here', () => {
     }
   });
 
+  /**
+   * The wiring from `blocksAmnesia` through `createSimState` to `immunityFor` traces correctly by
+   * reading, but nothing before this exercised it end to end: every other test in this file builds
+   * an ordinary `SimInput` with `blocksAmnesia` left unset. This is the one that actually sets it
+   * against a real amnesia case, so a break anywhere on that path — the field never reaching
+   * `immunityFor`, or `immunityFor` reading it wrong — shows up here rather than passing silently.
+   */
+  it('leaves the wiped strain intact once MMR has blocked the wipe', () => {
+    if (wiping?.wipes === undefined) return;
+
+    const state = createSimState({ ...input, caseId: wiping.id, immunity: held, blocksAmnesia: true });
+
+    expect(state.immunity[wiping.wipes], 'MMR blocked the wipe but the strain still read zero').toBe(IMMUNITY_MAX);
+  });
+
   it('never touches the profile object it was handed', () => {
     if (wiping === undefined) return;
 

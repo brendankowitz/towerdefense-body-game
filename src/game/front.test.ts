@@ -131,6 +131,22 @@ describe('Chickenpox: walls that cannot fall', () => {
     expect(after.infected).not.toContain('gut');
   });
 
+  /**
+   * A region already mid-siege the day the gate is crossed is the case the two tests above cannot
+   * tell apart from a bug: dropping a held node from `options` stops the countdown moving, but a
+   * `front` returned unchanged still carries whatever count it stopped at. Asserted on `siege`
+   * directly, not just on `held`/`infected`, because those two stayed correct even before this was
+   * fixed — the wall never fell, it just sat on the map still claiming to be under attack.
+   */
+  it('lifts a siege already in progress once the gate is crossed', () => {
+    const midSiege: Front = { infected: ['stomach'], held: ['gut'], siege: { gut: 2 }, day: 1, rngState: 1 };
+    const after = stepSickness(midSiege, NO_IMMUNITY, { wallsCannotFall: true });
+
+    expect(after.siege.gut, 'a siege that started before the vaccine kept counting down').toBeUndefined();
+    expect(after.held).toContain('gut');
+    expect(after.infected).not.toContain('gut');
+  });
+
   it('forwards the same rule through endDay', () => {
     const under: Front = { infected: ['stomach'], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1 };
     const after = endDay(under, NO_IMMUNITY, { wallsCannotFall: true });

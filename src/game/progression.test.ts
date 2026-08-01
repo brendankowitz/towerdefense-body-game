@@ -332,11 +332,15 @@ describe('frontRules', () => {
 });
 
 describe('seasonRows', () => {
+  /**
+   * Written to hold whether `LATER` is empty or not — it is empty today (every promise the
+   * schedule made has been kept), but the type stays live for the next mechanic that ships ahead
+   * of its content, so this cannot assume a first entry exists without going stale the day one
+   * does again.
+   */
   it('lists every case then every later entry, with days counted from today', () => {
     const fresh = createFreshProfile();
     const rows = seasonRows(fresh);
-    const firstLater = LATER[0];
-    if (firstLater === undefined) throw new Error('content has no later entries');
 
     expect(rows).toHaveLength(CASES.length + LATER.length);
     expect(rows.map((row) => row.name)).toEqual([
@@ -344,7 +348,9 @@ describe('seasonRows', () => {
       ...LATER.map((entry) => entry.name),
     ]);
     expect(rows[0]?.day).toBe(fresh.front.day);
-    expect(rows[CASES.length]?.day).toBe(fresh.front.day + firstLater.offset);
+    LATER.forEach((entry, index) => {
+      expect(rows[CASES.length + index]?.day).toBe(fresh.front.day + entry.offset);
+    });
   });
 
   /**

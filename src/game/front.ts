@@ -146,6 +146,18 @@ export interface FrontRules {
 const ORDINARY_RULES: FrontRules = { wallsCannotFall: false };
 
 /**
+ * Every entry in `siege` is, by construction, a region the player holds — nothing else in this
+ * module ever writes one — so once `wallsCannotFall` is true there is nothing left for a
+ * countdown already in progress to count down to. Lifting it here rather than leaving it to expire
+ * on its own matters because it never will: `wallsCannotFall` also drops the region from every
+ * future move below, so an untouched countdown would sit on the map forever, at whatever number it
+ * stopped at, telling the player a wall that cannot fall is still under attack.
+ */
+function withSiegesLifted(front: Front): Front {
+  return { ...front, siege: {} };
+}
+
+/**
  * The sickness's whole turn, and deliberately one step however many fronts it has: the day is
  * one-for-one with the player's, so a run is a race rather than a rout. It steps wherever it is
  * closest to the core, which makes it predictable — a player can see which fire is about to get
@@ -154,42 +166,44 @@ const ORDINARY_RULES: FrontRules = { wallsCannotFall: false };
 export function stepSickness(
   front: Front, immunity: Readonly<Record<StrainId, number>>, rules: FrontRules = ORDINARY_RULES,
 ): Front {
+  const standing = rules.wallsCannotFall ? withSiegesLifted(front) : front;
+
   // The core is zero steps from the core, so sorting by distance alone would walk onto the heart
   // the moment one road fell — and the campaign this whole layer is built on would never happen.
   // It is off the table until every road is taken; `isCoreBesieged` is that rule, stated once.
   // That holds even for a heart the player has already fortified: a held heart is not besieged
   // early either, or the wall would start coming down the moment any one road opened.
-  const coreOpen = !isCoreBesieged(front);
+  const coreOpen = !isCoreBesieged(standing);
 
-  const options = front.infected
+  const options = standing.infected
     .flatMap((from) => neighboursOf(from).map((to) => ({ from, to })))
-    .filter(({ to }) => !front.infected.includes(to))
+    .filter(({ to }) => !standing.infected.includes(to))
     .filter(({ to }) => !(coreOpen && to === 'heart'))
     // Chickenpox: dropped from the candidates entirely rather than stopped once chosen, so held
     // ground never even starts a siege — the vaccine's promise is that it cannot fall, not that
     // it falls slower.
-    .filter(({ to }) => !(rules.wallsCannotFall && front.held.includes(to)))
+    .filter(({ to }) => !(rules.wallsCannotFall && standing.held.includes(to)))
     .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
 
   const move = options[0];
-  if (move === undefined) return front;
+  if (move === undefined) return standing;
 
-  if (!front.held.includes(move.to)) {
-    return { ...front, infected: [...front.infected, move.to] };
+  if (!standing.held.includes(move.to)) {
+    return { ...standing, infected: [...standing.infected, move.to] };
   }
 
   // A wall. The step is spent on it either way — that is the whole point of holding ground.
-  const left = front.siege[move.to] ?? wallDays(move.to, immunity);
+  const left = standing.siege[move.to] ?? wallDays(move.to, immunity);
   if (left > 0) {
-    return { ...front, siege: { ...front.siege, [move.to]: left - 1 } };
+    return { ...standing, siege: { ...standing.siege, [move.to]: left - 1 } };
   }
 
-  const siege = { ...front.siege };
+  const siege = { ...standing.siege };
   Reflect.deleteProperty(siege, move.to);
   return {
-    ...front,
-    infected: [...front.infected, move.to],
-    held: front.held.filter((node) => node !== move.to),
+    ...standing,
+    infected: [...standing.infected, move.to],
+    held: standing.held.filter((node) => node !== move.to),
     siege,
   };
 }
