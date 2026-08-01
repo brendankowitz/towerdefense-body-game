@@ -60,6 +60,26 @@ describe('BodyMap', () => {
     expect(screen.getByTestId('map-node-heart')).toHaveAttribute('data-state', 'hot');
   });
 
+  /**
+   * The state the map could not draw at all: a heart the player won at the last stand and now
+   * holds. It is not infected, so the core short-circuit ran first and drew the untouched core
+   * over it — no held colour, and, once the sickness had retaken every road and started on the
+   * wall, no ring and no countdown either. `front.test.ts` covers the model making exactly this
+   * transition; nothing covered the map drawing it.
+   */
+  it('marks a core the player holds as held, not as untouched scenery', () => {
+    render(<BodyMap front={fresh({ infected: [], held: ['heart'] })} onSelectCase={noop} />);
+    expect(screen.getByTestId('map-node-heart')).toHaveAttribute('data-state', 'held');
+  });
+
+  it('shows the countdown on a held core whose wall is coming down', () => {
+    const besieged = fresh({ infected: ['throat'], held: ['heart'], siege: { heart: 2 } });
+    render(<BodyMap front={besieged} onSelectCase={noop} />);
+
+    expect(screen.getByTestId('map-node-heart')).toHaveAttribute('data-state', 'besieged');
+    expect(screen.getByTestId('map-siege-heart')).toHaveTextContent('2');
+  });
+
   it('marks every other node as not reached', () => {
     render(<BodyMap front={fresh()} onSelectCase={noop} />);
     expect(screen.getByTestId('map-node-footR')).toHaveAttribute('data-state', 'cold');

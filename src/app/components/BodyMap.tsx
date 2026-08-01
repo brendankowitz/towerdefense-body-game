@@ -44,10 +44,21 @@ const STATE_TOKEN: Record<NodeState, string> = {
 export function BodyMap({ front, onSelectCase, canShoreUp }: BodyMapProps) {
   const joints = new Set(BODY_NODES.filter((node) => node.connective === true).map((n) => n.id));
 
+  /**
+   * `core` and `link` are drawings, not states: they are what the map shows for a node the front
+   * line has no claim on either way. So both are only ever a substitute for `cold`, never for a
+   * node the player holds.
+   *
+   * The heart is why that distinction has to be written this way round. A heart the player has
+   * won and now holds is not infected, so short-circuiting on `infected` alone drew the serene
+   * untouched core over the one wall the entire run exists to protect — no besieged ring, no
+   * countdown — for the whole of a second siege the model spends thirteen lines making visible.
+   */
   const stateOf = (id: BodyNodeId): NodeState => {
-    if (id === 'heart' && !front.infected.includes('heart')) return 'core';
-    if (joints.has(id) && !front.infected.includes(id)) return 'link';
-    return frontStateOf(front, id);
+    const state = frontStateOf(front, id);
+    if (state !== 'cold') return state;
+    if (id === 'heart') return 'core';
+    return joints.has(id) ? 'link' : 'cold';
   };
 
   const isHeld = (state: NodeState): boolean => state === 'held' || state === 'besieged';
