@@ -10,13 +10,13 @@ interface BodyMapProps {
   readonly front: Front;
   readonly onSelectCase: (node: BodyNodeId) => void;
   /**
-   * Shoring up only ever makes sense on ground the page already knows is held and the bank
-   * already knows it can afford — the map is just where that ground is drawn. Both are optional
-   * and only ever supplied together: a map with neither draws itself with nothing to press,
-   * which is what every render that only cares about the front line still expects.
+   * Whether the page would let the player shore up ground right now — drawn as a hint on the
+   * ground itself, nothing more. `<svg>` is `role="img"`, which flattens everything inside it for
+   * assistive technology, so this can never be the control that actually spends the bank; that
+   * control is a real button the page renders itself, next to the day's choices. This prop only
+   * decides whether the map hints that the button exists.
    */
   readonly canShoreUp?: boolean;
-  readonly onShoreUp?: (node: BodyNodeId) => void;
 }
 
 const STATE_TOKEN: Record<NodeState, string> = {
@@ -41,7 +41,7 @@ const STATE_TOKEN: Record<NodeState, string> = {
  * State is read straight off `Front` through `stateOf` rather than kept here, so the map and the
  * model it draws can never disagree about which ground is whose.
  */
-export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapProps) {
+export function BodyMap({ front, onSelectCase, canShoreUp }: BodyMapProps) {
   const joints = new Set(BODY_NODES.filter((node) => node.connective === true).map((n) => n.id));
 
   const stateOf = (id: BodyNodeId): NodeState => {
@@ -51,7 +51,6 @@ export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapP
   };
 
   const isHeld = (state: NodeState): boolean => state === 'held' || state === 'besieged';
-  const shoreUpOffered = canShoreUp === true && onShoreUp !== undefined;
 
   return (
     <svg
@@ -88,7 +87,7 @@ export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapP
       {BODY_NODES.map((node) => {
         const state = stateOf(node.id);
         const interactive = state === 'hot';
-        const shoreable = isHeld(state) && shoreUpOffered;
+        const shoreable = isHeld(state) && canShoreUp === true;
         return (
           <g key={node.id}>
             {/* The sickness itself, circling the region it has taken. Still the only thing on
@@ -140,6 +139,9 @@ export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapP
                 {String(front.siege[node.id] ?? 0)}
               </text>
             )}
+            {/* A hint only — never a control. The real, focusable "shore up" button lives in
+                the page's own DOM, next to the day's choices, because everything inside an
+                `role="img"` svg is invisible to assistive technology. */}
             {shoreable && (
               <text
                 className="mono map-shoreup"
@@ -147,8 +149,7 @@ export function BodyMap({ front, onSelectCase, canShoreUp, onShoreUp }: BodyMapP
                 x={node.x}
                 y={node.y + node.r + (state === 'besieged' ? 28 : 16)}
                 textAnchor="middle"
-                style={{ cursor: 'pointer' }}
-                onClick={() => { onShoreUp(node.id); }}
+                pointerEvents="none"
               >
                 SHORE UP
               </text>

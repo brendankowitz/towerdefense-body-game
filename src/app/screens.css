@@ -223,6 +223,65 @@
   opacity: 0.85;
 }
 
+.wall-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.wall-row {
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  padding: 8px 10px 8px 13px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: none;
+}
+
+.wall-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wall-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wall-days {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 44px tall per WCAG 2.5.5 / Apple HIG — the same minimum `controls.spec.ts` holds every
+   other control on this screen to. */
+.wall-shoreup {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--screen-paper);
+  background: var(--energy);
+  cursor: pointer;
+}
+
+.wall-shoreup:active {
+  opacity: 0.85;
+}
+
 .pick-swatch {
   width: 44px;
   height: 44px;

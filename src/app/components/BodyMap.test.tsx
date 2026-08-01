@@ -148,34 +148,45 @@ describe('BodyMap', () => {
     expect(style?.textContent).toBe(ORBIT_KEYFRAMES);
   });
 
-  describe('shoring up', () => {
+  /**
+   * The shore-up hint drawn here is exactly that — a hint. `<svg role="img">` flattens
+   * everything inside it for assistive technology, so this text can never be the actionable
+   * control (that is a real button `MapPage` renders in its own DOM); these tests only cover
+   * what the map itself promises: the hint appears on ground the page says is held and
+   * affordable, and it is never an interactive element pretending otherwise.
+   */
+  describe('the shore-up hint', () => {
     const held: Front = { infected: [], held: ['forearm'], siege: {}, day: 1, rngState: 1 };
 
-    it('offers shore up on a held region when the page says the bank can afford it', () => {
-      const onShoreUp = vi.fn();
-      render(<BodyMap front={held} onSelectCase={noop} canShoreUp onShoreUp={onShoreUp} />);
-      fireEvent.click(screen.getByTestId('map-shoreup-forearm'));
-      expect(onShoreUp).toHaveBeenCalledExactlyOnceWith('forearm');
+    it('draws the hint on a held region when the page says the bank can afford it', () => {
+      render(<BodyMap front={held} onSelectCase={noop} canShoreUp />);
+      expect(screen.getByTestId('map-shoreup-forearm')).toBeInTheDocument();
     });
 
-    it('offers shore up on a besieged region too, alongside the days it has left', () => {
+    it('draws the hint on a besieged region too, alongside the days it has left', () => {
       const besieged: Front = { infected: [], held: ['forearm'], siege: { forearm: 2 }, day: 1, rngState: 1 };
-      render(<BodyMap front={besieged} onSelectCase={noop} canShoreUp onShoreUp={() => undefined} />);
+      render(<BodyMap front={besieged} onSelectCase={noop} canShoreUp />);
       expect(screen.getByTestId('map-siege-forearm')).toHaveTextContent('2');
       expect(screen.getByTestId('map-shoreup-forearm')).toBeInTheDocument();
     });
 
-    it('withholds shore up when the page says the bank cannot afford it', () => {
-      render(<BodyMap front={held} onSelectCase={noop} canShoreUp={false} onShoreUp={() => undefined} />);
+    it('never lets the hint intercept a tap — it carries no click behaviour of its own', () => {
+      render(<BodyMap front={held} onSelectCase={noop} canShoreUp />);
+      const hint = screen.getByTestId('map-shoreup-forearm');
+      expect(hint).toHaveAttribute('pointer-events', 'none');
+    });
+
+    it('withholds the hint when the page says the bank cannot afford it', () => {
+      render(<BodyMap front={held} onSelectCase={noop} canShoreUp={false} />);
       expect(screen.queryByTestId('map-shoreup-forearm')).not.toBeInTheDocument();
     });
 
-    it('never offers shore up on ground that is not held', () => {
-      render(<BodyMap front={fresh()} onSelectCase={noop} canShoreUp onShoreUp={() => undefined} />);
+    it('never draws the hint on ground that is not held', () => {
+      render(<BodyMap front={fresh()} onSelectCase={noop} canShoreUp />);
       expect(screen.queryByTestId('map-shoreup-forearm')).not.toBeInTheDocument();
     });
 
-    it('draws no shore up affordance at all when the page has not wired one', () => {
+    it('draws no hint at all when the page has not said whether it can afford one', () => {
       render(<BodyMap front={held} onSelectCase={noop} />);
       expect(screen.queryByTestId('map-shoreup-forearm')).not.toBeInTheDocument();
     });

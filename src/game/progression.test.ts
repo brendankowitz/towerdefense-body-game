@@ -193,9 +193,16 @@ describe('shoreUpRegion', () => {
     expect(after.front.siege[node]).toBe(wallDays(node, profile.immunity) + 1);
   });
 
+  /**
+   * `{ ...profile }` alone would not catch an in-place mutation of `profile.front` — the copy
+   * is shallow, so `before.front` and `profile.front` would still be the same object and an
+   * `shoreUpRegion` that mutated the siege map in place would pass this unnoticed. A structured
+   * clone captures the front's contents by value, which is the only way this test can tell "a
+   * new front was returned" apart from "the old one was quietly edited".
+   */
   it('leaves the profile it was given untouched', () => {
     const { profile, node } = profileWithHeldRegion();
-    const before = { ...profile };
+    const before = structuredClone(profile);
     shoreUpRegion(profile, node);
     expect(profile).toEqual(before);
   });

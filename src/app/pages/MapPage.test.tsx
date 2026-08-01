@@ -6,9 +6,11 @@ import { MapPage } from './MapPage';
 import { BODY_NODES } from '@game/content/body';
 import { CASE_BY_ID } from '@game/content/cases';
 import { SHORE_UP_COST } from '@game/content/rules';
-import { hotCases } from '@game/front';
-import { createFreshProfile, strainRows } from '@game/progression';
+import { hotCases, nodeOf } from '@game/front';
+import { clearCase, createFreshProfile, strainRows, type Profile } from '@game/progression';
+import { encode, STORAGE_KEY } from '@progress/ProgressRepository';
 import { ProfileProvider } from '@app/state/ProfileProvider';
+import type { BodyNodeId } from '@game/types';
 
 function LocationProbe() {
   const location = useLocation();
@@ -118,5 +120,57 @@ describe('MapPage', () => {
     await renderMap();
     expect(PROFILE.bank).toBeGreaterThanOrEqual(SHORE_UP_COST);
     expect(screen.queryByText('SHORE UP')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('wall-list')).not.toBeInTheDocument();
+  });
+
+  /**
+   * `BodyMap`'s root is `<svg role="img">`, which flattens everything inside it for assistive
+   * technology — so the map's own "SHORE UP" hint can never be the real control. These tests
+   * cover the real one: a focusable button in the page's own DOM, next to the day's choices,
+   * whose visible (and so accessible) name states the region and what it costs, with the wall's
+   * countdown reachable as ordinary text beside it rather than only as a mark on the picture.
+   */
+  describe('shoring up a wall', () => {
+    function heldProfile(): { readonly profile: Profile; readonly node: BodyNodeId; readonly title: string } {
+      const fresh = createFreshProfile();
+      const [firstHot] = hotCases(fresh.front);
+      if (firstHot === undefined) throw new Error('fixture expects an open front');
+      return {
+        profile: clearCase(fresh, firstHot, 0),
+        node: nodeOf(firstHot),
+        title: CASE_BY_ID[firstHot].title,
+      };
+    }
+
+    it('lists a real, focusable control naming the region held and what it costs', async () => {
+      const { profile, node, title } = heldProfile();
+      localStorage.setItem(STORAGE_KEY, encode(profile));
+      await renderMap();
+
+      expect(screen.getByRole('button', { name: `Shore up ${title} · ${String(SHORE_UP_COST)}` }))
+        .toBeInTheDocument();
+      expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('Holding');
+    });
+
+    it('spends the bank and reinforces the wall when the control is activated', async () => {
+      const { profile, node } = heldProfile();
+      localStorage.setItem(STORAGE_KEY, encode(profile));
+      await renderMap();
+
+      fireEvent.click(screen.getByTestId(`shoreup-${node}`));
+      await act(async () => { await Promise.resolve(); });
+
+      expect(screen.getByTestId('bank').textContent).toBe(String(profile.bank - SHORE_UP_COST));
+      expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('day');
+    });
+
+    it('still lists the wall, and its countdown as reachable text, when the bank cannot afford it', async () => {
+      const { profile, node } = heldProfile();
+      localStorage.setItem(STORAGE_KEY, encode({ ...profile, bank: SHORE_UP_COST - 1 }));
+      await renderMap();
+
+      expect(screen.getByTestId(`wall-${node}`)).toHaveTextContent('Holding');
+      expect(screen.queryByTestId(`shoreup-${node}`)).not.toBeInTheDocument();
+    });
   });
 });
