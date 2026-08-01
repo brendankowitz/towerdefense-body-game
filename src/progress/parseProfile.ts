@@ -87,11 +87,11 @@ export function parseProfile(raw: unknown): Profile | null {
     immunity[strain] = value;
   }
 
-  const { day, bank, kills } = record;
-  if (!isCount(day) || !isCount(bank) || !isCount(kills)) return null;
+  const { bank, kills } = record;
+  if (!isCount(bank) || !isCount(kills)) return null;
 
   const front = parseFront(record['front']);
   if (front === null) return null;
 
-  return { cleared, immunity, day, bank, kills, front };
+  return { cleared, immunity, bank, kills, front };
 }

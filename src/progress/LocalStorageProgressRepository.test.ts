@@ -17,7 +17,7 @@ describe('LocalStorageProgressRepository', () => {
   it('round-trips a saved profile', async () => {
     const repository = new LocalStorageProgressRepository();
     const fresh = createFreshProfile();
-    const profile = { ...fresh, day: fresh.day + 5, bank: fresh.bank + 660 };
+    const profile = { ...fresh, front: { ...fresh.front, day: fresh.front.day + 5 }, bank: fresh.bank + 660 };
 
     await repository.save(profile);
     const result = await repository.load();
@@ -71,7 +71,9 @@ describe('LocalStorageProgressRepository', () => {
     const before = localStorage.getItem(STORAGE_KEY);
 
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('nope'); });
-    await expect(repository.save({ ...createFreshProfile(), day: createFreshProfile().day + 8 })).rejects.toThrow();
+    const fresh = createFreshProfile();
+    const changed = { ...fresh, front: { ...fresh.front, day: fresh.front.day + 8 } };
+    await expect(repository.save(changed)).rejects.toThrow();
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
     expect(before).toBe(encode(createFreshProfile()));

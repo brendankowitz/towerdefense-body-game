@@ -14,7 +14,7 @@ import '../screens.css';
 
 export function MapPage() {
   const history = useHistory();
-  const { profile, shoreUp } = useProfile();
+  const { profile, shoreUp, endDay } = useProfile();
   const front = profile.front;
 
   const goToBrief = (caseId: CaseId): void => { history.push(`/brief/${caseId}`); };
@@ -48,7 +48,7 @@ export function MapPage() {
         <div className="screen">
           <header className="screen-header">
             <div className="screen-title">
-              <span className="mono kicker">{`DAY ${String(profile.day)} · MORNING`}</span>
+              <span className="mono kicker">{`DAY ${String(front.day)} · MORNING`}</span>
               <span className="screen-heading-sm">The body</span>
             </div>
             <div className="energy-pill">
@@ -124,10 +124,6 @@ export function MapPage() {
                         type="button"
                         className="wall-shoreup"
                         data-testid={`shoreup-${node}`}
-                        // Reinforcing costs the day, the same as fighting does. Task 10 owns
-                        // `endDay`, so for now this only moves the bank and the wall —
-                        // `shoreUp` on the context will route through the same day-ending
-                        // path the fight uses once it exists.
                         onClick={() => { shoreUp(node); }}
                       >
                         {`Shore up ${title} · ${String(SHORE_UP_COST)}`}
@@ -139,14 +135,14 @@ export function MapPage() {
             )}
             <div className="footer-actions">
               {today.length === 0 && (
-                // Nothing is on fire, so there is nothing to fight into — but sleeping still
-                // costs the day, and Task 10's `endDay` is what will make this button do that.
+                // Nothing is on fire, so there is nothing to fight into — but the sickness still
+                // gets its step, the same as it would on a day spent fighting or shoring up.
                 <button
                   type="button"
                   className="primary"
                   data-testid="sleep"
                   style={{ background: palette.frontline.css }}
-                  disabled
+                  onClick={() => { endDay(); }}
                 >
                   Sleep
                 </button>

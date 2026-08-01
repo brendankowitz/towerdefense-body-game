@@ -4,7 +4,8 @@ import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
-import { clearCase, createFreshProfile } from '@game/progression';
+import { endDay as gameEndDay } from '@game/front';
+import { clearCase, createFreshProfile, type Profile } from '@game/progression';
 import { FEVER_DURATION, TISSUE_PIPS } from '@game/content/rules';
 import type { SimState } from '@game/types';
 import { STORAGE_KEY } from '@progress/ProgressRepository';
@@ -70,6 +71,48 @@ async function renderFight(path = `/play/${CASE.id}`): Promise<void> {
     </ProfileProvider>,
   );
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+}
+
+/** What `ProfileProvider` actually wrote, read back the way the app itself would on reload. */
+function persistedProfile(): Profile {
+  const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as { profile?: Profile };
+  if (stored.profile === undefined) throw new Error('no profile was persisted');
+  return stored.profile;
+}
+
+/** Runs a case to a loss with nothing built, takes the result's only action, and settles. */
+async function renderFightLost(): Promise<{ readonly profile: Profile }> {
+  await renderFight();
+  act(() => { screen.getByTestId('start-wave').click(); });
+
+  // The frame budget bounds the wait: a hang here should fail, not stall the suite.
+  let seconds = 0;
+  for (let frame = 0; frame < 4000 && screen.queryByTestId('result-cta') === null; frame += 1) {
+    seconds += 1 / 30;
+    tickFrame(seconds);
+  }
+  const cta = screen.queryByTestId('result-cta');
+  if (cta === null) throw new Error('the case was expected to be lost with nothing built');
+
+  act(() => { cta.click(); });
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  return { profile: persistedProfile() };
+}
+
+/** Forces a case win by construction (see `captured` above) and takes the result's action. */
+async function renderFightCleared(): Promise<{ readonly profile: Profile }> {
+  await renderFight();
+  if (captured.state === undefined) throw new Error('createSimState was never called');
+  captured.state.totalKills = 1;
+  captured.state.result = 'case';
+  // Two frames: the first only establishes the previous timestamp (elapsed is always zero on
+  // it), the second supplies the elapsed time the HUD publish timer needs to fire.
+  tickFrame(0);
+  tickFrame(0.2);
+
+  act(() => { screen.getByTestId('result-cta').click(); });
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  return { profile: persistedProfile() };
 }
 
 function board(): HTMLElement {
@@ -344,11 +387,16 @@ describe('FightPage', () => {
       throw new Error(`no result after ${String(seconds)}s of simulation with nothing built`);
     }
     expect(title.textContent).toBe('It got into the blood.');
-    expect(screen.getByTestId('result-cta').textContent).toBe('Try this case again');
+    expect(screen.getByTestId('result-cta').textContent).toBe('Come back tomorrow');
     expect(screen.getAllByTestId('pip').filter((p) => p.dataset['lit'] === 'true')).toHaveLength(0);
   });
 
-  it('gives back a fresh board when the lost case is taken again', async () => {
+  /**
+   * Losing used to rebuild the same board in place — "Try this case again" was a free retry.
+   * A front line cannot allow that (the whole layer is that a day is spent either way), so the
+   * result's only action now leaves the fight entirely rather than handing back a fresh board.
+   */
+  it('returns to the map, rather than rebuilding the board, when a lost case\'s result is taken', async () => {
     await renderFight();
     act(() => { screen.getByTestId('start-wave').click(); });
 
@@ -362,12 +410,23 @@ describe('FightPage', () => {
 
     act(() => { cta.click(); });
 
-    expect(screen.queryByTestId('result-title')).not.toBeInTheDocument();
-    expect(energy()).toBe(CASE.startingEnergy);
-    expect(screen.getByTestId('fight-wave').textContent)
-      .toBe(`Wave 1 of ${String(CASE.waves.length)}`);
-    expect(screen.getAllByTestId('pip').filter((p) => p.dataset['lit'] === 'true'))
-      .toHaveLength(TISSUE_PIPS);
+    expect(screen.getByTestId('location').textContent).toBe('/');
+  });
+
+  /**
+   * The brief's own required tests, verbatim: a clear holds the region and ends the day, and a
+   * loss ends the day and lets the sickness move, rather than being a free retry.
+   */
+  it('ends the day and lets the sickness move when a case is lost', async () => {
+    const { profile } = await renderFightLost();
+    expect(profile.front.day).toBe(2);
+    expect(profile.front.infected.length).toBeGreaterThan(1);
+  });
+
+  it('holds the region and ends the day when a case is cleared', async () => {
+    const { profile } = await renderFightCleared();
+    expect(profile.front.held).toHaveLength(1);
+    expect(profile.front.day).toBe(2);
   });
 
   it('banks the clear and credits the strain, and persists it, when a case is won', async () => {
@@ -387,7 +446,8 @@ describe('FightPage', () => {
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 
     expect(screen.getByTestId('location').textContent).toBe('/');
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as { profile?: unknown };
-    expect(stored.profile).toEqual(clearCase(PROFILE, CASE.id, 42));
+    const cleared = clearCase(PROFILE, CASE.id, 42);
+    const expected: Profile = { ...cleared, front: gameEndDay(cleared.front, cleared.immunity) };
+    expect(persistedProfile()).toEqual(expected);
   });
 });

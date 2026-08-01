@@ -41,11 +41,10 @@ function clearedIds(count: number): readonly CaseId[] {
 }
 
 describe('createFreshProfile', () => {
-  it('starts a body with nothing cleared, no immunity, and the fresh day and bank', () => {
+  it('starts a body with nothing cleared, no immunity, and the fresh bank', () => {
     expect(createFreshProfile()).toEqual({
       cleared: [],
       immunity: { staph: 0, film: 0, virus: 0 },
-      day: FRESH_PROFILE.day,
       bank: FRESH_PROFILE.bank,
       kills: 0,
       front: createFront(FRESH_PROFILE.seed),
@@ -93,11 +92,11 @@ describe('nextCaseId', () => {
 });
 
 describe('clearCase', () => {
-  it('advances the day and banks the reward', () => {
+  it('banks the reward without spending the day — that is endDay\'s job', () => {
     const fresh = createFreshProfile();
     const profile = clearCase(fresh, requireCase(0).id, 0);
 
-    expect(profile.day).toBe(fresh.day + 1);
+    expect(profile.front.day).toBe(fresh.front.day);
     expect(profile.bank).toBe(fresh.bank + CASE_CLEAR_BANK);
   });
 
@@ -337,8 +336,8 @@ describe('seasonRows', () => {
       ...CASES.map((definition) => definition.title),
       ...LATER.map((entry) => entry.name),
     ]);
-    expect(rows[0]?.day).toBe(fresh.day);
-    expect(rows[CASES.length]?.day).toBe(fresh.day + firstLater.offset);
+    expect(rows[0]?.day).toBe(fresh.front.day);
+    expect(rows[CASES.length]?.day).toBe(fresh.front.day + firstLater.offset);
   });
 
   /**
@@ -375,9 +374,9 @@ describe('seasonRows', () => {
     const profile = clearCase(createFreshProfile(), requireCase(0).id, 0);
     const rows = seasonRows(profile);
 
-    expect(rows[0]?.day).toBe(profile.day - 1);
-    expect(rows[1]?.day).toBe(profile.day);
-    expect(rows[2]?.day).toBe(profile.day + 1);
+    expect(rows[0]?.day).toBe(profile.front.day - 1);
+    expect(rows[1]?.day).toBe(profile.front.day);
+    expect(rows[2]?.day).toBe(profile.front.day + 1);
   });
 
   it('notes a cleared region as holding and says nothing about one still ahead', () => {

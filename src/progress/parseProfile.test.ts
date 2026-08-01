@@ -6,7 +6,6 @@ import { createFront } from '@game/front';
 const valid = {
   cleared: ['forearm'],
   immunity: { staph: 1, film: 0, virus: 2 },
-  day: 5,
   bank: 700,
   kills: 42,
   front: createFront(1),
@@ -23,7 +22,7 @@ describe('parseProfile', () => {
 
   it('rejects a missing field', () => {
     const rest: Record<string, unknown> = { ...valid };
-    delete rest['day'];
+    delete rest['bank'];
     expect(parseProfile(rest)).toBeNull();
   });
 
@@ -54,13 +53,13 @@ describe('parseProfile', () => {
   });
 
   it('rejects a negative counter', () => {
-    expect(parseProfile({ ...valid, day: -1 })).toBeNull();
+    expect(parseProfile({ ...valid, bank: -1 })).toBeNull();
   });
 
   it('drops unknown extra keys rather than carrying them forward', () => {
     const parsed = parseProfile({ ...valid, sneaky: true });
     if (parsed === null) throw new Error('a profile with an unknown key should still parse');
-    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'day', 'bank', 'kills', 'front']);
+    expect(Object.keys(parsed)).toEqual(['cleared', 'immunity', 'bank', 'kills', 'front']);
   });
 
   /**

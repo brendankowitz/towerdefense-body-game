@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { CASES, ruleLabels } from '../../src/game/content/cases';
+import { nodeOf } from '../../src/game/front';
 import { createFreshProfile, type Profile } from '../../src/game/progression';
 import type { CaseId } from '../../src/game/types';
 import { onScreen, openCase, placeCell, screen, seedProfile } from './helpers';
@@ -13,17 +14,33 @@ import { onScreen, openCase, placeCell, screen, seedProfile } from './helpers';
  * nowhere else.
  */
 
-function profileWith(cleared: readonly CaseId[]): Profile {
-  return { ...createFreshProfile(), cleared };
+/**
+ * A seeded profile with `cleared` set and `hot` left as the fresh door — which is a fixed seed,
+ * but not necessarily the case the previous test cleared — used to say nothing today rather than
+ * fail to find one. The day's choices come from the front line now, not from clear order, so a
+ * spec that wants a particular case playable has to put the sickness on that case's region
+ * itself, not just mark earlier ones cleared.
+ */
+function profileWith(cleared: readonly CaseId[], hot?: CaseId): Profile {
+  const fresh = createFreshProfile();
+  return {
+    ...fresh,
+    cleared,
+    front: {
+      ...fresh.front,
+      infected: hot === undefined ? [] : [nodeOf(hot)],
+      held: cleared.map((id) => nodeOf(id)),
+    },
+  };
 }
 
 test('the map offers each case in turn as the ones before it are cleared', async ({ page }) => {
   const cleared: CaseId[] = [];
   for (const definition of CASES) {
-    await seedProfile(page, profileWith(cleared));
+    await seedProfile(page, profileWith(cleared, definition.id));
     await expect(screen(page).getByText(definition.title, { exact: true })).toBeVisible();
 
-    await onScreen(page, 'go-there').click();
+    await onScreen(page, `pick-${definition.id}`).click();
     await expect(page).toHaveURL(`/brief/${definition.id}`);
     await expect(screen(page).getByText(definition.region, { exact: true })).toBeVisible();
 
@@ -32,7 +49,7 @@ test('the map offers each case in turn as the ones before it are cleared', async
 
   await seedProfile(page, profileWith(cleared));
   await expect(onScreen(page, 'held-count')).toHaveText(new RegExp(`^${String(CASES.length)} / `));
-  await expect(onScreen(page, 'go-there')).toHaveText('Sleep');
+  await expect(onScreen(page, 'sleep')).toHaveText('Sleep');
 });
 
 for (const definition of CASES) {

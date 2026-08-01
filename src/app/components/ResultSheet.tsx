@@ -65,8 +65,8 @@ function copyFor(props: ResultSheetProps): Copy {
       return {
         kicker: `TISSUE FAILED · WAVE ${String(wave)}`,
         title: 'It got into the blood.',
-        body: 'The region is lost. Take the case again — you keep what you learned.',
-        cta: 'Try this case again',
+        body: 'The region is lost for today. What you learned stays with you.',
+        cta: 'Come back tomorrow',
         accent: palette.threat.css,
         reward: '0',
         canLeave: true,

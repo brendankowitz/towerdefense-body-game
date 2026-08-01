@@ -14,7 +14,7 @@ export function ImmunityPage() {
       <IonContent fullscreen>
         <Immunity
           rows={strainRows(profile)}
-          day={profile.day}
+          day={profile.front.day}
           kills={profile.kills}
           regionsHeld={profile.cleared.length}
           onSeasonClick={() => { history.push('/season'); }}

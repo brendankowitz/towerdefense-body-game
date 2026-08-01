@@ -26,13 +26,14 @@ import { onScreen, screen, seedProfile } from './helpers';
 const REGION_COUNT = BODY_NODES
   .filter((node) => node.core !== true && node.connective !== true).length;
 
+const FRONT_WITH_FOREARM_HELD = holdRegion(createFront(FRESH_PROFILE.seed), nodeOf('forearm'));
+
 const SAVED: Profile = {
   cleared: ['forearm'],
   immunity: { staph: 1, film: 0, virus: 0 },
-  day: 2,
   bank: 420,
   kills: 37,
-  front: holdRegion(createFront(FRESH_PROFILE.seed), nodeOf('forearm')),
+  front: { ...FRONT_WITH_FOREARM_HELD, day: 2 },
 };
 
 test('a saved run is read back, and a run written through the UI outlives a reload', async ({ page }) => {
@@ -42,13 +43,13 @@ test('a saved run is read back, and a run written through the UI outlives a relo
   await expect(onScreen(page, 'held-count')).toHaveText(`1 / ${String(REGION_COUNT)}`);
 
   await page.goto('/immunity');
-  await expect(onScreen(page, 'stat-days')).toHaveText(String(SAVED.day));
+  await expect(onScreen(page, 'stat-days')).toHaveText(String(SAVED.front.day));
   await expect(onScreen(page, 'stat-kills')).toHaveText(String(SAVED.kills));
   await expect(onScreen(page, 'stat-regions')).toHaveText('1');
   await expect(onScreen(page, 'strain-staph')).toContainText(`1/${String(IMMUNITY_MAX)}`);
 
   await page.reload();
-  await expect(onScreen(page, 'stat-days')).toHaveText(String(SAVED.day));
+  await expect(onScreen(page, 'stat-days')).toHaveText(String(SAVED.front.day));
   await expect(onScreen(page, 'strain-staph')).toContainText(`1/${String(IMMUNITY_MAX)}`);
 
   // "Start a new body" is a real write down the same path a cleared case takes. Nothing puts

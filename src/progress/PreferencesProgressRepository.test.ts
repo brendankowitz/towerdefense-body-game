@@ -44,7 +44,7 @@ describe('PreferencesProgressRepository', () => {
   it('round-trips a saved profile', async () => {
     const repository = new PreferencesProgressRepository();
     const fresh = createFreshProfile();
-    const profile = { ...fresh, day: fresh.day + 5, bank: fresh.bank + 660 };
+    const profile = { ...fresh, front: { ...fresh.front, day: fresh.front.day + 5 }, bank: fresh.bank + 660 };
 
     await repository.save(profile);
     const result = await repository.load();
@@ -87,7 +87,9 @@ describe('PreferencesProgressRepository', () => {
     const before = store.get(STORAGE_KEY);
 
     failNextSet = true;
-    await expect(repository.save({ ...createFreshProfile(), day: createFreshProfile().day + 8 })).rejects.toThrow();
+    const fresh = createFreshProfile();
+    const changed = { ...fresh, front: { ...fresh.front, day: fresh.front.day + 8 } };
+    await expect(repository.save(changed)).rejects.toThrow();
 
     expect(store.get(STORAGE_KEY)).toBe(before);
   });

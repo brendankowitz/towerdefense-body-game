@@ -63,7 +63,7 @@ describe('ResultSheet', () => {
     render(<ResultSheet {...base} result="lost" waveIndex={3} />);
     expect(screen.getByTestId('result-kicker').textContent).toBe('TISSUE FAILED · WAVE 4');
     expect(screen.getByTestId('result-title').textContent).toBe('It got into the blood.');
-    expect(screen.getByTestId('result-cta').textContent).toBe('Try this case again');
+    expect(screen.getByTestId('result-cta').textContent).toBe('Come back tomorrow');
   });
 
   it('reports what the wave cost, both ways', () => {

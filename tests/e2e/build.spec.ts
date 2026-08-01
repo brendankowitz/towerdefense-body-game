@@ -141,6 +141,11 @@ test('reabsorbing a cell returns part of what it cost', async ({ page }) => {
  * Both the profile and the case are derived from the form's own `unlock`: seed exactly that many
  * clears, then open the case the season would be on next. Naming a case here would go stale the
  * first time the schedule in `maturation.ts` moved.
+ *
+ * `unlock` is days elapsed, not clears — a run that has lost a case still meets the form on the
+ * day the season names for it — so `cleared` alone does not put the offer on the board. The front
+ * carries the only day a profile has, and nothing derives it from `cleared`, so it is seeded here
+ * directly rather than assumed to follow from how many cases were marked cleared.
  */
 test('maturing a cell charges the growth and renames it', async ({ page }) => {
   const grown = maturedFormOf('phago');
@@ -151,9 +156,11 @@ test('maturing a cell charges the growth and renames it', async ({ page }) => {
   test.skip(definition === undefined, 'the season is shorter than the growth schedule');
   if (definition === undefined) return;
 
+  const fresh = createFreshProfile();
   await seedProfile(page, {
-    ...createFreshProfile(),
+    ...fresh,
     cleared: CASES.slice(0, grown.unlock).map((c) => c.id),
+    front: { ...fresh.front, day: grown.unlock + 1 },
   });
   await openCase(page, definition.id);
   await placeCell(page, definition.id, 'phago', 2);

@@ -9,13 +9,13 @@ import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 export interface Profile {
   readonly cleared: readonly CaseId[];
   readonly immunity: Readonly<Record<StrainId, number>>;
-  readonly day: number;
   readonly bank: number;
   readonly kills: number;
   /**
    * The run's front line. It lives on the profile because it is what a run *is* now — the day, the
    * ground held and the ground lost — and a save that restored the cleared list without it would
-   * put the player back on a map with no sickness on it.
+   * put the player back on a map with no sickness on it. `front.day` is the only day a run has:
+   * a second counter here would just be the same number kept in two places.
    */
   readonly front: Front;
 }
@@ -29,7 +29,6 @@ export function createFreshProfile(): Profile {
   return {
     cleared: [],
     immunity: { staph: 0, film: 0, virus: 0 },
-    day: FRESH_PROFILE.day,
     bank: FRESH_PROFILE.bank,
     kills: 0,
     front: createFront(FRESH_PROFILE.seed),
@@ -37,9 +36,14 @@ export function createFreshProfile(): Profile {
 }
 
 /**
- * Clearing a case advances the day, banks the reward and raises the immunity of the strain the
- * case declares it credits (decision D6) — not a branch on the illness type, which left the
- * Biofilm serum permanently unearnable. `cleared` is an ordered unique list (decision D4).
+ * Clearing a case banks the reward, raises the immunity of the strain the case declares it
+ * credits (decision D6) — not a branch on the illness type, which left the Biofilm serum
+ * permanently unearnable — and holds the region the case was fought over. `cleared` is an
+ * ordered unique list (decision D4).
+ *
+ * Spending the day is deliberately not here: a clear and a loss both cost a day, and `endDay`
+ * is the one place that charges it, so a caller always pairs this with that rather than getting
+ * the day for free on a win.
  */
 export function clearCase(profile: Profile, caseId: CaseId, totalKills: number): Profile {
   const strain = CASE_BY_ID[caseId].credits;
@@ -49,7 +53,6 @@ export function clearCase(profile: Profile, caseId: CaseId, totalKills: number):
       ...profile.immunity,
       [strain]: Math.min(IMMUNITY_MAX, profile.immunity[strain] + 1),
     },
-    day: profile.day + 1,
     bank: profile.bank + CASE_CLEAR_BANK,
     kills: totalKills,
     front: holdRegion(profile.front, nodeOf(caseId)),
@@ -63,8 +66,9 @@ export function nextCaseId(profile: Profile): CaseId | null {
 
 /**
  * Reinforcing a wall: the bank pays `SHORE_UP_COST` and the front adds a day to the region's
- * siege. This is the whole of what changes today — spending the day itself is Task 10's, which
- * will route the choice through the same `endDay` the fight takes when a case is cleared.
+ * siege. Spending the day itself is not this function's job — `ProfileProvider.shoreUp` chains
+ * it into the same `endDay` a fight's result takes, so reinforcing costs exactly as much of the
+ * day as fighting does.
  *
  * `shoreUp` itself already refuses ground the player does not hold; mirrored here so the bank
  * is never spent on a call that changed nothing, whatever calls this beyond the map's own
@@ -161,7 +165,7 @@ function regionName(region: string): string {
 
 /**
  * The season timeline: every case, then everything the season promises but cannot yet be played.
- * Days are counted from today, so the case you are on is always day `profile.day`.
+ * Days are counted from today, so the case you are on is always day `profile.front.day`.
  */
 export function seasonRows(profile: Profile): readonly SeasonRow[] {
   const nextIndex = Math.max(0, CASES.findIndex((definition) => !profile.cleared.includes(definition.id)));
@@ -169,7 +173,7 @@ export function seasonRows(profile: Profile): readonly SeasonRow[] {
   const cases: SeasonRow[] = CASES.map((definition, index) => {
     const done = profile.cleared.includes(definition.id);
     return {
-      day: profile.day + (index - nextIndex),
+      day: profile.front.day + (index - nextIndex),
       name: definition.title,
       region: regionName(definition.region),
       note: done ? 'Cleared — this region is holding' : '',
@@ -179,7 +183,7 @@ export function seasonRows(profile: Profile): readonly SeasonRow[] {
   });
 
   const later: SeasonRow[] = LATER.map((entry) => ({
-    day: profile.day + entry.offset,
+    day: profile.front.day + entry.offset,
     name: entry.name,
     region: entry.region,
     note: entry.note,

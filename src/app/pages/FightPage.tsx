@@ -2,8 +2,7 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
 import { Redirect, useHistory, useParams } from 'react-router-dom';
 import {
-  advanceToNextWave, placeDefender, restartCase, selectDefender, startWave, toggleSpeed,
-  triggerFever,
+  advanceToNextWave, placeDefender, selectDefender, startWave, toggleSpeed, triggerFever,
 } from '@game/commands';
 import { CASES, CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { GameLoop } from '@game/loop';
@@ -32,10 +31,7 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
     caseId,
     immunity: profile.immunity,
     clearedCount: profile.cleared.length,
-    // `profile.front.day` is not this: nothing advances it yet (`endDay` is Task 10). The front
-    // carries a day of its own, but it is the same day as `profile.day` — Task 10 is where the two
-    // stop being two fields and collapse into one. Until then this is the day that actually moves.
-    day: profile.day,
+    day: profile.front.day,
     totalKills: profile.kills,
   }));
 }
@@ -46,10 +42,12 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
  */
 function Fight({ caseId }: { readonly caseId: CaseId }) {
   const history = useHistory();
-  const { profile, recordClear } = useProfile();
+  const { profile, recordClear, endDay } = useProfile();
 
   const rendererRef = useRef<BoardRenderer | null>(null);
-  const [loop, setLoop] = useState<GameLoop>(() => createLoop(caseId, profile));
+  // A case that is lost or won both leave this screen (`endDay` and a route push) rather than
+  // rebuilding the board in place, so nothing here ever needs to replace the loop after mount.
+  const [loop] = useState<GameLoop>(() => createLoop(caseId, profile));
   /**
    * Which placed cell is open for reabsorbing or growing. It lives here rather than inside
    * PlacedCells so that tapping the cell on the board opens it too — that is the gesture a
@@ -102,10 +100,15 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         return;
       case 'case':
         recordClear(caseId, loop.state.totalKills);
+        endDay();
         history.push('/');
         return;
       case 'lost':
-        setLoop(new GameLoop(restartCase(loop.state)));
+        // A lost day is a day the sickness got. "Try this case again" was a free retry, which is
+        // the one thing a front line cannot allow — the whole layer is that a day is spent either
+        // way. Coming back tomorrow is the retry now.
+        endDay();
+        history.push('/');
         return;
       case null:
         return;
@@ -215,7 +218,13 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               tissue={hud.tissue}
               caseTitle={definition.title}
               onPrimary={onResultPrimary}
-              onLeave={() => { history.push('/'); }}
+              onLeave={() => {
+                // "Leave the region" is a second door out of a lost case's result, and a day the
+                // sickness got is spent whichever door is used — otherwise leaving would be the
+                // free retry the primary action was just closed off from being.
+                if (hud.result === 'lost') endDay();
+                history.push('/');
+              }}
             />
           )}
 

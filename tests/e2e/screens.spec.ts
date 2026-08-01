@@ -3,7 +3,9 @@ import { CASE_BY_ID, ruleLabels } from '../../src/game/content/cases';
 import { BODY_NODES } from '../../src/game/content/body';
 import { FRESH_PROFILE } from '../../src/game/content/rules';
 import { STRAIN_ROWS, VACCINES } from '../../src/game/content/vaccines';
-import { onScreen, screen } from './helpers';
+import { nodeOf } from '../../src/game/front';
+import { createFreshProfile, type Profile } from '../../src/game/progression';
+import { onScreen, screen, seedProfile } from './helpers';
 
 /**
  * Spec §13.9 — the five screens exist, render their own content and reach each other.
@@ -21,14 +23,24 @@ const FOREARM = CASE_BY_ID.forearm;
 const REGION_COUNT = BODY_NODES
   .filter((node) => node.core !== true && node.connective !== true).length;
 
+/**
+ * The day's choices come from the front line, not clear order, so a chain that means to walk
+ * through the forearm case has to put the sickness there itself rather than trust a fresh
+ * body's door to be it.
+ */
+function profileWithForearmHot(): Profile {
+  const fresh = createFreshProfile();
+  return { ...fresh, front: { ...fresh.front, infected: [nodeOf(FOREARM.id)] } };
+}
+
 test('the map, the brief and the fight screen chain together', async ({ page }) => {
-  await page.goto('/');
+  await seedProfile(page, profileWithForearmHot());
   await expect(screen(page).getByText('The body', { exact: true })).toBeVisible();
   await expect(onScreen(page, 'bank')).toHaveText(String(FRESH_PROFILE.bank));
   await expect(onScreen(page, 'held-count')).toHaveText(`0 / ${String(REGION_COUNT)}`);
   await expect(screen(page).getByText(FOREARM.title, { exact: true })).toBeVisible();
 
-  await onScreen(page, 'go-there').click();
+  await onScreen(page, `pick-${FOREARM.id}`).click();
   await expect(page).toHaveURL(`/brief/${FOREARM.id}`);
   await expect(screen(page).getByText(FOREARM.region, { exact: true })).toBeVisible();
   await expect(screen(page).getByText(FOREARM.story, { exact: true })).toBeVisible();

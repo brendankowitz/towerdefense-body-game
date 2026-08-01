@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('MapPage', () => {
   it('shows the day and the bank from the profile', async () => {
     await renderMap();
-    expect(screen.getByText(`DAY ${String(PROFILE.day)} · MORNING`)).toBeInTheDocument();
+    expect(screen.getByText(`DAY ${String(PROFILE.front.day)} · MORNING`)).toBeInTheDocument();
     expect(screen.getByTestId('bank').textContent).toBe(String(PROFILE.bank));
   });
 
@@ -121,6 +121,24 @@ describe('MapPage', () => {
     expect(PROFILE.bank).toBeGreaterThanOrEqual(SHORE_UP_COST);
     expect(screen.queryByText('SHORE UP')).not.toBeInTheDocument();
     expect(screen.queryByTestId('wall-list')).not.toBeInTheDocument();
+  });
+
+  /**
+   * With nothing on fire there is nothing to fight into, but the day still has to end — the
+   * sickness does not wait for the player to have something to do.
+   */
+  it('spends a day, and lets the sickness move, when there is nothing to fight and Sleep is tapped', async () => {
+    const quiet: Profile = { ...createFreshProfile(), front: { ...createFreshProfile().front, infected: [] } };
+    localStorage.setItem(STORAGE_KEY, encode(quiet));
+
+    await renderMap();
+    expect(screen.queryByTestId('day-choices')).not.toBeInTheDocument();
+    expect(screen.getByText(`DAY ${String(quiet.front.day)} · MORNING`)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('sleep'));
+    await act(async () => { await Promise.resolve(); });
+
+    expect(screen.getByText(`DAY ${String(quiet.front.day + 1)} · MORNING`)).toBeInTheDocument();
   });
 
   /**

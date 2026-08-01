@@ -49,7 +49,7 @@ describe('ImmunityPage', () => {
 
   it("shows the fresh profile's run stats", async () => {
     await renderImmunity();
-    expect(screen.getByTestId('stat-days').textContent).toBe(String(PROFILE.day));
+    expect(screen.getByTestId('stat-days').textContent).toBe(String(PROFILE.front.day));
     expect(screen.getByTestId('stat-kills').textContent).toBe(String(PROFILE.kills));
     expect(screen.getByTestId('stat-regions').textContent).toBe(String(PROFILE.cleared.length));
   });
@@ -72,7 +72,7 @@ describe('ImmunityPage', () => {
     localStorage.setItem(STORAGE_KEY, encode(played));
 
     await renderImmunity();
-    expect(screen.getByTestId('stat-days').textContent).toBe(String(played.day));
+    expect(screen.getByTestId('stat-days').textContent).toBe(String(played.front.day));
 
     fireEvent.click(screen.getByTestId('reset-run'));
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
