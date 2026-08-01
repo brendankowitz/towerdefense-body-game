@@ -47,12 +47,17 @@ export function createFreshProfile(): Profile {
  * is the one place that charges it, so a caller always pairs this with that rather than getting
  * the day for free on a win.
  *
+ * `cleared` is a record of what a run has *done*, not of what it still has. It never shrinks, so
+ * it is not the count of ground the body holds and must never be shown as one — the sickness can
+ * retake a region and this list will go on naming it. `front.held` is what the body has now, and
+ * `heldRegionCount` is the one function every screen and the ending read it through. What
+ * `cleared.length` is right for is the vaccine gates: a gate is a thing a run earned by clearing
+ * cases, and losing ground afterward does not un-earn it.
+ *
  * The last stand is the one case that is not a region: winning it takes the core back and drives
- * the sickness off the roads (`holdCore`), and it never enters `cleared`. `cleared.length` is the
- * count of ground the body holds — the map's numerator against `CASE_REGIONS`, the vaccine gates'
- * counter, and the dock's unlock schedule — and the core is defended rather than held, so a heart
- * in that list reads as an eleventh region out of ten and buys a gate step nothing earned. That
- * the last stand was won is recorded where it is true: `front.held`.
+ * the sickness off the roads (`holdCore`), and it never enters `cleared` — the core is defended
+ * rather than held, so a heart in that list would buy a gate step nothing earned. That the last
+ * stand was won is recorded where it is true: `front.held`.
  */
 export function clearCase(profile: Profile, caseId: CaseId, totalKills: number): Profile {
   const strain = CASE_BY_ID[caseId].credits;

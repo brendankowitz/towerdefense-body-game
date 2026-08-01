@@ -201,6 +201,22 @@ export function loseCore(front: Front): Front {
 }
 
 /**
+ * How much of the season's ground the body holds *right now* — the map's numerator, the Immunity
+ * screen's "REGIONS HELD", and the count `isRunWon` asks after, all off one function so no screen
+ * can disagree with the ending.
+ *
+ * Counted against `CASE_REGIONS` rather than off `held.length` for two reasons, and both of them
+ * are reachable. A won last stand puts the core in `held` too (`holdCore`), and the core is
+ * defended rather than held, so counted raw it would read as an eleventh region out of ten. And
+ * `cleared.length`, which the screens used to count instead, never falls — it is a record of what
+ * a run has done, not of what it still has, so the moment the sickness retook a region the two
+ * screens and the ending disagreed about the same body.
+ */
+export function heldRegionCount(front: Front): number {
+  return CASE_REGIONS.filter((node) => front.held.includes(node.id)).length;
+}
+
+/**
  * Won when every case region — the ground a season is actually fought over — is held, the run is
  * not lost, and the core is not currently under an unresolved last stand. The heart is not itself
  * a case region, so holding the ten alone is not enough: without the second check a run could be
@@ -212,7 +228,7 @@ export function loseCore(front: Front): Front {
  */
 export function isRunWon(front: Front): boolean {
   return !isRunLost(front) && !front.infected.includes('heart')
-    && CASE_REGIONS.every((node) => front.held.includes(node.id));
+    && heldRegionCount(front) === CASE_REGIONS.length;
 }
 
 /**

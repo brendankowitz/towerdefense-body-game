@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import {
-  createFront, endDay, holdCore, holdRegion, hotCases, isCoreBesieged, isLastStand, isRunLost,
-  isRunWon, loseCore, seedOutbreak, shoreUp, stateOf, stepSickness, wallDays, wallStatus,
+  createFront, endDay, heldRegionCount, holdCore, holdRegion, hotCases, isCoreBesieged, isLastStand,
+  isRunLost, isRunWon, loseCore, seedOutbreak, shoreUp, stateOf, stepSickness, wallDays, wallStatus,
   type Front,
 } from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
@@ -303,6 +303,32 @@ describe('holding and losing the body', () => {
     const most: Front = { infected: CORE_ROADS.slice(1), held: [], siege: {}, day: 1, rngState: 1, lost: false };
     expect(isCoreBesieged(most)).toBe(false);
     expect(isCoreBesieged({ ...most, infected: [...CORE_ROADS] })).toBe(true);
+  });
+
+  /**
+   * The map's numerator, and the one the ending is stated in. Two things it must not count: the
+   * core, which a won last stand puts in `held` and which is not a region a season is fought
+   * over, and ground the run cleared once and has since lost.
+   */
+  describe('heldRegionCount', () => {
+    it('counts held case regions and not the core', () => {
+      const all = CASE_REGIONS.map((n) => n.id);
+      const rallied: Front = {
+        infected: [], held: [...all, 'heart'], siege: {}, day: 9, rngState: 1, lost: false,
+      };
+      expect(heldRegionCount(rallied)).toBe(CASE_REGIONS.length);
+    });
+
+    it('falls when the sickness retakes ground', () => {
+      const all = CASE_REGIONS.map((n) => n.id);
+      const [first] = all;
+      if (first === undefined) throw new Error('content has no case regions');
+      const held: Front = { infected: [], held: all, siege: {}, day: 9, rngState: 1, lost: false };
+      const retaken: Front = { ...held, held: all.slice(1), infected: [first] };
+
+      expect(heldRegionCount(held)).toBe(CASE_REGIONS.length);
+      expect(heldRegionCount(retaken)).toBe(CASE_REGIONS.length - 1);
+    });
   });
 
   it('is won when every region is held at once', () => {

@@ -56,11 +56,16 @@ test('the map offers each case in turn as the ones before it are cleared', async
    * list the screen's own denominator is the length of, rather than against `CASES` — written as
    * `CASES.length` on both sides this moved when the season gained an eleventh case and went on
    * passing while the map said "11 / 10".
+   *
+   * Holding all ten at once is the win, so this is also the run's ending. It used to assert a
+   * **Sleep** button here, which is what the map really drew: a won run read as "All clear",
+   * indefinitely, with nothing to say the run was over.
    */
   await seedProfile(page, profileWith(cleared));
   const held = String(CASE_REGIONS.length);
   await expect(onScreen(page, 'held-count')).toHaveText(`${held} / ${held}`);
-  await expect(onScreen(page, 'sleep')).toHaveText('Sleep');
+  await expect(onScreen(page, 'run-won')).toContainText('The body holds every region');
+  await expect(onScreen(page, 'sleep')).toHaveCount(0);
 });
 
 /**
@@ -107,6 +112,28 @@ test('a lost run cannot be reached by URL — the brief and the fight both send 
   await page.goto('/brief/forearm');
   await expect(page).toHaveURL('/');
   await expect(onScreen(page, 'run-lost')).toBeVisible();
+});
+
+/**
+ * The same guard, for the other ending. A won run has nothing on fire, so the only way into a
+ * case is a stale URL — and a fight taken from there spends a day and lets the sickness step,
+ * which would un-win a run the player had already finished.
+ */
+test('a won run cannot be reached by URL either', async ({ page }) => {
+  const fresh = createFreshProfile();
+  const won: Profile = {
+    ...fresh,
+    front: { ...fresh.front, infected: [], held: CASE_REGIONS.map((node) => node.id) },
+  };
+  await seedProfile(page, won);
+
+  await page.goto('/play/forearm');
+  await expect(page).toHaveURL('/');
+  await expect(onScreen(page, 'run-won')).toBeVisible();
+
+  await page.goto('/brief/forearm');
+  await expect(page).toHaveURL('/');
+  await expect(onScreen(page, 'run-won')).toBeVisible();
 });
 
 for (const definition of CASES) {

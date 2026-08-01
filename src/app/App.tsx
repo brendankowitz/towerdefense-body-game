@@ -2,7 +2,7 @@ import { Suspense, lazy, type ReactNode } from 'react';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
-import { isRunLost } from '@game/front';
+import { isRunLost, isRunWon } from '@game/front';
 import { SaveErrorBanner } from '@app/components/SaveErrorBanner';
 import { useProfile } from '@app/state/ProfileProvider';
 
@@ -15,16 +15,20 @@ const SeasonPage = lazy(() => import('./pages/SeasonPage').then((m) => ({ defaul
 setupIonicReact({ mode: 'ios' });
 
 /**
- * The map is the one screen that explains why a lost run stops offering anything, so any route
+ * The map is the one screen that explains why a decided run stops offering anything, so any route
  * reached by a case id has to send the player back there rather than let them wander into a case
  * through Back or a typed URL. Wrapping the route here, once, is what makes that automatic for a
  * screen added later — it inherits the guard by being declared through this rather than by
- * whoever writes it remembering to ask `isRunLost` themselves, the way `FightPage` already
- * redirects on a case id that does not exist.
+ * whoever writes it remembering to ask themselves, the way `FightPage` already redirects on a
+ * case id that does not exist.
+ *
+ * Both endings, not only the loss. A won run has no region left on fire, so the only way into a
+ * case from there is a stale URL — and a fight taken from a won run would spend a day, let the
+ * sickness step, and quietly un-win the run the player had already finished.
  */
 function RequireLiveRun({ children }: { readonly children: ReactNode }) {
   const { profile } = useProfile();
-  if (isRunLost(profile.front)) return <Redirect to="/" />;
+  if (isRunLost(profile.front) || isRunWon(profile.front)) return <Redirect to="/" />;
   return <>{children}</>;
 }
 

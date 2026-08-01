@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { SHORE_UP_COST } from '@game/content/rules';
-import { caseAt, hotCases, isRunLost, wallStatus } from '@game/front';
+import { caseAt, heldRegionCount, hotCases, isRunLost, isRunWon, wallStatus } from '@game/front';
 import { strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
 import type { BodyNodeId, CaseId } from '@game/types';
@@ -23,16 +23,25 @@ export function MapPage() {
    * wall to shore up, no day to sleep through.
    */
   const lost = isRunLost(front);
+  /**
+   * The other ending, and until now the one the app could reach and not draw. It is the majority
+   * outcome of a run at the shipped constants, and it rendered as "All clear" over a Sleep button
+   * that the player could press forever. A won run is over in exactly the sense a lost one is:
+   * there is no ground left to take, so there is no day left worth spending.
+   */
+  const won = isRunWon(front);
+  const over = lost || won;
 
   const goToBrief = (caseId: CaseId): void => { history.push(`/brief/${caseId}`); };
   const onSelectNode = (node: BodyNodeId): void => {
-    if (lost) return;
+    if (over) return;
     const caseId = caseAt(node);
     if (caseId !== null) goToBrief(caseId);
   };
 
   const today = hotCases(front).map((id) => CASE_BY_ID[id]);
-  const canAffordShoreUp = !lost && profile.bank >= SHORE_UP_COST;
+  const canAffordShoreUp = !over && profile.bank >= SHORE_UP_COST;
+  const endingColour = lost ? palette.threat.css : palette.frontline.css;
 
   /**
    * Every region held, named from the case it was won. The map draws a hint of this on the
@@ -73,7 +82,7 @@ export function MapPage() {
               <span><i style={{ background: palette.notReached.css }} />NOT REACHED</span>
             </div>
             <MapProgress
-              regionsHeld={profile.cleared.length}
+              regionsHeld={heldRegionCount(front)}
               regionsTotal={CASE_REGIONS.length}
               strains={strainRows(profile)}
               onClick={() => { history.push('/immunity'); }}
@@ -81,16 +90,22 @@ export function MapPage() {
           </div>
 
           <footer className="screen-footer">
-            {lost ? (
-              // The one screen a lost run shows: what happened, stated once, and the one action
-              // left — never the day's choices, a wall to shore up, or a day to sleep through,
-              // because none of those exist for a body that is already gone.
+            {over ? (
+              // The one screen an ended run shows, whichever ending it reached: what happened,
+              // stated once, and the one action left — never the day's choices, a wall to shore
+              // up, or a day to sleep through, because none of those exist for a run that is
+              // already decided. Both endings share this shape on purpose; only the colour, the
+              // two lines and the test id tell them apart.
               <>
-                <div className="pick" data-testid="run-lost">
-                  <span className="pick-swatch" style={{ background: palette.threat.css }} />
+                <div className="pick" data-testid={lost ? 'run-lost' : 'run-won'}>
+                  <span className="pick-swatch" style={{ background: endingColour }} />
                   <div className="pick-text">
-                    <span className="pick-name">The sickness reached the heart</span>
-                    <span className="pick-sub">This run is over</span>
+                    <span className="pick-name">
+                      {lost ? 'The sickness reached the heart' : 'The body holds every region'}
+                    </span>
+                    <span className="pick-sub">
+                      {lost ? 'This run is over' : 'The sickness has nowhere left to be'}
+                    </span>
                   </div>
                 </div>
                 <div className="footer-actions">
@@ -98,7 +113,7 @@ export function MapPage() {
                     type="button"
                     className="primary"
                     data-testid="reset-run"
-                    style={{ background: palette.threat.css }}
+                    style={{ background: endingColour }}
                     onClick={() => { resetRun(); }}
                   >
                     Start a new body

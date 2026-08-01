@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { MapPage } from './MapPage';
-import { BODY_NODES } from '@game/content/body';
+import { BODY_NODES, CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID } from '@game/content/cases';
 import { SHORE_UP_COST } from '@game/content/rules';
 import { hotCases, nodeOf } from '@game/front';
@@ -59,8 +59,33 @@ describe('MapPage', () => {
 
     expect(regions.length).toBeLessThan(BODY_NODES.length);
     expect(screen.getByTestId('held-count').textContent).toBe(
-      `${String(PROFILE.cleared.length)} / ${String(regions.length)}`,
+      `${String(PROFILE.front.held.length)} / ${String(regions.length)}`,
     );
+  });
+
+  /**
+   * The numerator counts ground the body has, not cases it once won. `cleared` never shrinks, so
+   * a run that cleared a region and then lost it back reads as still holding it — the map's
+   * headline number disagreeing with the wall list two hundred pixels below it and with the
+   * ending, both of which read `front.held`.
+   */
+  it('stops counting a region once the sickness has retaken it', async () => {
+    const fresh = createFreshProfile();
+    const [firstHot] = hotCases(fresh.front);
+    if (firstHot === undefined) throw new Error('fixture expects an open front');
+    const cleared = clearCase(fresh, firstHot, 0);
+    const node = nodeOf(firstHot);
+    const retaken: Profile = {
+      ...cleared,
+      front: { ...cleared.front, held: [], infected: [...cleared.front.infected, node] },
+    };
+
+    expect(retaken.cleared).toContain(firstHot);
+    localStorage.setItem(STORAGE_KEY, encode(retaken));
+    await renderMap();
+
+    expect(screen.getByTestId('held-count').textContent).toMatch(/^0 \//);
+    expect(screen.queryByTestId('wall-list')).not.toBeInTheDocument();
   });
 
   /** A fresh body opens with exactly one door under attack — this is the fixture, not a guess. */
@@ -251,6 +276,54 @@ describe('MapPage', () => {
       const fresh = createFreshProfile();
       expect(screen.getByText(`DAY ${String(fresh.front.day)} · MORNING`)).toBeInTheDocument();
       expect(screen.queryByTestId('run-lost')).not.toBeInTheDocument();
+      expect(screen.getByTestId('day-choices')).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * The ending the design calls the goal, and the majority outcome at the shipped constants. It
+   * had no reader anywhere in the app: a won run drew as "All clear" over a Sleep button the
+   * player could press for the rest of time.
+   */
+  describe('when the run is won', () => {
+    function wonProfile(): Profile {
+      const fresh = createFreshProfile();
+      return {
+        ...fresh,
+        front: { ...fresh.front, infected: [], held: CASE_REGIONS.map((node) => node.id) },
+      };
+    }
+
+    it('says the body holds every region and offers only starting a new body', async () => {
+      localStorage.setItem(STORAGE_KEY, encode(wonProfile()));
+      await renderMap();
+
+      expect(screen.getByTestId('run-won')).toHaveTextContent('The body holds every region');
+      expect(screen.getByTestId('run-won')).toHaveTextContent('The sickness has nowhere left to be');
+      expect(screen.queryByTestId('run-lost')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('day-choices')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('wall-list')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('sleep')).not.toBeInTheDocument();
+      expect(screen.queryByText('Season')).not.toBeInTheDocument();
+      expect(screen.getByTestId('reset-run')).toHaveTextContent('Start a new body');
+    });
+
+    it('counts every region as held', async () => {
+      localStorage.setItem(STORAGE_KEY, encode(wonProfile()));
+      await renderMap();
+
+      const total = String(CASE_REGIONS.length);
+      expect(screen.getByTestId('held-count').textContent).toBe(`${total} / ${total}`);
+    });
+
+    it('starts a new body from the run-over screen', async () => {
+      localStorage.setItem(STORAGE_KEY, encode(wonProfile()));
+      await renderMap();
+
+      fireEvent.click(screen.getByTestId('reset-run'));
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+      expect(screen.queryByTestId('run-won')).not.toBeInTheDocument();
       expect(screen.getByTestId('day-choices')).toBeInTheDocument();
     });
   });
