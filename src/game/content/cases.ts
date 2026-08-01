@@ -564,12 +564,15 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // **The run-level target this case owes, and currently misses.** The other three pacing numbers
     // each had a target stated before they were measured; this one was anchored to the *board*
-    // band's floor and its run-level consequence found afterwards. Measured: the last stand is
-    // fought in 28 to 43 per cent of runs and **won in 2 to 3 per cent** — so reaching the core is,
-    // in practice, how a run ends, and `holdCore`'s whole reprieve-and-second-siege rule fires
-    // about once in forty runs. A defensible target is **a last stand won by a quarter of the runs
-    // that fight it**, which is what would make the reprieve a thing players see rather than a
-    // branch that exists in code. Meeting it means this case sitting well above the board band's
+    // band's floor and its run-level consequence found afterwards. Measured at the shipped pacing
+    // numbers, 200 seeds: the last stand is fought in **34 to 41 per cent** of runs and **won in 0
+    // to 2 per cent** — so reaching the core is, in practice, how a run ends, and `holdCore`'s whole
+    // reprieve-and-second-siege rule fires about once in a hundred runs. Lowering
+    // `OUTBREAK_INTERVAL` made the core easier to reach and did nothing for the share won, which is
+    // what says this is the case's number rather than the front line's. A defensible target is
+    // **a last stand won by a quarter of the runs that fight it**, which is what would make the
+    // reprieve a thing players see rather than a branch that only exists in code. Meeting it means
+    // this case sitting well above the board band's
     // floor at the arrival entry, which is a content decision the next pass owns. It is written
     // here rather than left in a report so that pass starts from a number.
     id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',

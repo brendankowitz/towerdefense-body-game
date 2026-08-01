@@ -136,11 +136,11 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  * the three, and two of these three constants turned out to move it far harder than they move
  * anything else.
  *
- * **What the three chosen together produce**, confirmed at 200 seeds — five times the sample the
- * choices were made on — by `npm run sweep:runs`, `'learning'`, nearestToCore / cheapest:
+ * **What the three chosen together produce**, at 200 seeds — twice the sample the choices were made
+ * on — by `npm run sweep:runs`, `'learning'`, nearestToCore / cheapest:
  *
- *     won 50% / 45%   lost 27% / 41%   unresolved 23% / 14%
- *     median run 122 / 113 days   held 9.5 / 9 of 10   core reached 28% / 43%
+ *     won 46% / 46%   lost 34% / 40%   unresolved 20% / 15%
+ *     median run 116 / 113 days   held 9 / 9 of 10   core reached 34% / 41%
  *
  * All three targets met on both policies. Re-run that sweep and re-read this block before moving
  * any of the three below; the numbers under each are what one step of it was worth, and they are
@@ -176,9 +176,10 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
 export const OUTBREAK_INTERVAL = 3;
 
 /**
- * **Worth per step: nothing measurable.** Swept over 0, 1, 2, 3 at `OUTBREAK_INTERVAL` 4, at **100
- * seeds a cell** rather than 40, because a claim that a lever is inert deserves more sample than a
- * claim that it is not (nearestToCore / cheapest):
+ * **Worth per step: nothing measurable.** Swept over 0, 1, 2, 3 at **`OUTBREAK_INTERVAL` 4** — the
+ * value that shipped when the sweep ran, not the 3 that ships now — at **100 seeds a cell** rather
+ * than 40, because a claim that a lever is inert deserves more sample than a claim that it is not
+ * (nearestToCore / cheapest):
  *
  *     SBD=0  lost 28% / 39%   unresolved 21% / 10%   median run 134 / 114 days
  *     SBD=1  lost 30% / 27%   unresolved 20% / 14%   median run 128 / 119 days
@@ -219,6 +220,12 @@ export const OUTBREAK_INTERVAL = 3;
  * the run is measured not to care either way. If the joint-wall gap is ever closed — a case on a
  * road the sickness must besiege — this becomes a live lever and should be re-swept before it is
  * trusted.
+ *
+ * **Provenance, exactly.** The table above was measured at `OUTBREAK_INTERVAL` 4 and was not re-run
+ * when that moved to 3. Deliberate: the lever measured inert at 40 seeds under the old rng and at
+ * 100 under the new one, and the reason it is inert — a third of the core's approach is joints no
+ * wall can stand on — does not depend on how often doors open. A re-sweep would cost half an hour to
+ * confirm a structural fact. Whoever closes the joint gap should re-sweep at the shipped interval.
  */
 export const SIEGE_BASE_DAYS = 1;
 

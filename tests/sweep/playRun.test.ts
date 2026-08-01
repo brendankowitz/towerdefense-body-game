@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CASE_REGIONS } from '../../src/game/content/body';
+import type { StrainId } from '../../src/game/types';
+import type { BoardContext } from './playBoard';
 import {
-  CASE_POLICIES, MAX_RUN_DAYS, playRun, resetLearned,
+  CASE_POLICIES, learnedBoard, MAX_RUN_DAYS, playRun, resetLearned,
   type CasePolicy, type RunOutcome,
 } from './playRun';
 
@@ -160,28 +162,53 @@ describe('playRun', () => {
   }, PLAY_BUDGET);
 
   /**
-   * **The version of this test that shipped could not fail.** It played one seed under three fight
-   * policies forwards, then backwards, and compared. `LEARNED` is module-global and never cleared,
-   * so by the time the backwards pass ran it read what the forwards pass had written: a memo key
-   * missing a field would have returned the same wrong answer to both orderings and the assertion
-   * would still have passed. It could only fail on nondeterminism the memo does not mask, which is
-   * precisely not the property it claimed to guard.
+   * **Two earlier versions of this test could not fail, and the second was caught by mutation.**
    *
-   * Contamination is only visible against a run played with **nothing in the memo**, so that is what
-   * this compares against. `alone` is seed 7 on an empty memo. `after` is the same seed played once
-   * two other runs have filled the memo with entries for the same cases at different days, different
-   * immunity and a different case policy — which is exactly the shape a missing key field would
-   * cross-read. If `learnedBoard` ever keys on less than it decides on, these two diverge.
+   * The first played a seed forwards and backwards and compared; `LEARNED` is module-global, so the
+   * backwards pass read what the forwards pass wrote. The second played whole *runs* against a
+   * cleared memo — better, and still vacuous: reducing `contextKey` to `caseId` plus the dock size,
+   * dropping immunity, `clearedCount` and `blocksAmnesia`, left every test green with byte-identical
+   * output. The reason is the call site. `playRun` only reads `learnedBoard(...) !== null`, and
+   * whether a case is winnable *at all* barely moves across those fields — the band floor is 5%, so
+   * almost every context has some winning board. A run-level assertion cannot see the difference.
+   *
+   * So this asserts on `learnedBoard` directly and on the **board it returns**, which does move.
+   * `vesper` at day 11 finds `anti,mem,mast,mast,nk` from a cold profile and `mast,mem,phago,mem,nk`
+   * from a fully immune one: same case, same day, same dock, different answer. Fill the memo from
+   * one and ask for the other, and a key that has dropped immunity hands back the first board.
+   *
+   * **Verified by the same mutation that exposed the last version**: cut `contextKey` down to
+   * `caseId` and the kinds, and this test goes red. The first assertion is what keeps it that way —
+   * if a content change ever made the two immunity states agree, the test would become vacuous
+   * silently, so it fails loudly instead.
+   *
+   * **What this does not guard, stated rather than implied.** `clearedCount` and `blocksAmnesia` are
+   * in the key and are **not observable through it**: nothing in the simulation reads `clearedCount`,
+   * and `blocksAmnesia` returned an identical board on the amnesia case with film at its cap at every
+   * day from 4 to 20. They are carried defensively, for the reason `learnedBoard` gives — a key that
+   * omits a field because today's code ignores it starts lying the day somebody uses it — and no test
+   * here can hold them to it.
    */
-  it('does not let one run change what another one measures', () => {
-    resetLearned();
-    const alone = playRun(7, 'nearestToCore', 'learning');
+  it('does not let one context change what another one measures', () => {
+    const at = (immunity: Readonly<Record<StrainId, number>>): BoardContext =>
+      ({ caseId: 'vesper', immunity, clearedCount: 0, day: 11, blocksAmnesia: false });
+    const cold: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
+    const full: Readonly<Record<StrainId, number>> = { staph: 3, film: 3, virus: 3 };
 
     resetLearned();
-    playRun(3, 'nearestToCore', 'learning');
-    playRun(11, 'cheapest', 'learning');
-    const after = playRun(7, 'nearestToCore', 'learning');
+    const aloneFull = learnedBoard(at(full));
+    resetLearned();
+    const aloneCold = learnedBoard(at(cold));
 
-    expect(after).toEqual(alone);
+    expect(aloneFull, 'vesper is unwinnable at one of the two immunity states').not.toBeNull();
+    expect(
+      aloneCold,
+      'the two immunity states now agree, so this test guards nothing — pick another case',
+    ).not.toEqual(aloneFull);
+
+    resetLearned();
+    learnedBoard(at(cold));
+    expect(learnedBoard(at(full)), 'the cold context answered for the immune one')
+      .toEqual(aloneFull);
   }, PLAY_BUDGET);
 });

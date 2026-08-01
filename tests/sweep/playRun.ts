@@ -165,14 +165,14 @@ const SEARCH_STRIDE = 2833;
 const LEARNED = new Map<string, readonly DefenderKind[] | null>();
 
 /**
- * Empties the memo, and it exists for one caller: the test that one run cannot change what another
- * measures.
+ * Empties the memo, for the test that one context cannot change what another measures.
  *
- * That test used to play a seed forwards and backwards and compare, which **could not fail**. The
- * memo is module-global and never cleared, so the backwards pass read whatever the forwards pass
- * wrote — a key missing a field would hand back the same wrong answer to both and the assertion
- * would still pass. Contamination is only visible against a run played with nothing in the memo, so
- * the test needs to be able to empty it.
+ * Contamination is only visible against a call made with **nothing in the memo**, so the test needs
+ * to be able to empty it — but that alone is not enough, and two versions of that test were vacuous
+ * before this one. What makes it able to fail is asserting on the *board* `learnedBoard` returns
+ * rather than on a run's outcome: `playRun` only reads `!== null`, and whether a case is winnable at
+ * all barely moves across the fields the key carries. `playRun.test.ts` records which field is
+ * observable, which two are not, and the mutation that proves the difference.
  */
 export function resetLearned(): void {
   LEARNED.clear();

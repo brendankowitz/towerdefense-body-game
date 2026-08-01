@@ -188,13 +188,15 @@ function gateReport(groups: readonly RunGroup[]): string {
  * policy and all happened to carry two or fewer points of immunity. All four cleared 415/7776, and
  * "5.3% is stable across the arrivals runs actually make" was recorded in `cases.ts`, `band.ts` and
  * the task report on the strength of it. At a different seed count the head of the list contains an
- * arrival at three points of virus immunity, which clears **11.4%** — more than double. The claim
- * was false and the head-of-list sample is the only reason it looked true.
+ * arrival at three points of one strain that clears more than twice that. The claim was false, and
+ * the head-of-list sample is the only reason it looked true.
  *
  * So the selection is deliberately the extremes: least and most immunity, fewest and most cases
  * cleared. Four contexts is a quarter of an hour of enumeration and that budget is better spent on
  * the ends of the range than on four neighbours, because what the report has to support is a
- * **range** rather than a point.
+ * **range** rather than a point. Selecting that way measured the real top at **13.0%** against the
+ * 5.3% floor — higher than the head-of-list sample had found, which is the argument for picking the
+ * ends rather than for picking more of them.
  */
 function spreadOf(arrivals: readonly CoreArrival[]): readonly CoreArrival[] {
   const total = (arrival: CoreArrival): number =>
