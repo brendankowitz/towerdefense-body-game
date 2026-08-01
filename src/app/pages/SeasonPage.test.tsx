@@ -4,8 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { SeasonPage } from './SeasonPage';
 import { createFreshProfile, seasonRows } from '@game/progression';
-import { CASES } from '@game/content/cases';
-import { LATER } from '@game/content/later';
+import { hotCases } from '@game/front';
 import { VACCINES } from '@game/content/vaccines';
 import { ProfileProvider } from '@app/state/ProfileProvider';
 
@@ -34,9 +33,9 @@ beforeEach(() => {
 });
 
 describe('SeasonPage', () => {
-  it('lists every case and every later entry the content declares', async () => {
+  it('lists exactly the ground on fire, since a fresh body has taken none yet', async () => {
     await renderSeason();
-    expect(screen.getAllByTestId('season-row')).toHaveLength(CASES.length + LATER.length);
+    expect(screen.getAllByTestId('season-row')).toHaveLength(hotCases(PROFILE.front).length);
   });
 
   it('lists every vaccine the content declares', async () => {
@@ -44,7 +43,7 @@ describe('SeasonPage', () => {
     expect(screen.getAllByTestId('vaccine-row')).toHaveLength(VACCINES.length);
   });
 
-  it('marks the next unplayed case as under way today', async () => {
+  it('marks the case burning today as under way, not as a schedule slot', async () => {
     await renderSeason();
     const rows = seasonRows(PROFILE);
     const nowIndex = rows.findIndex((row) => row.state === 'now');

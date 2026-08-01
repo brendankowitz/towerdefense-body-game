@@ -13,6 +13,7 @@ export function SeasonPage() {
     <IonPage>
       <IonContent fullscreen>
         <Season
+          day={profile.front.day}
           season={seasonRows(profile)}
           vaccines={vaccineRows(profile)}
           onImmunityClick={() => { history.push('/immunity'); }}

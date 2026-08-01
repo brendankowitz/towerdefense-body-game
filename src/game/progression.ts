@@ -1,8 +1,7 @@
 import { CASES, CASE_BY_ID } from './content/cases';
-import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, holdRegion, shoreUp, nodeOf, type Front, type FrontRules } from './front';
+import { caseAt, createFront, holdRegion, hotCases, shoreUp, nodeOf, type Front, type FrontRules } from './front';
 import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
 /** Everything a run carries between cases. The simulation reads it; only this module writes it. */
@@ -163,13 +162,20 @@ export function vaccineRows(profile: Profile): readonly VaccineRow[] {
   });
 }
 
-export type SeasonState = 'done' | 'now' | 'next' | 'warn' | 'unknown';
+/**
+ * What a row records having happened. A forecast needed `next` for a case not yet reached and
+ * `warn`/`unknown` for promises the season had not built yet — a front line has neither: which
+ * ground catches fire next is not knowable ahead of the day it happens, and `LATER` is retired
+ * for the same reason. What is left is only ever one of two facts about a region: the body took
+ * it and still has it, or the sickness is standing on it right now.
+ */
+export type SeasonState = 'done' | 'now';
 
 export interface SeasonRow {
-  readonly day: number;
   readonly name: string;
   readonly region: string;
   readonly note: string;
+  readonly status: string;
   readonly tier: Tier;
   readonly state: SeasonState;
 }
@@ -181,33 +187,50 @@ function regionName(region: string): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
+/** A held wall's status: how long it has left, read the same way the map's wall list reads it. */
+function wallStatus(front: Front, node: BodyNodeId): string {
+  const left = front.siege[node];
+  return left === undefined ? 'HOLDING' : `${String(left)} DAY${left === 1 ? '' : 'S'} LEFT`;
+}
+
 /**
- * The season timeline: every case, then everything the season promises but cannot yet be played.
- * Days are counted from today, so the case you are on is always day `profile.front.day`.
+ * The season timeline, read off the front line instead of the case order: ground the body took
+ * and still holds, chronological in the order it was taken because that is the order `held`
+ * itself grows in, followed by every region on fire today. A region can be both cleared once and
+ * on fire now — the sickness took it back — and that is carried as a note on the burning row
+ * rather than a third state, because to the player today it is exactly as fightable as ground
+ * that has never been held.
  */
 export function seasonRows(profile: Profile): readonly SeasonRow[] {
-  const nextIndex = Math.max(0, CASES.findIndex((definition) => !profile.cleared.includes(definition.id)));
+  const front = profile.front;
 
-  const cases: SeasonRow[] = CASES.map((definition, index) => {
-    const done = profile.cleared.includes(definition.id);
-    return {
-      day: profile.front.day + (index - nextIndex),
+  const held: SeasonRow[] = front.held.flatMap((node): SeasonRow[] => {
+    const caseId = caseAt(node);
+    if (caseId === null) return [];
+    const definition = CASE_BY_ID[caseId];
+    const besieged = front.siege[node] !== undefined;
+    return [{
       name: definition.title,
       region: regionName(definition.region),
-      note: done ? 'Cleared — this region is holding' : '',
+      note: besieged ? 'Cleared — the wall is under siege' : 'Cleared — this region is holding',
+      status: wallStatus(front, node),
       tier: definition.tier,
-      state: done ? 'done' : index === nextIndex ? 'now' : 'next',
+      state: 'done',
+    }];
+  });
+
+  const burning: SeasonRow[] = hotCases(front).map((caseId) => {
+    const definition = CASE_BY_ID[caseId];
+    const retaken = profile.cleared.includes(caseId);
+    return {
+      name: definition.title,
+      region: regionName(definition.region),
+      note: retaken ? 'Lost — the sickness has retaken this ground' : '',
+      status: 'UNDER ATTACK',
+      tier: definition.tier,
+      state: 'now',
     };
   });
 
-  const later: SeasonRow[] = LATER.map((entry) => ({
-    day: profile.front.day + entry.offset,
-    name: entry.name,
-    region: entry.region,
-    note: entry.note,
-    tier: entry.tier,
-    state: entry.tier === 3 ? 'unknown' : 'warn',
-  }));
-
-  return [...cases, ...later];
+  return [...held, ...burning];
 }

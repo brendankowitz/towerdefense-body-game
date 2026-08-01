@@ -2,6 +2,7 @@ import type { SeasonRow, VaccineRow } from '@game/progression';
 import type { Tier } from '@game/types';
 
 interface SeasonProps {
+  readonly day: number;
   readonly season: readonly SeasonRow[];
   readonly vaccines: readonly VaccineRow[];
   readonly onImmunityClick: () => void;
@@ -26,27 +27,20 @@ const TIER_LABEL: Record<Tier, string> = {
   3: 'UNKNOWN',
 };
 
-/** The season timeline: every case ahead, what the season promises beyond it, and the vaccination schedule. */
-export function Season({ season, vaccines, onImmunityClick, onMapClick }: SeasonProps) {
-  const first = season[0];
-  const last = season[season.length - 1];
-
+/** The season record: how long the body has been fighting, what it holds, and what is on fire today. */
+export function Season({ day, season, vaccines, onImmunityClick, onMapClick }: SeasonProps) {
   return (
     <div className="screen rise">
       <div className="screen-body">
         <div className="screen-title">
-          <span className="mono kicker">
-            {first !== undefined && last !== undefined
-              ? `SEASON · DAYS ${String(first.day)}—${String(last.day)}`
-              : 'SEASON'}
-          </span>
-          <h2 className="screen-heading">What&apos;s coming</h2>
+          <span className="mono kicker">{`SEASON · DAY ${String(day)}`}</span>
+          <h2 className="screen-heading">What&apos;s happened</h2>
         </div>
 
         <section>
           {season.map((row) => (
             <div
-              key={`${row.name}-${String(row.day)}`}
+              key={row.name}
               className="season-row"
               data-testid="season-row"
               data-state={row.state}
@@ -58,7 +52,7 @@ export function Season({ season, vaccines, onImmunityClick, onMapClick }: Season
                 {row.note !== '' && <span className="row-note">{row.note}</span>}
               </div>
               <div className="season-meta">
-                <span className="mono">{`DAY ${String(row.day)}`}</span>
+                <span className="mono">{row.status}</span>
                 <span className="mono tier" data-testid="season-tier" data-tier={String(row.tier)}>
                   {TIER_LABEL[row.tier]}
                 </span>

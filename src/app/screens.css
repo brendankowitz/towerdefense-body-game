@@ -653,14 +653,6 @@ section {
   background: var(--frontline);
 }
 
-.season-row[data-state='warn'] .season-dot {
-  background: var(--burst);
-}
-
-.season-row[data-state='unknown'] .season-dot {
-  background: var(--learn);
-}
-
 .season-text {
   flex: 1;
   display: flex;

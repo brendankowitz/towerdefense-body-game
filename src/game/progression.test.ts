@@ -4,10 +4,9 @@ import {
   strainRows, vaccineRows, type Profile,
 } from './progression';
 import { CASES } from './content/cases';
-import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, hotCases, nodeOf, wallDays } from './front';
+import { createFront, hotCases, nodeOf, wallDays, type Front } from './front';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -332,88 +331,104 @@ describe('frontRules', () => {
 });
 
 describe('seasonRows', () => {
-  /**
-   * Written to hold whether `LATER` is empty or not — it is empty today (every promise the
-   * schedule made has been kept), but the type stays live for the next mechanic that ships ahead
-   * of its content, so this cannot assume a first entry exists without going stale the day one
-   * does again.
-   */
-  it('lists every case then every later entry, with days counted from today', () => {
-    const fresh = createFreshProfile();
-    const rows = seasonRows(fresh);
+  /** A front built by hand, the way `front.test.ts` builds one, so a row's shape never depends on where the RNG happened to open the season's door. */
+  function frontWith(overrides: Partial<Front>): Front {
+    return { infected: [], held: [], siege: {}, day: 1, rngState: 1, ...overrides };
+  }
 
-    expect(rows).toHaveLength(CASES.length + LATER.length);
-    expect(rows.map((row) => row.name)).toEqual([
-      ...CASES.map((definition) => definition.title),
-      ...LATER.map((entry) => entry.name),
-    ]);
-    expect(rows[0]?.day).toBe(fresh.front.day);
-    LATER.forEach((entry, index) => {
-      expect(rows[CASES.length + index]?.day).toBe(fresh.front.day + entry.offset);
-    });
+  function profileWithFront(overrides: Partial<Front>, cleared: readonly CaseId[] = []): Profile {
+    return { ...createFreshProfile(), cleared, front: frontWith(overrides) };
+  }
+
+  /**
+   * Two regions taken and standing, one region on fire — the shape the brief's own test is
+   * written against. `state` no longer has anywhere to put a forecasted case, because a front
+   * line does not know which ground catches fire next.
+   */
+  function profileOnDay(day: number): Profile {
+    const [firstHeld, secondHeld, hot] = [requireCase(0), requireCase(1), requireCase(2)];
+    return profileWithFront(
+      { infected: [nodeOf(hot.id)], held: [nodeOf(firstHeld.id), nodeOf(secondHeld.id)], day },
+      [firstHeld.id, secondHeld.id],
+    );
+  }
+
+  it('shows the run that happened rather than a schedule that cannot be known', () => {
+    const rows = seasonRows(profileOnDay(6));
+    expect(rows.map((r) => r.state)).not.toContain('next');
+    expect(rows.filter((r) => r.state === 'done')).toHaveLength(2);
   });
 
-  /**
-   * The tier decides which of EVERYDAY / LASTING / UNKNOWN the timeline prints beside a case, and
-   * it used to be the literal 1 here for every case — true while every case was a scrape or a bug,
-   * and wrong the moment a real disease became playable. The season screen's own naming-policy card
-   * names measles as the example of the tier this was flattening.
-   *
-   * The precondition is the point: with a season of uniform tiers this assertion holds against a
-   * hardcoded constant and proves nothing, so it says so out loud rather than passing quietly.
-   */
+  it('lists held ground before ground on fire, and nothing untouched', () => {
+    const rows = seasonRows(profileOnDay(6));
+    const [firstHeld, secondHeld, hot] = [requireCase(0), requireCase(1), requireCase(2)];
+
+    expect(rows.map((row) => row.name)).toEqual([firstHeld.title, secondHeld.title, hot.title]);
+    expect(rows.map((row) => row.state)).toEqual(['done', 'done', 'now']);
+  });
+
+  it('lists held ground in the order it was taken, because that is the order `held` grows in', () => {
+    const [first, second] = [requireCase(0), requireCase(1)];
+    const profile = profileWithFront({ held: [nodeOf(second.id), nodeOf(first.id)] }, [second.id, first.id]);
+    const rows = seasonRows(profile);
+    expect(rows.map((row) => row.name)).toEqual([second.title, first.title]);
+  });
+
+  it('says a held region is holding, or under siege with the days it has left', () => {
+    const [held, sieged] = [requireCase(0), requireCase(1)];
+    const profile = profileWithFront(
+      { held: [nodeOf(held.id), nodeOf(sieged.id)], siege: { [nodeOf(sieged.id)]: 2 } },
+      [held.id, sieged.id],
+    );
+    const rows = seasonRows(profile);
+
+    expect(rows[0]?.note).toBe('Cleared — this region is holding');
+    expect(rows[0]?.status).toBe('HOLDING');
+    expect(rows[1]?.note).toBe('Cleared — the wall is under siege');
+    expect(rows[1]?.status).toBe('2 DAYS LEFT');
+  });
+
+  it('says nothing extra about ground on fire for the first time', () => {
+    const hot = requireCase(0);
+    const rows = seasonRows(profileWithFront({ infected: [nodeOf(hot.id)] }));
+    expect(rows[0]?.state).toBe('now');
+    expect(rows[0]?.status).toBe('UNDER ATTACK');
+    expect(rows[0]?.note).toBe('');
+  });
+
+  /** Ground the player took and then lost is still fightable today — it just says so. */
+  it('marks ground on fire again as lost, not as new', () => {
+    const retaken = requireCase(0);
+    const rows = seasonRows(profileWithFront({ infected: [nodeOf(retaken.id)] }, [retaken.id]));
+    expect(rows[0]?.state).toBe('now');
+    expect(rows[0]?.note).toBe('Lost — the sickness has retaken this ground');
+  });
+
   it('reports the tier each case declares rather than assuming they are all alike', () => {
     expect(
       new Set(CASES.map((definition) => definition.tier)).size,
       'every case is the same tier, so this test cannot tell a lookup from a constant',
     ).toBeGreaterThan(1);
 
-    const rows = seasonRows(createFreshProfile());
-
-    expect(rows.slice(0, CASES.length).map((row) => row.tier))
-      .toEqual(CASES.map((definition) => definition.tier));
-  });
-
-  it('marks the current case as now and a cleared one as done', () => {
-    const profile = clearCase(createFreshProfile(), requireCase(0).id, 0);
+    const profile = profileOnDay(1);
     const rows = seasonRows(profile);
+    const [firstHeld, secondHeld, hot] = [requireCase(0), requireCase(1), requireCase(2)];
 
-    expect(rows[0]?.state).toBe('done');
-    expect(rows[1]?.state).toBe('now');
-    expect(rows[2]?.state).toBe('next');
-  });
-
-  it('keeps the case you are on as today, whatever day the run has reached', () => {
-    const profile = clearCase(createFreshProfile(), requireCase(0).id, 0);
-    const rows = seasonRows(profile);
-
-    expect(rows[0]?.day).toBe(profile.front.day - 1);
-    expect(rows[1]?.day).toBe(profile.front.day);
-    expect(rows[2]?.day).toBe(profile.front.day + 1);
-  });
-
-  it('notes a cleared region as holding and says nothing about one still ahead', () => {
-    const rows = seasonRows(clearCase(createFreshProfile(), requireCase(0).id, 0));
-    expect(rows[0]?.note).not.toBe('');
-    expect(rows[1]?.note).toBe('');
+    expect(rows.map((row) => row.tier)).toEqual([firstHeld.tier, secondHeld.tier, hot.tier]);
   });
 
   it('names each region without the fight screen kicker', () => {
-    const rows = seasonRows(createFreshProfile());
-    CASES.forEach((definition, index) => {
-      const region = rows[index]?.region ?? '';
-      expect(region).not.toBe('');
-      expect(region).not.toContain('·');
-      expect(definition.region.toUpperCase()).toContain(region.toUpperCase());
-      expect(region).toBe(region.charAt(0).toUpperCase() + region.slice(1).toLowerCase());
-    });
+    const hot = requireCase(0);
+    const rows = seasonRows(profileWithFront({ infected: [nodeOf(hot.id)] }));
+    const region = rows[0]?.region ?? '';
+
+    expect(region).not.toBe('');
+    expect(region).not.toContain('·');
+    expect(hot.region.toUpperCase()).toContain(region.toUpperCase());
+    expect(region).toBe(region.charAt(0).toUpperCase() + region.slice(1).toLowerCase());
   });
 
-  it('marks an invented strain unknown and a named one a warning', () => {
-    const rows = seasonRows(createFreshProfile());
-    LATER.forEach((entry, index) => {
-      expect(rows[CASES.length + index]?.state).toBe(entry.tier === 3 ? 'unknown' : 'warn');
-      expect(rows[CASES.length + index]?.tier).toBe(entry.tier);
-    });
+  it('carries an empty front through as an empty record — nothing has happened yet to show', () => {
+    expect(seasonRows(profileWithFront({}))).toEqual([]);
   });
 });
