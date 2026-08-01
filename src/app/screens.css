@@ -714,7 +714,6 @@ section {
 }
 
 .vaccine-row[data-status='locked'],
-.vaccine-row[data-status='later'],
 .vaccine-row[data-status='none'] {
   opacity: 0.6;
 }

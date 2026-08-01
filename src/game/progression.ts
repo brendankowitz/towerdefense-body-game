@@ -166,7 +166,7 @@ export function strainRows(profile: Profile): readonly StrainRow[] {
   });
 }
 
-export type VaccineStatus = 'held' | 'progress' | 'available' | 'locked' | 'later' | 'none';
+export type VaccineStatus = 'held' | 'progress' | 'available' | 'locked' | 'none';
 
 export interface VaccineRow {
   readonly name: string;
@@ -180,12 +180,7 @@ export function vaccineRows(profile: Profile): readonly VaccineRow[] {
     let status: VaccineStatus = 'none';
     let label = 'NONE EXISTS';
 
-    if (vaccine.later === true) {
-      // Not locked: there is nothing to unlock. The row states what the season intends to add,
-      // and a player reading it should not go looking for the case that opens it.
-      status = 'later';
-      label = 'LATER';
-    } else if (vaccine.strain !== undefined) {
+    if (vaccine.strain !== undefined) {
       const count = profile.immunity[vaccine.strain];
       status = count >= IMMUNITY_MAX ? 'held' : 'progress';
       label = status === 'held' ? 'HELD' : `${String(count)}/${String(IMMUNITY_MAX)}`;

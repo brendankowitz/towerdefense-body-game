@@ -14,13 +14,6 @@ export interface VaccineDefinition {
    * case credits; `content.invariants.test.ts` holds every gate at or under the real ceiling.
    */
   readonly gate?: number;
-  /**
-   * On the schedule, but the rule that would give it meaning has not been built. Renders as its
-   * own status, so the row reads as a promise about the season rather than as something the
-   * player is failing to unlock. Never combined with `strain` or `gate` — those describe things
-   * that can be earned now.
-   */
-  readonly later?: true;
 }
 
 export const VACCINES: readonly VaccineDefinition[] = [

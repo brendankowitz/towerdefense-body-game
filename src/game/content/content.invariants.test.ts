@@ -266,15 +266,6 @@ describe('vaccine reachability', () => {
     expect(CASES.filter((c) => isLastStand(c.id))).toHaveLength(1);
   });
 
-  /** A row cannot be both earnable now and deferred to a rule that does not exist yet. */
-  it('never marks a vaccine as later when it is already earnable', () => {
-    for (const v of VACCINES) {
-      if (v.later !== true) continue;
-      expect(v.strain, `${v.name} is marked later but a case credits it`).toBeUndefined();
-      expect(v.gate, `${v.name} is marked later but also carries a gate`).toBeUndefined();
-    }
-  });
-
   /**
    * A vaccine needs `IMMUNITY_MAX` clears, and a strain credited by fewer cases than that is a row
    * the immunity screen can never fill in a single season — earnable in principle, unearnable in a

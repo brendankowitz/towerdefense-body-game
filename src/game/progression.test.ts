@@ -361,7 +361,7 @@ describe('vaccineRows', () => {
 
   it('says so plainly when no vaccine exists', () => {
     VACCINES.forEach((vaccine, index) => {
-      if (vaccine.strain !== undefined || vaccine.gate !== undefined || vaccine.later === true) return;
+      if (vaccine.strain !== undefined || vaccine.gate !== undefined) return;
 
       const row = vaccineRows(profileWith({ cleared: clearedIds(CASES.length) }))[index];
       expect(row?.status).toBe('none');
