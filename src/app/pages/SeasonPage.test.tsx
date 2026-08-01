@@ -4,7 +4,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { SeasonPage } from './SeasonPage';
 import { createFreshProfile, seasonRows } from '@game/progression';
-import { hotCases } from '@game/front';
 import { VACCINES } from '@game/content/vaccines';
 import { ProfileProvider } from '@app/state/ProfileProvider';
 
@@ -33,9 +32,14 @@ beforeEach(() => {
 });
 
 describe('SeasonPage', () => {
-  it('lists exactly the ground on fire, since a fresh body has taken none yet', async () => {
+  /**
+   * `createFront` always opens a run on exactly one door (`infected: [door.id]`), and a fresh
+   * body has taken no ground yet — so a fresh run's record has exactly one row, not a number
+   * derived from the function under test.
+   */
+  it('lists exactly one row for a fresh body: the one door the sickness opened on', async () => {
     await renderSeason();
-    expect(screen.getAllByTestId('season-row')).toHaveLength(hotCases(PROFILE.front).length);
+    expect(screen.getAllByTestId('season-row')).toHaveLength(1);
   });
 
   it('lists every vaccine the content declares', async () => {

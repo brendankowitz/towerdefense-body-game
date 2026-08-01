@@ -1,7 +1,9 @@
 import { CASES, CASE_BY_ID } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { caseAt, createFront, holdRegion, hotCases, shoreUp, nodeOf, type Front, type FrontRules } from './front';
+import {
+  caseAt, createFront, holdRegion, hotCases, shoreUp, nodeOf, wallStatus, type Front, type FrontRules,
+} from './front';
 import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
 /** Everything a run carries between cases. The simulation reads it; only this module writes it. */
@@ -185,12 +187,6 @@ function regionName(region: string): string {
   const head = region.split(' · ')[0] ?? region;
   const lower = head.toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
-}
-
-/** A held wall's status: how long it has left, read the same way the map's wall list reads it. */
-function wallStatus(front: Front, node: BodyNodeId): string {
-  const left = front.siege[node];
-  return left === undefined ? 'HOLDING' : `${String(left)} DAY${left === 1 ? '' : 'S'} LEFT`;
 }
 
 /**

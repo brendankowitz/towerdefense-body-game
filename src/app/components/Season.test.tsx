@@ -5,8 +5,8 @@ import { Season } from './Season';
 import type { SeasonRow, VaccineRow } from '@game/progression';
 
 const season: readonly SeasonRow[] = [
-  { name: 'Deep cut', region: 'Forearm', note: 'Cleared — this region is holding', status: 'HOLDING', tier: 1, state: 'done' },
-  { name: 'Food poisoning', region: 'Stomach', note: 'Cleared — the wall is under siege', status: '2 DAYS LEFT', tier: 1, state: 'done' },
+  { name: 'Deep cut', region: 'Forearm', note: 'Cleared — this region is holding', status: 'Holding', tier: 1, state: 'done' },
+  { name: 'Food poisoning', region: 'Stomach', note: 'Cleared — the wall is under siege', status: '2 days left', tier: 1, state: 'done' },
   { name: 'Flu', region: 'Throat', note: '', status: 'UNDER ATTACK', tier: 1, state: 'now' },
   { name: 'Measles', region: 'Right lung', note: 'Lost — the sickness has retaken this ground', status: 'UNDER ATTACK', tier: 2, state: 'now' },
 ];
@@ -33,7 +33,7 @@ describe('Season', () => {
     expect(rows).toHaveLength(season.length);
     expect(rows[0]).toHaveTextContent('Deep cut');
     expect(rows[0]).toHaveTextContent('Forearm');
-    expect(rows[0]?.querySelector('.mono')?.textContent).toBe('HOLDING');
+    expect(rows[0]?.querySelector('.mono')?.textContent).toBe('Holding');
   });
 
   it('shows the note only when the row has one', () => {
@@ -52,7 +52,7 @@ describe('Season', () => {
   it('says how long a wall has left when it is under siege', () => {
     render(<Season day={11} season={season} vaccines={vaccines} onImmunityClick={noop} onMapClick={noop} />);
     const rows = screen.getAllByTestId('season-row');
-    expect(rows[1]?.querySelector('.mono')?.textContent).toBe('2 DAYS LEFT');
+    expect(rows[1]?.querySelector('.mono')?.textContent).toBe('2 days left');
   });
 
   it('says ground lost and retaken by the sickness is lost, not new', () => {

@@ -78,6 +78,17 @@ export function wallDays(
   return SIEGE_BASE_DAYS + (strain === null ? 0 : immunity[strain]);
 }
 
+/**
+ * A held region's status in words: holding, or counting down. One copy, because the map and the
+ * season screen both name a wall's countdown and a sentence typed twice in two layers is a
+ * sentence that can say two different things about the same wall — which it already had, once
+ * this was two copies with two capitalisations of the same words.
+ */
+export function wallStatus(front: Front, node: BodyNodeId): string {
+  const left = front.siege[node];
+  return left === undefined ? 'Holding' : `${String(left)} day${left === 1 ? '' : 's'} left`;
+}
+
 /** A case cleared: the sickness is off that ground and the player is on it. */
 export function holdRegion(front: Front, node: BodyNodeId): Front {
   const siege = { ...front.siege };

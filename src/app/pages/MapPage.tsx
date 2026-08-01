@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { CASE_REGIONS } from '@game/content/body';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { SHORE_UP_COST } from '@game/content/rules';
-import { caseAt, hotCases, isRunLost } from '@game/front';
+import { caseAt, hotCases, isRunLost, wallStatus } from '@game/front';
 import { strainRows } from '@game/progression';
 import { palette } from '@theme/tokens';
 import type { BodyNodeId, CaseId } from '@game/types';
@@ -46,7 +46,7 @@ export function MapPage() {
     return {
       node,
       title: caseId === null ? node : CASE_BY_ID[caseId].title,
-      siegeDays: front.siege[node],
+      status: wallStatus(front, node),
     };
   });
 
@@ -143,15 +143,11 @@ export function MapPage() {
                   )}
                 {walls.length > 0 && (
                   <div className="wall-list" data-testid="wall-list">
-                    {walls.map(({ node, title, siegeDays }) => (
+                    {walls.map(({ node, title, status }) => (
                       <div key={node} className="wall-row" data-testid={`wall-${node}`}>
                         <div className="wall-text">
                           <span className="wall-name">{title}</span>
-                          <span className="mono wall-days">
-                            {siegeDays === undefined
-                              ? 'Holding'
-                              : `${String(siegeDays)} day${siegeDays === 1 ? '' : 's'} left`}
-                          </span>
+                          <span className="mono wall-days">{status}</span>
                         </div>
                         {canAffordShoreUp && (
                           <button

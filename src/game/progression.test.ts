@@ -6,7 +6,7 @@ import {
 import { CASES } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, hotCases, nodeOf, wallDays, type Front } from './front';
+import { createFront, hotCases, nodeOf, wallDays, wallStatus, type Front } from './front';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -383,9 +383,26 @@ describe('seasonRows', () => {
     const rows = seasonRows(profile);
 
     expect(rows[0]?.note).toBe('Cleared — this region is holding');
-    expect(rows[0]?.status).toBe('HOLDING');
+    expect(rows[0]?.status).toBe('Holding');
     expect(rows[1]?.note).toBe('Cleared — the wall is under siege');
-    expect(rows[1]?.status).toBe('2 DAYS LEFT');
+    expect(rows[1]?.status).toBe('2 days left');
+  });
+
+  /**
+   * `wallStatus` is the one place that spells out a wall's countdown — the map's own wall list
+   * reads it the same way (`MapPage.tsx`) — so a held row's status is asserted here as a call
+   * through to it rather than as a second literal string that could quietly drift from it.
+   */
+  it('reads a held row\'s status off the same wallStatus the map reads', () => {
+    const [held, sieged] = [requireCase(0), requireCase(1)];
+    const profile = profileWithFront(
+      { held: [nodeOf(held.id), nodeOf(sieged.id)], siege: { [nodeOf(sieged.id)]: 3 } },
+      [held.id, sieged.id],
+    );
+    const rows = seasonRows(profile);
+
+    expect(rows[0]?.status).toBe(wallStatus(profile.front, nodeOf(held.id)));
+    expect(rows[1]?.status).toBe(wallStatus(profile.front, nodeOf(sieged.id)));
   });
 
   it('says nothing extra about ground on fire for the first time', () => {
