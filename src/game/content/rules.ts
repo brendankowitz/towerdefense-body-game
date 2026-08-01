@@ -139,12 +139,31 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  * **What the three chosen together produce**, at 200 seeds — twice the sample the choices were made
  * on — by `npm run sweep:runs`, `'learning'`, nearestToCore / cheapest:
  *
- *     won 46% / 46%   lost 34% / 40%   unresolved 20% / 15%
- *     median run 116 / 113 days   held 9 / 9 of 10   core reached 34% / 41%
+ *     won 48% / 46%   lost 32% / 40%   unresolved 21% / 14%
+ *     median run 121 / 98 days   held 9 / 8 of 10   core reached 32% / 42%
  *
- * All three targets met on both policies. Re-run that sweep and re-read this block before moving
- * any of the three below; the numbers under each are what one step of it was worth, and they are
- * the only reason any of them is the value it is.
+ * All three targets met on both policies.
+ *
+ * **That reading is a re-measurement, and what changed was the model rather than any number here.**
+ * `seedOutbreak` used to filter its candidate doors against `infected` and not against `held`, so a
+ * seeding day could open a door the player was standing on — and the region then sat in both lists
+ * for the rest of the run, because no siege is ever opened against ground already infected. Closing
+ * it changes which door a roll can pick and, once the body holds every door, whether the roll is
+ * taken at all, so every seed diverges and the sample is effectively re-drawn. Against the previous
+ * reading every share moved by two points or less, which is inside the roughly three-and-a-half
+ * point standard error at 200 seeds; the largest single move is the `cheapest` median run, 113 days
+ * to 98, and that is the figure to watch if any of these is swept again.
+ *
+ * **The per-step tables below have not been re-run since that fix.** They were measured on a model
+ * in which a wall standing at a door could be bypassed by a roll — which is the thing two of these
+ * three levers exist to prevent — so what each was worth per step was measured against a weaker
+ * version of what it buys. The shipped combination above is the reading that has been re-measured;
+ * the tables are the provenance for why each value was chosen, and should be re-swept before any of
+ * the three is moved.
+ *
+ * Re-run that sweep and re-read this block before moving any of the three below; the numbers under
+ * each are what one step of it was worth, and they are the only reason any of them is the value it
+ * is.
  */
 
 /**
