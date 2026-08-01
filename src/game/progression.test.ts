@@ -3,10 +3,12 @@ import {
   blocksAmnesia, clearCase, createFreshProfile, frontRules, nextCaseId, recordCoreLoss, seasonRows,
   shoreUpRegion, strainRows, vaccineRows, type Profile,
 } from './progression';
+import { CASE_REGIONS } from './content/body';
 import { CASES } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
 import { createFront, hotCases, isRunLost, nodeOf, wallDays, wallStatus, type Front } from './front';
+import { CORE_ROADS } from './graph';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -157,6 +159,38 @@ describe('clearCase', () => {
     clearCase(fresh, requireCase(0).id, 9);
 
     expect(fresh).toEqual(createFreshProfile());
+  });
+
+  /**
+   * `cleared.length` is what the map divides by `CASE_REGIONS.length`, what the vaccine gates
+   * count and what the dock's unlock schedule reads. The core is defended, never held, so a won
+   * last stand must not enter that list — counted there it reads as an eleventh region out of ten
+   * and buys a gate step nothing earned. Where the win *is* recorded is the front.
+   */
+  it('does not count a won last stand as a region held', () => {
+    const fresh = createFreshProfile();
+    const reached: Profile = {
+      ...fresh,
+      front: { ...fresh.front, infected: [...CORE_ROADS, 'heart'] },
+    };
+
+    const after = clearCase(reached, 'heart', 3);
+    expect(after.cleared).not.toContain('heart');
+    expect(after.cleared.length).toBeLessThanOrEqual(CASE_REGIONS.length);
+    expect(after.front.held, 'nothing recorded that the last stand was won').toContain('heart');
+    expect(after.bank, 'the fight paid nothing').toBe(reached.bank + CASE_CLEAR_BANK);
+  });
+
+  /** The rally, through the door the app actually calls — see `holdCore` for why it is the rule. */
+  it('drives the sickness off the roads to the core when the last stand is won', () => {
+    const fresh = createFreshProfile();
+    const reached: Profile = {
+      ...fresh,
+      front: { ...fresh.front, infected: [...CORE_ROADS, 'heart'] },
+    };
+
+    const after = clearCase(reached, 'heart', 3);
+    for (const road of CORE_ROADS) expect(after.front.infected).not.toContain(road);
   });
 
   it('holds the region a cleared case was fought over', () => {

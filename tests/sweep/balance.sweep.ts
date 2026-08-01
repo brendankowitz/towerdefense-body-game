@@ -4,7 +4,7 @@ import { DEFENDERS } from '../../src/game/content/defenders';
 import { BOARD_WIDTH, TISSUE_PIPS } from '../../src/game/content/rules';
 import { dwellSeconds } from '../../src/game/coverage';
 import type { CaseId, DefenderKind } from '../../src/game/types';
-import { CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR } from './band';
+import { CEILING_EXEMPT, CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR, OFF_THE_CURVE } from './band';
 import { pushoverFailures, trendFailures, type SeasonCase } from './curve';
 import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoard';
 
@@ -52,18 +52,6 @@ import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoar
  * whole curve came down into the band together, stomach included.
  */
 const BAND_EXCEPTIONS: Partial<Record<CaseId, number>> = {};
-
-/**
- * The one case this sweep measures without gating: the heart. Every other case is entered at a
- * fixed, known point in the season — `clearedCount` cases cleared, that immunity, that dock — so
- * "every affordable board" is a real population of runs a player could actually be in. The last
- * stand has no such fixed point. It is reached by losing ground, not by clearing it, so the bank,
- * the immunity and even which cells are unlocked all vary with how the run that got there went —
- * the opposite of what this harness assumes about every other row. Measured anyway (the number is
- * printed below), because a rate is still worth seeing; asserted against Task 13's whole-run sweep
- * instead, which is the instrument that can actually see the run this case is fought at the end of.
- */
-const UNGATED: ReadonlySet<CaseId> = new Set(['heart']);
 
 interface SweepCase {
   readonly caseId: CaseId;
@@ -317,13 +305,15 @@ describe('affordable-board sweep', () => {
 
   it('clears every case at a rate a player can actually stumble into', () => {
     for (const result of results) {
-      if (UNGATED.has(result.caseId)) continue;
       const rate = result.clears / result.boards;
       const floor = BAND_EXCEPTIONS[result.caseId] ?? CLEAR_RATE_FLOOR;
       expect(
         rate,
         `${result.caseId} clears ${String(result.clears)} of ${String(result.boards)} boards — below the floor, so nobody finds a win`,
       ).toBeGreaterThanOrEqual(floor);
+      // The ceiling, and only the ceiling, has an exemption — whose members and whose reason are
+      // in `band.ts` beside the number they are exempt from.
+      if (CEILING_EXEMPT.has(result.caseId)) continue;
       expect(
         rate,
         `${result.caseId} clears ${String(result.clears)} of ${String(result.boards)} boards — above the ceiling, so the board is not a decision`,
@@ -333,13 +323,12 @@ describe('affordable-board sweep', () => {
 
   /**
    * Read through a function, not a const: `results` is only filled once `beforeAll` has run.
-   * The heart is dropped here for the same reason it is skipped above: the curve this measures is
-   * a season played case by case at a known point in progression, and the last stand is neither —
-   * its own rate would read as the season going easier at the very end, which is not what it is.
+   * What is dropped from the season here, and why that is a different decision from the ceiling
+   * exemption above rather than the same one twice, is `OFF_THE_CURVE` in `band.ts`.
    */
   const season = (): readonly SeasonCase[] =>
     results
-      .filter((result) => !UNGATED.has(result.caseId))
+      .filter((result) => !OFF_THE_CURVE.has(result.caseId))
       .map((result) => ({ caseId: result.caseId, rate: result.clears / result.boards }));
 
   /*

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { CASE_REGIONS } from '../../src/game/content/body';
 import { CASES, ruleLabels } from '../../src/game/content/cases';
-import { nodeOf } from '../../src/game/front';
+import { isLastStand, nodeOf } from '../../src/game/front';
 import { createFreshProfile, type Profile } from '../../src/game/progression';
 import type { CaseId } from '../../src/game/types';
 import { onScreen, openCase, placeCell, screen, seedProfile } from './helpers';
@@ -44,11 +45,21 @@ test('the map offers each case in turn as the ones before it are cleared', async
     await expect(page).toHaveURL(`/brief/${definition.id}`);
     await expect(screen(page).getByText(definition.region, { exact: true })).toBeVisible();
 
-    cleared.push(definition.id);
+    // The last stand is defended, never held: `clearCase` keeps it out of `cleared`, so a fixture
+    // that pushed it here would seed a run the game cannot produce — and the count below is the
+    // one the map gets wrong when it is counted.
+    if (!isLastStand(definition.id)) cleared.push(definition.id);
   }
 
+  /**
+   * Every region held reads as all ten of ten. Both sides are stated against `CASE_REGIONS`, the
+   * list the screen's own denominator is the length of, rather than against `CASES` — written as
+   * `CASES.length` on both sides this moved when the season gained an eleventh case and went on
+   * passing while the map said "11 / 10".
+   */
   await seedProfile(page, profileWith(cleared));
-  await expect(onScreen(page, 'held-count')).toHaveText(new RegExp(`^${String(CASES.length)} / `));
+  const held = String(CASE_REGIONS.length);
+  await expect(onScreen(page, 'held-count')).toHaveText(`${held} / ${held}`);
   await expect(onScreen(page, 'sleep')).toHaveText('Sleep');
 });
 

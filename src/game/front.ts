@@ -53,6 +53,16 @@ export function nodeOf(caseId: CaseId): BodyNodeId {
 }
 
 /**
+ * The one case fought on the core rather than over a region to hold. Asked through here rather
+ * than by comparing a node to `'heart'` at each call site, because every layer that has to know
+ * — what a win does to the front, what `cleared` counts, which copy the result sheet shows — is
+ * asking the same question and none of them should be able to answer it differently.
+ */
+export function isLastStand(caseId: CaseId): boolean {
+  return nodeOf(caseId) === 'heart';
+}
+
+/**
  * A fresh body, with one outbreak already at a door — the run opens on something happening to you
  * rather than on an empty map with nothing to do.
  */
@@ -113,6 +123,25 @@ export function holdRegion(front: Front, node: BodyNodeId): Front {
     held: front.held.includes(node) ? front.held : [...front.held, node],
     siege,
   };
+}
+
+/**
+ * The last stand won: the body takes the core, and the sickness is driven off every road to it.
+ *
+ * Winning clears more than the one node on purpose, and the reason is `stepsToCore('heart') === 0`.
+ * A sickness left standing on the roads is adjacent to the core every day after, and the core is
+ * always the closest thing to the core — so it would spend its whole turn on that one wall, take
+ * no other ground at all, break through, and hand the player the same fight again. The hardest
+ * case in the game would pay its clear reward on a loop while the front line stood still. Pushing
+ * it back off the roads means it has to take all of them again before it can so much as reach the
+ * heart, which is what makes a won last stand a reprieve rather than a revolving door.
+ *
+ * The roads come back cold, not held: the body drove the sickness off that ground, it did not win
+ * the cases fought over it. Holding them still costs the days it always did.
+ */
+export function holdCore(front: Front): Front {
+  const rallied = holdRegion(front, 'heart');
+  return { ...rallied, infected: rallied.infected.filter((node) => !CORE_ROADS.includes(node)) };
 }
 
 /**

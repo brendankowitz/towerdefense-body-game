@@ -12,6 +12,8 @@ interface ResultSheetProps {
   /** Pips remaining. On a loss the sheet reports the case total, not this wave's. */
   readonly tissue: number;
   readonly caseTitle: string;
+  /** The core, fought once at the end of a run: the only case whose result ends or spares it. */
+  readonly lastStand: boolean;
   readonly onPrimary: () => void;
   readonly onLeave: () => void;
 }
@@ -51,9 +53,13 @@ function copyFor(props: ResultSheetProps): Copy {
       };
     case 'case':
       return {
-        kicker: `${props.caseTitle.toUpperCase()} CLEARED`,
-        title: 'The region is yours.',
-        body: 'Tissue is closing on its own now. Immunity to this strain went up.',
+        kicker: props.lastStand ? 'THE CORE HELD' : `${props.caseTitle.toUpperCase()} CLEARED`,
+        title: props.lastStand ? 'The body rallied.' : 'The region is yours.',
+        body: props.lastStand
+          // What the win actually did to the map, said here because it is the one result in the
+          // game that changes more ground than the region it was fought over (`holdCore`).
+          ? 'The sickness is off the core and off every road to it. It has to take all of them again to come back.'
+          : 'Tissue is closing on its own now. Immunity to this strain went up.',
         cta: 'Back to the body',
         accent: palette.support.css,
         reward: `+${String(CASE_CLEAR_BANK)}`,
@@ -63,13 +69,23 @@ function copyFor(props: ResultSheetProps): Copy {
       };
     case 'lost':
       return {
-        kicker: `TISSUE FAILED · WAVE ${String(wave)}`,
-        title: 'It got into the blood.',
-        body: 'The region is lost for today. What you learned stays with you.',
-        cta: 'Come back tomorrow',
+        kicker: props.lastStand
+          ? `THE CORE FAILED · WAVE ${String(wave)}`
+          : `TISSUE FAILED · WAVE ${String(wave)}`,
+        title: props.lastStand ? 'The sickness reached the heart.' : 'It got into the blood.',
+        // The ordinary loss is a bad day and says so. The last stand is the end of the run, and
+        // the same words — a region lost "for today", a call to come back tomorrow — would
+        // promise a tomorrow the map is about to say does not exist. Stated as a fact, once,
+        // because that is all it is.
+        body: props.lastStand
+          ? 'This run is over. A new body starts from day one.'
+          : 'The region is lost for today. What you learned stays with you.',
+        cta: props.lastStand ? 'End the run' : 'Come back tomorrow',
         accent: palette.threat.css,
         reward: '0',
-        canLeave: true,
+        // No second way off a lost last stand: the run ended here, so "leave the region" is not a
+        // choice the player has, and offering it was how a lost run could be walked away from.
+        canLeave: !props.lastStand,
         // The wave figure is what made this sheet confusing in play: losing the last pip after
         // four earlier waves reported "1 got through", which reads as one leak ending the run.
         // The case total is the number that explains the loss.

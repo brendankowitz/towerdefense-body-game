@@ -2,8 +2,8 @@ import { CASES, CASE_BY_ID } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
 import {
-  caseAt, createFront, holdRegion, hotCases, loseCore, shoreUp, nodeOf, wallStatus,
-  type Front, type FrontRules,
+  caseAt, createFront, holdCore, holdRegion, hotCases, isLastStand, loseCore, shoreUp, nodeOf,
+  wallStatus, type Front, type FrontRules,
 } from './front';
 import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
@@ -46,18 +46,28 @@ export function createFreshProfile(): Profile {
  * Spending the day is deliberately not here: a clear and a loss both cost a day, and `endDay`
  * is the one place that charges it, so a caller always pairs this with that rather than getting
  * the day for free on a win.
+ *
+ * The last stand is the one case that is not a region: winning it takes the core back and drives
+ * the sickness off the roads (`holdCore`), and it never enters `cleared`. `cleared.length` is the
+ * count of ground the body holds — the map's numerator against `CASE_REGIONS`, the vaccine gates'
+ * counter, and the dock's unlock schedule — and the core is defended rather than held, so a heart
+ * in that list reads as an eleventh region out of ten and buys a gate step nothing earned. That
+ * the last stand was won is recorded where it is true: `front.held`.
  */
 export function clearCase(profile: Profile, caseId: CaseId, totalKills: number): Profile {
   const strain = CASE_BY_ID[caseId].credits;
+  const lastStand = isLastStand(caseId);
   return {
-    cleared: profile.cleared.includes(caseId) ? profile.cleared : [...profile.cleared, caseId],
+    cleared: lastStand || profile.cleared.includes(caseId)
+      ? profile.cleared
+      : [...profile.cleared, caseId],
     immunity: {
       ...profile.immunity,
       [strain]: Math.min(IMMUNITY_MAX, profile.immunity[strain] + 1),
     },
     bank: profile.bank + CASE_CLEAR_BANK,
     kills: totalKills,
-    front: holdRegion(profile.front, nodeOf(caseId)),
+    front: lastStand ? holdCore(profile.front) : holdRegion(profile.front, nodeOf(caseId)),
   };
 }
 

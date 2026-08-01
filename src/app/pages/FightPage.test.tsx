@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEffect } from 'react';
 import { act, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, useHistory, useLocation } from 'react-router-dom';
 import { CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '@game/content/defenders';
 import { endDay as gameEndDay } from '@game/front';
@@ -55,16 +56,29 @@ const PROFILE = createFreshProfile();
 /** Hand-driven animation frames, so a test decides how much time passes. */
 const frames: ((timestamp: number) => void)[] = [];
 
+/** The router's own history, so a test can leave a screen the way a browser's Back button does. */
+const routerHistoryRef: { current: ReturnType<typeof useHistory> | null } = { current: null };
+
 function LocationProbe() {
   const location = useLocation();
+  const history = useHistory();
+  useEffect(() => { routerHistoryRef.current = history; }, [history]);
   return <span data-testid="location">{location.pathname}</span>;
 }
 
-/** Renders and lets the profile load and the board's asynchronous start settle. */
-async function renderFight(path = `/play/${CASE.id}`): Promise<void> {
+/**
+ * Renders and lets the profile load and the board's asynchronous start settle. `entries` is the
+ * history the page is reached through — a second entry is what gives a test somewhere to go Back
+ * to, which is one of the ways a player leaves a fight.
+ */
+async function renderFight(
+  path = `/play/${CASE.id}`, entries: readonly string[] = [path],
+): Promise<void> {
   render(
     <ProfileProvider>
-      <MemoryRouter initialEntries={[path]}>
+      {/* `initialIndex` because the history package starts at the *first* entry: without it the
+          page a test asked for is the one it can only reach by going forward. */}
+      <MemoryRouter initialEntries={[...entries]} initialIndex={entries.length - 1}>
         <Route exact path="/play/:caseId" component={FightPage} />
         <Route component={LocationProbe} />
       </MemoryRouter>
@@ -80,21 +94,30 @@ function persistedProfile(): Profile {
   return stored.profile;
 }
 
-/** Runs a case to a loss with nothing built, takes the result's only action, and settles. */
-async function renderFightLost(): Promise<{ readonly profile: Profile }> {
-  await renderFight();
+/**
+ * Starts the wave and runs frames until the result sheet is up. With nothing built nothing can
+ * kill anything, so the result it arrives at is a loss — asserted by the tests that care rather
+ * than assumed here. The frame budget bounds the wait: a hang should fail, not stall the suite.
+ */
+function playToResult(): void {
   act(() => { screen.getByTestId('start-wave').click(); });
 
-  // The frame budget bounds the wait: a hang here should fail, not stall the suite.
   let seconds = 0;
   for (let frame = 0; frame < 4000 && screen.queryByTestId('result-cta') === null; frame += 1) {
     seconds += 1 / 30;
     tickFrame(seconds);
   }
-  const cta = screen.queryByTestId('result-cta');
-  if (cta === null) throw new Error('the case was expected to be lost with nothing built');
+  if (screen.queryByTestId('result-cta') === null) {
+    throw new Error(`no result after ${String(seconds)}s of simulation with nothing built`);
+  }
+}
 
-  act(() => { cta.click(); });
+/** Runs a case to a loss with nothing built, takes the result's only action, and settles. */
+async function renderFightLost(): Promise<{ readonly profile: Profile }> {
+  await renderFight();
+  playToResult();
+
+  act(() => { screen.getByTestId('result-cta').click(); });
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
   return { profile: persistedProfile() };
 }
@@ -489,21 +512,42 @@ describe('FightPage', () => {
    */
   it('marks the run lost, and keeps it lost, when the heart case is lost', async () => {
     await renderFight(`/play/${CASE_BY_ID.heart.id}`);
-    act(() => { screen.getByTestId('start-wave').click(); });
+    playToResult();
 
-    let seconds = 0;
-    for (let frame = 0; frame < 4000 && screen.queryByTestId('result-cta') === null; frame += 1) {
-      seconds += 1 / 30;
-      tickFrame(seconds);
-    }
-    const cta = screen.queryByTestId('result-cta');
-    if (cta === null) throw new Error('the heart case was expected to be lost with nothing built');
-
-    act(() => { cta.click(); });
+    act(() => { screen.getByTestId('result-cta').click(); });
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 
     expect(screen.getByTestId('location').textContent).toBe('/');
     expect(persistedProfile().front.lost).toBe(true);
+  });
+
+  /**
+   * Reported from review: the loss was recorded by the result sheet's primary button alone, so
+   * the *other* button on that same sheet — and browser Back, and any other way off the screen —
+   * left the run alive with the heart still in `infected` and still offered by `hotCases`. The
+   * ending was decided by which of two adjacent buttons was pressed.
+   *
+   * Back is the exit the sheet cannot take away, so it is the one this drives: the sheet's second
+   * button is gone now (`ResultSheet` sets `canLeave: false` for the last stand, asserted below),
+   * and a fix that only removed the button would leave this hole open.
+   */
+  it('marks the run lost when the last stand is left by Back rather than by the sheet', async () => {
+    await renderFight(`/play/${CASE_BY_ID.heart.id}`, ['/', `/play/${CASE_BY_ID.heart.id}`]);
+    playToResult();
+
+    act(() => { routerHistoryRef.current?.goBack(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(persistedProfile().front.lost).toBe(true);
+  });
+
+  it('offers no way off a lost last stand except the one that ends the run', async () => {
+    await renderFight(`/play/${CASE_BY_ID.heart.id}`);
+    playToResult();
+
+    expect(screen.queryByTestId('result-leave')).not.toBeInTheDocument();
+    expect(screen.getByTestId('result-cta').textContent).toBe('End the run');
   });
 
   it('holds the region and ends the day when a case is cleared', async () => {

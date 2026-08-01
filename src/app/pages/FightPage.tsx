@@ -5,6 +5,7 @@ import {
   advanceToNextWave, placeDefender, selectDefender, startWave, toggleSpeed, triggerFever,
 } from '@game/commands';
 import { CASES, CASE_BY_ID, ruleLabels } from '@game/content/cases';
+import { isLastStand } from '@game/front';
 import { GameLoop } from '@game/loop';
 import { blocksAmnesia, type Profile } from '@game/progression';
 import { createSimState } from '@game/state';
@@ -93,6 +94,30 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
   const definition = CASE_BY_ID[caseId];
   const buildPhase = hud.phase === 'build' || hud.phase === 'built';
   const region = definition.region.split(' · ')[0] ?? definition.region;
+  const lastStand = isLastStand(caseId);
+
+  /**
+   * Losing the last stand is remembered on the way *out* of this screen, whichever way that is.
+   * The result sheet's action, the browser's Back button and any client-side push all unmount the
+   * fight, and all of them have to mean the same thing — a loss recorded by one button is a run
+   * that ends only if the player presses that button, which is exactly what the sheet's own
+   * "Leave the region" control walked away from with the heart still fightable.
+   *
+   * On the way out rather than the moment the result lands, because `RequireLiveRun` redirects a
+   * lost run off this route: recording it any earlier would take the sheet that announces the
+   * ending off the screen before it could be read.
+   */
+  const lastStandLost = useRef(false);
+  useEffect(() => {
+    if (lastStand && hud.result === 'lost') lastStandLost.current = true;
+  }, [lastStand, hud.result]);
+
+  // `recordLoss` is a new closure on every profile change, so the cleanup below is written
+  // against a ref instead: depending on the callback itself would fire it on the next save
+  // rather than on the way out.
+  const recordLossRef = useRef(recordLoss);
+  useEffect(() => { recordLossRef.current = recordLoss; }, [recordLoss]);
+  useEffect(() => () => { if (lastStandLost.current) recordLossRef.current(); }, []);
 
   /**
    * A day is spent once the fight has begun, not once it is resolved. Reading the brief and
@@ -126,11 +151,8 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         history.push('/');
         return;
       case 'lost':
-        // Every other case can be lost and tried again the next day for free — the region just
-        // stays hot. The heart cannot: losing the last stand is the run's only bad ending, and
-        // `recordLoss` is what makes that permanent rather than one more day the sickness steps
-        // past.
-        if (definition.node === 'heart') recordLoss();
+        // No branch for the heart here on purpose: every exit from a lost last stand records it,
+        // and this is only one of them (see `lastStandLost` above).
         leaveFight();
         return;
       case null:
@@ -244,6 +266,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
               leaks={hud.waveLeaks}
               tissue={hud.tissue}
               caseTitle={definition.title}
+              lastStand={lastStand}
               onPrimary={onResultPrimary}
               onLeave={leaveFight}
             />

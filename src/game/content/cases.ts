@@ -493,10 +493,11 @@ export const CASES: readonly CaseDefinition[] = [
     // into it — `content/body.ts` marks the core, never a door — so the fiction and the mechanic
     // agree: nothing about a systemic infection arrives from one place, and neither does this one.
     //
-    // **No door, so no entry-and-exit pair to share.** Every other case's pair is spoken for
-    // (`2026-07-31-season-shape-review.md` §5's table), which is what is left once a case has no
-    // door of its own: the vessel runs in and out through the same edge, a loop through the
-    // middle rather than a crossing, which nothing else in the season does.
+    // **No door, so nowhere outside for the vessel to cross from.** It enters and leaves through
+    // the same edge, looping through the middle. Same-edge is not itself new — the stomach runs
+    // top→top and the blister bottom→bottom (`2026-07-31-season-shape-review.md` §5's table) —
+    // but the *pair* is, and a pair no other case has is what §5 actually asks for: right→right
+    // was one of the six still free.
     //
     // **Five spots by profile, against vesper** — the case this one most resembles in what it
     // asks: a novel, unmarkable strain that has to be fought at short range because the dock's

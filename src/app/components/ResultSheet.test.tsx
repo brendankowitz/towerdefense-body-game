@@ -14,9 +14,13 @@ const base = {
   leaks: 1,
   tissue: TISSUE_PIPS,
   caseTitle: 'Deep cut',
+  lastStand: false,
   onPrimary: () => undefined,
   onLeave: () => undefined,
 };
+
+/** The core's own sheet, which is a different result to announce — see `copyFor`. */
+const lastStand = { ...base, caseTitle: 'The last stand', lastStand: true };
 
 describe('ResultSheet', () => {
   /**
@@ -66,19 +70,47 @@ describe('ResultSheet', () => {
     expect(screen.getByTestId('result-cta').textContent).toBe('Come back tomorrow');
   });
 
+  /**
+   * The one result in the game that is not about a region and not about today. Written out here
+   * rather than asserted as "not the ordinary copy", because what it must not do is specific:
+   * losing the run used to be announced as a region lost "for today" under a button reading
+   * "Come back tomorrow", one tap from a map that says the run is over.
+   */
+  it('announces the end of the run on a lost last stand, rather than a bad day', () => {
+    render(<ResultSheet {...lastStand} result="lost" waveIndex={4} />);
+    expect(screen.getByTestId('result-kicker').textContent).toBe('THE CORE FAILED · WAVE 5');
+    expect(screen.getByTestId('result-title').textContent).toBe('The sickness reached the heart.');
+    expect(screen.getByTestId('result-cta').textContent).toBe('End the run');
+    expect(screen.getByTestId('result-cta').textContent).not.toBe('Come back tomorrow');
+  });
+
+  it('offers no second way out of a lost last stand, the way a cleared case offers none', () => {
+    render(<ResultSheet {...lastStand} result="lost" />);
+    expect(screen.queryByTestId('result-leave')).not.toBeInTheDocument();
+  });
+
+  it('says what winning the last stand did to the map, which is more than the core', () => {
+    render(<ResultSheet {...lastStand} result="case" />);
+    expect(screen.getByTestId('result-kicker').textContent).toBe('THE CORE HELD');
+    expect(screen.getByTestId('result-title').textContent).toBe('The body rallied.');
+    expect(screen.getByTestId('result-cta').textContent).toBe('Back to the body');
+  });
+
   it('reports what the wave cost, both ways', () => {
     render(<ResultSheet {...base} result="wave" kills={17} leaks={2} />);
     expect(screen.getByTestId('result-kills').textContent).toBe('17');
     expect(screen.getByTestId('result-leaks').textContent).toBe('2');
   });
 
-  it('uses no exclamation marks and no emoji anywhere', () => {
-    for (const result of RESULTS) {
-      const { container, unmount } = render(<ResultSheet {...base} result={result} />);
-      const text = container.textContent;
-      expect(text).not.toMatch(/!/);
-      expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
-      unmount();
+  it('uses no exclamation marks and no emoji anywhere, the last stand\'s own copy included', () => {
+    for (const props of [base, lastStand]) {
+      for (const result of RESULTS) {
+        const { container, unmount } = render(<ResultSheet {...props} result={result} />);
+        const text = container.textContent;
+        expect(text).not.toMatch(/!/);
+        expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+        unmount();
+      }
     }
   });
 

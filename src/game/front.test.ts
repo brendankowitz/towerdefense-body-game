@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import {
-  createFront, endDay, holdRegion, hotCases, isCoreBesieged, isRunLost, isRunWon, loseCore,
-  seedOutbreak, shoreUp, stateOf, stepSickness, wallDays, wallStatus, type Front,
+  createFront, endDay, holdCore, holdRegion, hotCases, isCoreBesieged, isLastStand, isRunLost,
+  isRunWon, loseCore, seedOutbreak, shoreUp, stateOf, stepSickness, wallDays, wallStatus,
+  type Front,
 } from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
 import type { StrainId } from './types';
@@ -295,16 +296,59 @@ describe('holding and losing the body', () => {
     expect(isRunLost(loseCore(reached))).toBe(true);
   });
 
+  /** A won last stand, and the ground it was fought from: every road taken, plus a door elsewhere. */
+  function coreReached(): Front {
+    return {
+      infected: [...CORE_ROADS, 'heart', 'footL'], held: [], siege: {}, day: 9, rngState: 1,
+      lost: false,
+    };
+  }
+
   /**
-   * Winning the heart case does not clear the roads — it puts the player on the core, which the
-   * sickness then has to break like any other wall. One rule, reused, and it means the last stand
-   * buys time rather than resetting the campaign.
+   * Winning the last stand puts the body on the core and drives the sickness off every road to
+   * it. Ground it holds anywhere else is untouched — the body rallied at the core, it did not win
+   * the season, and the roads come back cold rather than held because nobody won the cases fought
+   * over them.
    */
-  it('turns a won heart case into a wall the sickness has to break again', () => {
-    const besieged: Front = { infected: [...CORE_ROADS, 'heart'], held: [], siege: {}, day: 9, rngState: 1, lost: false };
-    const after = holdRegion(besieged, 'heart');
+  it('drives the sickness off every road to the core when the last stand is won', () => {
+    const after = holdCore(coreReached());
+
+    expect(after.held).toEqual(['heart']);
+    expect(after.infected).not.toContain('heart');
+    for (const road of CORE_ROADS) {
+      expect(after.infected, `the sickness still holds ${road} after the body rallied`)
+        .not.toContain(road);
+      expect(stateOf(after, road)).toBe('cold');
+    }
+    expect(after.infected, 'the rally took ground it was never fought over').toContain('footL');
     expect(isRunLost(after)).toBe(false);
-    expect(after.held).toContain('heart');
+  });
+
+  /**
+   * The reason winning clears more than the one node, stated as the thing that would otherwise
+   * happen: `stepsToCore('heart')` is 0, so a sickness left standing on the roads picks the core
+   * over everything else every day, breaks the wall, and hands back the same fight — with the
+   * clear reward paid again each time round. Having to retake the roads first is what makes a won
+   * last stand a reprieve rather than a loop.
+   */
+  it('cannot be besieged again the day after the last stand is won', () => {
+    let front = holdCore(coreReached());
+
+    for (let day = 0; day < CORE_ROADS.length; day += 1) {
+      front = endDay(front, NO_IMMUNITY);
+      expect(isCoreBesieged(front), `the core was besieged again ${String(day + 1)} days after the rally`)
+        .toBe(false);
+      expect(front.infected, 'the sickness was back on the core').not.toContain('heart');
+      expect(hotCases(front), 'the last stand was offered again').not.toContain('heart');
+      expect(front.siege.heart, 'the core wall was being knocked on with a road still open')
+        .toBeUndefined();
+      expect(front.held, 'the body lost the core without a fight').toContain('heart');
+    }
+  });
+
+  it('names the last stand as the one case fought on the core', () => {
+    expect(isLastStand('heart')).toBe(true);
+    expect(isLastStand('forearm')).toBe(false);
   });
 
   it('adds a day to a wall when a region is shored up', () => {
