@@ -73,6 +73,28 @@ test('leaving through the header after a wave has started still spends the day',
   await expect(screen(page).getByText('DAY 2 · MORNING', { exact: true })).toBeVisible();
 });
 
+/**
+ * Reported from re-review: the map stopped offering the day's choices once the run was lost, but
+ * nothing at the route level asked the same question. A player whose body was gone could still
+ * reach a fight through browser Back to a brief visited earlier, or by typing either URL directly.
+ * Driven the way a player actually would — a fresh navigation to the URL, not a client-side push —
+ * because that is exactly what typing a URL or restoring a bookmark does, and what the earlier
+ * hole let through.
+ */
+test('a lost run cannot be reached by URL — the brief and the fight both send it back to the map', async ({ page }) => {
+  const fresh = createFreshProfile();
+  const lost: Profile = { ...fresh, front: { ...fresh.front, infected: ['heart'] } };
+  await seedProfile(page, lost);
+
+  await page.goto('/play/forearm');
+  await expect(page).toHaveURL('/');
+  await expect(onScreen(page, 'run-lost')).toBeVisible();
+
+  await page.goto('/brief/forearm');
+  await expect(page).toHaveURL('/');
+  await expect(onScreen(page, 'run-lost')).toBeVisible();
+});
+
 for (const definition of CASES) {
   test(`${definition.id}: a cell can be placed and its wave started`, async ({ page }) => {
     await openCase(page, definition.id);
