@@ -20,7 +20,6 @@ export interface VaccineDefinition {
    * that can be earned now.
    */
   readonly later?: true;
-  readonly cost?: string;
 }
 
 export const VACCINES: readonly VaccineDefinition[] = [
@@ -28,10 +27,12 @@ export const VACCINES: readonly VaccineDefinition[] = [
   { name: 'Tetanus', strain: 'staph', tier: 1, effect: 'In a wound, the first Staph of every wave bounces off' },
   { name: 'Flu B', strain: 'virus', tier: 1, effect: 'Flu no longer splits when it dies' },
   { name: 'Biofilm serum', strain: 'film', tier: 1, effect: 'Armour drops — phagocytes bite properly' },
-  { name: 'Measles, mumps, rubella', gate: 2, tier: 2, effect: 'Blocks the immune-amnesia wipe entirely', cost: 'Costs a day you don’t fight' },
-  // Shipped with `gate: 99` against a maximum of three clears: permanently LOCKED, quoting a case
-  // type that does not exist. It is on the schedule, not behind a gate, and now says so.
-  { name: 'Chickenpox', later: true, tier: 2, effect: 'Stops a cleared case reopening later' },
+  { name: 'Measles, mumps, rubella', gate: 2, tier: 2, effect: 'Blocks the immune-amnesia wipe entirely' },
+  // Earned like MMR, not deferred like Strain Vesper: `wallsCannotFall` in `front.ts` is the rule
+  // this row promises, so there is a gate to reach rather than a build still to finish. Gated
+  // later than MMR on purpose — the header's "earned, never bought" reads differently for a row
+  // that a short run may never live to see than for one two clears away.
+  { name: 'Chickenpox', gate: 8, tier: 2, effect: 'Stops a cleared case reopening' },
   { name: 'Strain Vesper', tier: 3, effect: 'No vaccine exists yet — this one you fight raw' },
 ];
 

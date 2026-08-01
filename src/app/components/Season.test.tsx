@@ -13,11 +13,11 @@ const season: readonly SeasonRow[] = [
 ];
 
 const vaccines: readonly VaccineRow[] = [
-  { name: 'Tetanus', effect: 'First Staph of every wave bounces off', cost: '', label: 'HELD', status: 'held' },
-  { name: 'Flu B', effect: 'Flu no longer splits when it dies', cost: '', label: '1/3', status: 'progress' },
-  { name: 'Measles, mumps, rubella', effect: 'Blocks the immune-amnesia wipe entirely', cost: 'Costs a day you don’t fight', label: 'AVAILABLE', status: 'available' },
-  { name: 'Chickenpox', effect: 'Stops a cleared case reopening later', cost: 'Survive a dormancy case first', label: 'LOCKED', status: 'locked' },
-  { name: 'Strain Vesper', effect: 'No vaccine exists yet — this one you fight raw', cost: '', label: 'NONE EXISTS', status: 'none' },
+  { name: 'Tetanus', effect: 'First Staph of every wave bounces off', label: 'HELD', status: 'held' },
+  { name: 'Flu B', effect: 'Flu no longer splits when it dies', label: '1/3', status: 'progress' },
+  { name: 'Measles, mumps, rubella', effect: 'Blocks the immune-amnesia wipe entirely', label: 'AVAILABLE', status: 'available' },
+  { name: 'Chickenpox', effect: 'Stops a cleared case reopening', label: 'LOCKED', status: 'locked' },
+  { name: 'Strain Vesper', effect: 'No vaccine exists yet — this one you fight raw', label: 'NONE EXISTS', status: 'none' },
 ];
 
 const noop = () => undefined;
@@ -76,13 +76,6 @@ describe('Season', () => {
     expect(rows.map((r) => r.getAttribute('data-status'))).toEqual([
       'held', 'progress', 'available', 'locked', 'none',
     ]);
-  });
-
-  it('shows a cost line only for vaccines that carry one', () => {
-    render(<Season season={season} vaccines={vaccines} onImmunityClick={noop} onMapClick={noop} />);
-    const rows = screen.getAllByTestId('vaccine-row');
-    expect(rows[0]?.querySelector('.row-cost')).toBeNull();
-    expect(rows[2]?.querySelector('.row-cost')?.textContent).toBe('Costs a day you don’t fight');
   });
 
   it('says vaccines are earned, never bought', () => {

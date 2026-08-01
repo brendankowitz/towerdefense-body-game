@@ -6,7 +6,7 @@ import {
 } from '@game/commands';
 import { CASES, CASE_BY_ID, ruleLabels } from '@game/content/cases';
 import { GameLoop } from '@game/loop';
-import type { Profile } from '@game/progression';
+import { blocksAmnesia, type Profile } from '@game/progression';
 import { createSimState } from '@game/state';
 import type { CaseId, SimState } from '@game/types';
 import type { BoardRenderer } from '@render/BoardRenderer';
@@ -33,6 +33,7 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
     clearedCount: profile.cleared.length,
     day: profile.front.day,
     totalKills: profile.kills,
+    blocksAmnesia: blocksAmnesia(profile),
   }));
 }
 

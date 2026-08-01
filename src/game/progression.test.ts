@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clearCase, createFreshProfile, nextCaseId, seasonRows, shoreUpRegion, strainRows, vaccineRows,
-  type Profile,
+  blocksAmnesia, clearCase, createFreshProfile, frontRules, nextCaseId, seasonRows, shoreUpRegion,
+  strainRows, vaccineRows, type Profile,
 } from './progression';
 import { CASES } from './content/cases';
 import { LATER } from './content/later';
@@ -276,51 +276,58 @@ describe('vaccineRows', () => {
         const open = count >= gate;
         expect(row?.status).toBe(open ? 'available' : 'locked');
         expect(row?.label).toBe(open ? 'AVAILABLE' : 'LOCKED');
-        expect(row?.cost).toBe(vaccine.cost ?? '');
       }
     });
   });
 
-  it('says so plainly when no vaccine exists, and quotes no cost for it', () => {
+  it('says so plainly when no vaccine exists', () => {
     VACCINES.forEach((vaccine, index) => {
       if (vaccine.strain !== undefined || vaccine.gate !== undefined || vaccine.later === true) return;
 
       const row = vaccineRows(profileWith({ cleared: clearedIds(CASES.length) }))[index];
       expect(row?.status).toBe('none');
       expect(row?.label).toBe('NONE EXISTS');
-      expect(row?.cost).toBe('');
     });
   });
+});
 
-  /**
-   * The Chickenpox row shipped as `gate: 99` against a maximum of three clears, so it read LOCKED
-   * whatever the player did — the same broken promise as the Biofilm serum that could never be
-   * earned. A deferred row must never move, however much of the season is finished.
-   */
-  it('never lets a deferred vaccine look like something the player is failing to unlock', () => {
-    const deferred = VACCINES.map((vaccine, index) => ({ vaccine, index }))
-      .filter(({ vaccine }) => vaccine.later === true);
-    expect(deferred.length, 'no vaccine is deferred, so this asserts nothing').toBeGreaterThan(0);
+/**
+ * MMR earned, stated as a fact rather than a purchase: nothing here is bought, so the only
+ * question a vaccine can answer is whether its gate has been reached yet.
+ */
+describe('blocksAmnesia', () => {
+  const mmrGate = VACCINES.find((vaccine) => vaccine.name === 'Measles, mumps, rubella')?.gate;
 
-    for (let count = 0; count <= CASES.length; count += 1) {
-      const rows = vaccineRows(profileWith({ cleared: clearedIds(count) }));
-      for (const { vaccine, index } of deferred) {
-        expect(rows[index]?.status, `${vaccine.name} at ${String(count)} clears`).toBe('later');
-        expect(rows[index]?.label).toBe('LATER');
-        expect(rows[index]?.label).not.toBe('LOCKED');
-      }
-    }
+  it('is not yet true short of MMR\'s gate', () => {
+    if (mmrGate === undefined) throw new Error('MMR carries no gate to test against');
+    const profile = profileWith({ cleared: clearedIds(mmrGate - 1) });
+    expect(blocksAmnesia(profile)).toBe(false);
   });
 
-  it('carries the stated cost through and leaves it empty where content states none', () => {
-    // Both shapes have to be present or this asserts nothing about the empty case.
-    expect(VACCINES.some((vaccine) => vaccine.cost !== undefined)).toBe(true);
-    expect(VACCINES.some((vaccine) => vaccine.cost === undefined)).toBe(true);
+  it('applies the amnesia block once its gate is reached, without being bought', () => {
+    const profile = { ...createFreshProfile(), cleared: CASES.slice(0, 2).map((c) => c.id) };
+    expect(blocksAmnesia(profile)).toBe(true);
+  });
+});
 
-    const rows = vaccineRows(profileWith({ cleared: clearedIds(CASES.length) }));
-    VACCINES.forEach((vaccine, index) => {
-      expect(rows[index]?.cost).toBe(vaccine.cost ?? '');
-    });
+/**
+ * Chickenpox, the same shape one layer down: `frontRules` is what `front.ts` is handed instead of
+ * a profile, so this is the one place that proves the fact it computes actually tracks the gate
+ * the season screen shows.
+ */
+describe('frontRules', () => {
+  const chickenpoxGate = VACCINES.find((vaccine) => vaccine.name === 'Chickenpox')?.gate;
+
+  it('leaves walls fallible short of the gate', () => {
+    if (chickenpoxGate === undefined) throw new Error('Chickenpox carries no gate to test against');
+    const profile = profileWith({ cleared: clearedIds(chickenpoxGate - 1) });
+    expect(frontRules(profile)).toEqual({ wallsCannotFall: false });
+  });
+
+  it('stops walls falling once Chickenpox is earned', () => {
+    if (chickenpoxGate === undefined) throw new Error('Chickenpox carries no gate to test against');
+    const profile = profileWith({ cleared: clearedIds(chickenpoxGate) });
+    expect(frontRules(profile)).toEqual({ wallsCannotFall: true });
   });
 });
 

@@ -2,7 +2,7 @@ import { CASES, CASE_BY_ID } from './content/cases';
 import { LATER } from './content/later';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, holdRegion, shoreUp, nodeOf, type Front } from './front';
+import { createFront, holdRegion, shoreUp, nodeOf, type Front, type FrontRules } from './front';
 import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
 /** Everything a run carries between cases. The simulation reads it; only this module writes it. */
@@ -83,6 +83,32 @@ export function shoreUpRegion(profile: Profile, node: BodyNodeId): Profile {
   };
 }
 
+/** The one row in `VACCINES` each gated effect answers to, found by the name the season shows it under. */
+function gateOf(name: string): number | undefined {
+  return VACCINES.find((vaccine) => vaccine.name === name)?.gate;
+}
+
+/**
+ * MMR's whole effect: past its gate, the amnesia wipe `createSimState` would otherwise apply does
+ * not happen. Reading the gate straight off `VACCINES` is what keeps this and the AVAILABLE label
+ * `vaccineRows` shows for the same row from ever disagreeing about when the block starts — there
+ * is no second number here to fall out of step with the one the player sees.
+ */
+export function blocksAmnesia(profile: Profile): boolean {
+  const gate = gateOf('Measles, mumps, rubella');
+  return gate !== undefined && profile.cleared.length >= gate;
+}
+
+/**
+ * The rules a day's sickness plays under, decided here because this is the layer that knows a
+ * gate from a vaccine — `front.ts` only ever receives the fact `wallsCannotFall` it needs to act
+ * on, never the vaccine, the gate or the profile that earned it.
+ */
+export function frontRules(profile: Profile): FrontRules {
+  const gate = gateOf('Chickenpox');
+  return { wallsCannotFall: gate !== undefined && profile.cleared.length >= gate };
+}
+
 export interface StrainRow {
   readonly key: StrainId;
   readonly name: string;
@@ -110,7 +136,6 @@ export type VaccineStatus = 'held' | 'progress' | 'available' | 'locked' | 'late
 export interface VaccineRow {
   readonly name: string;
   readonly effect: string;
-  readonly cost: string;
   readonly label: string;
   readonly status: VaccineStatus;
 }
@@ -134,14 +159,7 @@ export function vaccineRows(profile: Profile): readonly VaccineRow[] {
       label = status === 'available' ? 'AVAILABLE' : 'LOCKED';
     }
 
-    // Only the gated vaccines carry a cost; content decides that, so the row just passes it on.
-    return {
-      name: vaccine.name,
-      effect: vaccine.effect,
-      cost: vaccine.cost ?? '',
-      label,
-      status,
-    };
+    return { name: vaccine.name, effect: vaccine.effect, label, status };
   });
 }
 

@@ -108,6 +108,38 @@ describe('the sickness takes one step a day', () => {
   });
 });
 
+/**
+ * Chickenpox's whole effect, exercised on `stepSickness` and `endDay` directly rather than through
+ * a profile — `front.ts` never knows a vaccine exists, only the fact `wallsCannotFall` it was
+ * handed, so that is the only thing these tests give it.
+ */
+describe('Chickenpox: walls that cannot fall', () => {
+  it('never lets held ground come under siege at all', () => {
+    const before: Front = { infected: ['stomach'], held: ['gut'], siege: {}, day: 1, rngState: 1 };
+    const after = stepSickness(before, NO_IMMUNITY, { wallsCannotFall: true });
+
+    expect(after.siege.gut, 'a wall started under a rule that says none can').toBeUndefined();
+    expect(after.held).toContain('gut');
+    expect(after.infected).toEqual(before.infected);
+  });
+
+  it('keeps a wall from falling even once its days would have run out', () => {
+    const under: Front = { infected: ['stomach'], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1 };
+    const after = stepSickness(under, NO_IMMUNITY, { wallsCannotFall: true });
+
+    expect(after.held).toContain('gut');
+    expect(after.infected).not.toContain('gut');
+  });
+
+  it('forwards the same rule through endDay', () => {
+    const under: Front = { infected: ['stomach'], held: ['gut'], siege: { gut: 0 }, day: 1, rngState: 1 };
+    const after = endDay(under, NO_IMMUNITY, { wallsCannotFall: true });
+
+    expect(after.held).toContain('gut');
+    expect(after.infected).not.toContain('gut');
+  });
+});
+
 describe('new outbreaks open doors', () => {
   it('opens nothing on a day that is not a seeding day', () => {
     const front: Front = { infected: ['footL'], held: [], siege: {}, day: 1, rngState: 3 };

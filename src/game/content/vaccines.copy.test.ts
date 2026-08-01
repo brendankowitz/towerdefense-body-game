@@ -46,6 +46,21 @@ function bouncesStaph(caseId: CaseId): boolean {
   return state.enemies.length === 0;
 }
 
+/**
+ * The season screen's own header: EARNED, NEVER BOUGHT. MMR used to carry a `cost` field, and
+ * Chickenpox a promise nothing in the simulation performed — both broke the rule the header
+ * states. `'cost' in vaccine` rather than `vaccine.cost` because `VaccineDefinition` no longer
+ * declares the field at all: the fix is that a cost cannot be typed onto a row here again, not
+ * merely that today's rows happen not to have one.
+ */
+describe('vaccines are earned, never bought', () => {
+  it('never asks the player to buy a vaccine, in any row', () => {
+    for (const vaccine of VACCINES) {
+      expect('cost' in vaccine, `${vaccine.name} still carries a price`).toBe(false);
+    }
+  });
+});
+
 describe('the Tetanus shield', () => {
   const shieldedCase = CASES.find((definition) => caseHasRule(definition, SHIELDED_RULE));
   const otherCase = CASES.find((definition) => !caseHasRule(definition, SHIELDED_RULE));

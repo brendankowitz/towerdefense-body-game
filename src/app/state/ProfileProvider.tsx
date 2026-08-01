@@ -2,7 +2,9 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react';
 import { endDay as advanceFront } from '@game/front';
-import { clearCase, createFreshProfile, shoreUpRegion, type Profile } from '@game/progression';
+import {
+  clearCase, createFreshProfile, frontRules, shoreUpRegion, type Profile,
+} from '@game/progression';
 import { createProgressRepository } from '@progress/createProgressRepository';
 import type { BodyNodeId, CaseId } from '@game/types';
 
@@ -75,14 +77,16 @@ export function ProfileProvider({ children }: { readonly children: ReactNode }) 
       // is not held — that identity is how it says "nothing happened", and nothing happened is
       // the one case reinforcing must not charge a day for.
       if (shored === profileRef.current) return;
-      persist({ ...shored, front: advanceFront(shored.front, shored.immunity) });
+      persist({ ...shored, front: advanceFront(shored.front, shored.immunity, frontRules(shored)) });
     },
     // The sickness's whole turn: what a cleared case, a lost case and a reinforced wall all
     // spend one of, and what an idle day spends on its own when nothing needs the player.
     endDay: () => {
       persist({
         ...profileRef.current,
-        front: advanceFront(profileRef.current.front, profileRef.current.immunity),
+        front: advanceFront(
+          profileRef.current.front, profileRef.current.immunity, frontRules(profileRef.current),
+        ),
       });
     },
     resetRun: () => { persist(createFreshProfile()); },

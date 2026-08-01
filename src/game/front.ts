@@ -134,13 +134,25 @@ export function isRunWon(front: Front): boolean {
 }
 
 /**
+ * A fact about the day's rules, handed in rather than looked up — `front.ts` is the pure siege
+ * layer and has no way to know a vaccine, a gate or a profile exists. Whoever calls `stepSickness`
+ * or `endDay` is the one who knows whether either is true, and decides by passing this in.
+ */
+export interface FrontRules {
+  /** Chickenpox: held ground cannot be besieged at all. Earned, so it arrives late or never. */
+  readonly wallsCannotFall: boolean;
+}
+
+const ORDINARY_RULES: FrontRules = { wallsCannotFall: false };
+
+/**
  * The sickness's whole turn, and deliberately one step however many fronts it has: the day is
  * one-for-one with the player's, so a run is a race rather than a rout. It steps wherever it is
  * closest to the core, which makes it predictable — a player can see which fire is about to get
  * worse and plan against it, and that is the difference between pressure and harassment.
  */
 export function stepSickness(
-  front: Front, immunity: Readonly<Record<StrainId, number>>,
+  front: Front, immunity: Readonly<Record<StrainId, number>>, rules: FrontRules = ORDINARY_RULES,
 ): Front {
   // The core is zero steps from the core, so sorting by distance alone would walk onto the heart
   // the moment one road fell — and the campaign this whole layer is built on would never happen.
@@ -153,6 +165,10 @@ export function stepSickness(
     .flatMap((from) => neighboursOf(from).map((to) => ({ from, to })))
     .filter(({ to }) => !front.infected.includes(to))
     .filter(({ to }) => !(coreOpen && to === 'heart'))
+    // Chickenpox: dropped from the candidates entirely rather than stopped once chosen, so held
+    // ground never even starts a siege — the vaccine's promise is that it cannot fall, not that
+    // it falls slower.
+    .filter(({ to }) => !(rules.wallsCannotFall && front.held.includes(to)))
     .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
 
   const move = options[0];
@@ -214,8 +230,10 @@ export function seedOutbreak(
 export const MAX_DOOR_RESISTANCE = Math.min(1, IMMUNITY_MAX * DOOR_RESIST_PER_CLEAR);
 
 /** The sickness's whole day: it takes its step, then something new may get in. */
-export function endDay(front: Front, immunity: Readonly<Record<StrainId, number>>): Front {
-  const stepped = stepSickness(front, immunity);
+export function endDay(
+  front: Front, immunity: Readonly<Record<StrainId, number>>, rules: FrontRules = ORDINARY_RULES,
+): Front {
+  const stepped = stepSickness(front, immunity, rules);
   const advanced = { ...stepped, day: stepped.day + 1 };
   return seedOutbreak(advanced, immunity);
 }

@@ -83,7 +83,6 @@ export function Season({ season, vaccines, onImmunityClick, onMapClick }: Season
               <div className="row-text">
                 <span className="row-name">{vaccine.name}</span>
                 <span className="row-note">{vaccine.effect}</span>
-                {vaccine.cost !== '' && <span className="mono row-cost">{vaccine.cost}</span>}
               </div>
               <span className="mono vaccine-status">{vaccine.label}</span>
             </div>

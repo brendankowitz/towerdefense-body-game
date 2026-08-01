@@ -13,11 +13,17 @@ export interface SimInput {
   /** See `SimState.day`. */
   readonly day: number;
   readonly totalKills: number;
+  /**
+   * MMR, earned: once its gate is reached, the amnesia wipe below never runs. Optional so every
+   * fixture written before MMR existed keeps building the ordinary, un-blocked case it always did.
+   */
+  readonly blocksAmnesia?: boolean;
 }
 
 /**
  * The amnesia rule, and the whole of it: one strain the profile earned reads as zero for the
- * length of this case.
+ * length of this case — unless MMR has blocked the rule entirely, which is the vaccine's whole
+ * effect and the only thing it does.
  *
  * Applied here rather than at each of the three places an immunity is read — the tetanus bounce in
  * `applySpawn`, the suppressed split in `splitOnDeath`, the dropped armour in `armourMultiplier`.
@@ -32,8 +38,9 @@ export interface SimInput {
 function immunityFor(
   immunity: Readonly<Record<StrainId, number>>,
   wipes: StrainId | undefined,
+  blocked: boolean,
 ): Readonly<Record<StrainId, number>> {
-  return wipes === undefined ? immunity : { ...immunity, [wipes]: 0 };
+  return wipes === undefined || blocked ? immunity : { ...immunity, [wipes]: 0 };
 }
 
 /**
@@ -54,7 +61,7 @@ export function createSimState(input: SimInput): SimState {
     caseId: definition.id,
     rules: definition.rules.map((rule) => rule.kind),
     path: compilePath(definition.path),
-    immunity: immunityFor(input.immunity, definition.wipes),
+    immunity: immunityFor(input.immunity, definition.wipes, input.blocksAmnesia === true),
     clearedCount: input.clearedCount,
     day: input.day,
 
