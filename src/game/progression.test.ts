@@ -262,6 +262,29 @@ describe('shoreUpRegion', () => {
     expect(profile).toEqual(before);
   });
 
+  /**
+   * The bank is the other thing this can fail on, and until now nothing here checked it — the
+   * only guard was a render-time condition deciding whether the map drew the buttons, and the map
+   * draws one per held wall off a synchronously written profile, so two taps landing before the
+   * re-render spent twice. The identity of the returned profile is load-bearing: it is how
+   * `ProfileProvider` knows nothing happened and so must not spend the day either.
+   */
+  it('changes nothing, and spends nothing, when the bank cannot afford it', () => {
+    const { profile, node } = profileWithHeldRegion();
+    const broke: Profile = { ...profile, bank: SHORE_UP_COST - 1 };
+    expect(shoreUpRegion(broke, node)).toBe(broke);
+  });
+
+  /** Two taps on a bank that can only pay for one: the second one must find nothing left to spend. */
+  it('refuses the second reinforcement a bank of one can no longer pay for', () => {
+    const { profile, node } = profileWithHeldRegion();
+    const exact: Profile = { ...profile, bank: SHORE_UP_COST };
+    const once = shoreUpRegion(exact, node);
+
+    expect(once.bank).toBe(0);
+    expect(shoreUpRegion(once, node)).toBe(once);
+  });
+
   /** Ground the player does not hold cannot be shored up, and the bank is not spent trying. */
   it('changes nothing for ground that is not held', () => {
     const fresh = createFreshProfile();

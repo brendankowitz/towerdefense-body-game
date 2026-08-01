@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dwellSeconds } from '../coverage';
+import { isLastStand } from '../front';
 import {
   DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER, unlockPhrase,
 } from './defenders';
@@ -237,16 +238,32 @@ describe('vaccine reachability', () => {
    * The third time this class of defect has shipped: `film` immunity that was never incremented,
    * then Chickenpox at `gate: 99` against a maximum of three clears. A gate the player cannot
    * reach renders as LOCKED forever, which reads as something they are failing at.
+   *
+   * Bounded by `CASE_REGIONS`, not by `CASES`. `clearCase` keeps the last stand out of `cleared`
+   * on purpose — the core is defended, never held — so the count a gate is compared against tops
+   * out one below the number of cases the season has. Written against `CASES.length` this guard
+   * would pass a gate of eleven, which is exactly the LOCKED-forever row it exists to catch.
    */
   it('gates every gated vaccine at a number of clears the player can actually reach', () => {
     for (const v of VACCINES) {
       if (v.gate === undefined) continue;
       expect(
         v.gate,
-        `${v.name} opens at ${String(v.gate)} clears; the season only has ${String(CASES.length)} cases`,
-      ).toBeLessThanOrEqual(CASES.length);
+        `${v.name} opens at ${String(v.gate)} clears; a run can only ever clear ${String(CASE_REGIONS.length)}`,
+      ).toBeLessThanOrEqual(CASE_REGIONS.length);
       expect(v.gate, `${v.name} is gated at zero, which is not a gate`).toBeGreaterThan(0);
     }
+  });
+
+  /**
+   * The premise the bound above rests on, held rather than assumed: the ceiling on `cleared` is
+   * one below the season's case count because exactly one case is the last stand. If a second
+   * case ever moves onto the core, or the heart case leaves it, that bound is wrong and this is
+   * what says so.
+   */
+  it('leaves exactly one case out of the ground a run can clear', () => {
+    expect(CASES.length - CASE_REGIONS.length).toBe(1);
+    expect(CASES.filter((c) => isLastStand(c.id))).toHaveLength(1);
   });
 
   /** A row cannot be both earnable now and deferred to a rule that does not exist yet. */

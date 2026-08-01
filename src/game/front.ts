@@ -281,7 +281,13 @@ export function stepSickness(
     // ground never even starts a siege — the vaccine's promise is that it cannot fall, not that
     // it falls slower.
     .filter(({ to }) => !(rules.wallsCannotFall && standing.held.includes(to)))
-    .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || a.to.localeCompare(b.to));
+    // The tiebreak is a byte compare rather than `localeCompare`: this module's whole contract is
+    // that a run replays identically from its seed, and `localeCompare` resolves through ICU, so
+    // its answer depends on the host's default locale and on which ICU data the runtime was built
+    // with. Every measured constant in `rules.ts` sits on top of this ordering. Verified identical
+    // to `localeCompare` on all 225 pairs of `BodyNodeId` under the host locale, so nothing that
+    // was measured moves.
+    .sort((a, b) => stepsToCore(a.to) - stepsToCore(b.to) || (a.to < b.to ? -1 : a.to > b.to ? 1 : 0));
 
   const move = options[0];
   if (move === undefined) return standing;

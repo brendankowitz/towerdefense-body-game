@@ -100,9 +100,17 @@ export function nextCaseId(profile: Profile): CaseId | null {
  * `shoreUp` itself already refuses ground the player does not hold; mirrored here so the bank
  * is never spent on a call that changed nothing, whatever calls this beyond the map's own
  * button, which only ever offers held ground in the first place.
+ *
+ * Affordability gets the identical treatment, and for a sharper reason: the only thing that used
+ * to stop the bank going negative was a render-time condition deciding whether the buttons
+ * appeared, and the map draws one button per held wall off a profile that is written
+ * synchronously — so two taps landing before the re-render spent 240 from a bank of 120. A
+ * negative bank does not misbehave either; `parseProfile` rejects it, and a rejected parse is a
+ * fresh body, so the run would be deleted on the next launch with nothing said to the player.
  */
 export function shoreUpRegion(profile: Profile, node: BodyNodeId): Profile {
   if (!profile.front.held.includes(node)) return profile;
+  if (profile.bank < SHORE_UP_COST) return profile;
   return {
     ...profile,
     bank: profile.bank - SHORE_UP_COST,

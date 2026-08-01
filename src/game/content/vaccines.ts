@@ -7,10 +7,11 @@ export interface VaccineDefinition {
   /** Earned by clearing this strain three times. Never purchasable. */
   readonly strain?: StrainId;
   /**
-   * Becomes available once this many cases are cleared. Must be reachable — `CASES.length` is
-   * the most a player can ever clear, and `content.invariants.test.ts` holds every gate at or
-   * under it. A gate nobody can satisfy is a row marked LOCKED forever, which is the same broken
-   * promise as a vaccine no case credits.
+   * Becomes available once this many cases are cleared. Must be reachable — the most a player
+   * can ever clear is `CASE_REGIONS.length`, not `CASES.length`, because the last stand is
+   * defended rather than held and `clearCase` keeps it out of `cleared`. A gate nobody can
+   * satisfy is a row marked LOCKED forever, which is the same broken promise as a vaccine no
+   * case credits; `content.invariants.test.ts` holds every gate at or under the real ceiling.
    */
   readonly gate?: number;
   /**

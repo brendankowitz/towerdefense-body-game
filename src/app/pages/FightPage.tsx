@@ -129,6 +129,33 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
   const fightHasBegun = hud.phase !== 'build' || hud.waveIndex > 0;
 
   /**
+   * The day itself, spent exactly once for this fight however the player leaves it.
+   *
+   * `leaveFight` covers every exit the app offers. The browser's own Back button is one it does
+   * not: it unmounts the fight with no `endDay` at all, which is precisely the free retry this
+   * rule exists to remove, on a web-deployed game where Back is an ordinary gesture. So the
+   * unmount is the backstop, in the same shape as `lastStandLost` above — and `daySpent` is what
+   * keeps that backstop from charging a second day for the in-app exits, whose route push
+   * unmounts this page immediately afterward.
+   *
+   * Written against refs for the same reason the loss is: `endDay` is a new closure on every
+   * profile change, so a cleanup that depended on the callback would fire on the next save
+   * rather than on the way out.
+   */
+  const daySpent = useRef(false);
+  const endDayRef = useRef(endDay);
+  useEffect(() => { endDayRef.current = endDay; }, [endDay]);
+  const spendDay = useCallback((): void => {
+    if (daySpent.current) return;
+    daySpent.current = true;
+    endDayRef.current();
+  }, []);
+
+  const fightHasBegunRef = useRef(fightHasBegun);
+  useEffect(() => { fightHasBegunRef.current = fightHasBegun; }, [fightHasBegun]);
+  useEffect(() => () => { if (fightHasBegunRef.current) spendDay(); }, [spendDay]);
+
+  /**
    * The only way off this screen once the fight has begun, and the header icon's whole handler
    * before then too — so there is exactly one place that decides whether leaving costs a day,
    * not a copy of the rule at every exit. "Try this case again" was a free retry; a header icon
@@ -136,7 +163,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
    * would be worse than a free retry — the clear, the reward and the held region gone with it.
    */
   const leaveFight = (): void => {
-    if (fightHasBegun) endDay();
+    if (fightHasBegun) spendDay();
     history.push('/');
   };
 
@@ -147,7 +174,7 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         return;
       case 'case':
         recordClear(caseId, loop.state.totalKills);
-        endDay();
+        spendDay();
         history.push('/');
         return;
       case 'lost':

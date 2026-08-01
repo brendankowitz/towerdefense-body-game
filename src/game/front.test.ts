@@ -3,7 +3,8 @@ import { CASE_REGIONS, ENTRY_REGIONS } from './content/body';
 import { DOOR_RESIST_PER_CLEAR, IMMUNITY_MAX, OUTBREAK_INTERVAL, SIEGE_BASE_DAYS } from './content/rules';
 import {
   createFront, endDay, heldRegionCount, holdCore, holdRegion, hotCases, isCoreBesieged, isLastStand,
-  isRunLost, isRunWon, loseCore, seedOutbreak, shoreUp, stateOf, stepSickness, wallDays, wallStatus,
+  isRunLost, isRunWon, loseCore, MAX_DOOR_RESISTANCE, seedOutbreak, shoreUp, stateOf, stepSickness,
+  wallDays, wallStatus,
   type Front,
 } from './front';
 import { CORE_ROADS, stepsToCore } from './graph';
@@ -192,10 +193,17 @@ describe('new outbreaks open doors', () => {
 
   /**
    * The door roll, asserted as a rate rather than as one outcome: a single draw proves nothing
-   * about a probability. Walked over many seeds, a body that has met everything three times must
-   * shrug off far more than a body that has met nothing.
+   * about a probability.
+   *
+   * Asserted at the magnitude `DOOR_RESIST_PER_CLEAR` implies, not merely in its direction. Every
+   * door is a case region and full immunity is the same number in every strain, so the whole
+   * sample is one binomial: `MAX_DOOR_RESISTANCE` is the chance of shrugging one off, and the
+   * count of the rest has mean `attempts * (1 - MAX_DOOR_RESISTANCE)`. Four standard errors is
+   * wide enough that no seed makes this flap and narrow enough that a constant off by a factor
+   * does not fit inside it — so this survives a balance pass and fails a mistake, which asserting
+   * "fewer than a naive body" could not do at any value above zero.
    */
-  it('shrugs off more outbreaks the more immunity the body carries', () => {
+  it('shrugs off outbreaks at the rate the door constant sets', () => {
     const attempts = 400;
     const caught = (immunity: Readonly<Record<StrainId, number>>): number => {
       let count = 0;
@@ -208,11 +216,19 @@ describe('new outbreaks open doors', () => {
       return count;
     };
 
-    const naive = caught(NO_IMMUNITY);
-    const seasoned = caught(FULL_IMMUNITY);
-    expect(naive, 'a body with no immunity should catch nearly everything').toBeGreaterThan(attempts * 0.9);
-    expect(seasoned, 'a seasoned body should shrug most of it off').toBeLessThan(naive);
-    expect(DOOR_RESIST_PER_CLEAR * IMMUNITY_MAX).toBeLessThanOrEqual(1);
+    // A door that can never open again is what makes the ten-region win unreachable — the cliff
+    // `rules.ts` records at one third. Stated here because the arithmetic below has no meaning
+    // past it: at a resistance of 1 the expected count and its error are both zero.
+    expect(MAX_DOOR_RESISTANCE, 'a door closed for good seals the body').toBeLessThan(1);
+    expect(MAX_DOOR_RESISTANCE).toBe(IMMUNITY_MAX * DOOR_RESIST_PER_CLEAR);
+
+    const rate = 1 - MAX_DOOR_RESISTANCE;
+    const expected = attempts * rate;
+    const margin = 4 * Math.sqrt(attempts * rate * (1 - rate));
+
+    expect(caught(NO_IMMUNITY), 'a body with no immunity should catch every one').toBe(attempts);
+    expect(caught(FULL_IMMUNITY)).toBeGreaterThan(expected - margin);
+    expect(caught(FULL_IMMUNITY)).toBeLessThan(expected + margin);
   });
 
   it('never opens a door the sickness is already standing in', () => {

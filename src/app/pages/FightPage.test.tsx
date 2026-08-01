@@ -409,6 +409,48 @@ describe('FightPage', () => {
   });
 
   /**
+   * Reported from review: every exit the app itself offers was routed through `leaveFight`, and
+   * the browser's own Back button is one it does not offer. It unmounted the fight with no
+   * `endDay`, which is the free retry the whole rule exists to remove — on a web-deployed game
+   * where Back is an ordinary gesture, not an edge.
+   */
+  it('spends the day when the fight is left by Back after the first wave has started', async () => {
+    await renderFight(`/play/${CASE.id}`, ['/', `/play/${CASE.id}`]);
+    act(() => { screen.getByTestId('start-wave').click(); });
+
+    act(() => { routerHistoryRef.current?.goBack(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(persistedProfile().front.day).toBe(2);
+  });
+
+  /** Back before a wave has started is the same free exit the header control offers. */
+  it('leaves the region for free when Back is used before the fight begins', async () => {
+    await renderFight(`/play/${CASE.id}`, ['/', `/play/${CASE.id}`]);
+
+    act(() => { routerHistoryRef.current?.goBack(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  /**
+   * The unmount backstop above must not charge a second day for an exit that already paid one.
+   * Both in-app exits push a route, and the push unmounts this page — so without the guard the
+   * header control would advance the day twice.
+   */
+  it('spends exactly one day when the header control is used and the page then unmounts', async () => {
+    await renderFight();
+    act(() => { screen.getByTestId('start-wave').click(); });
+    act(() => { screen.getByTestId('leave').click(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(persistedProfile().front.day).toBe(2);
+  });
+
+  /**
    * The other half of the same finding: once a result is showing, the header icon must not be a
    * second, cheaper way off the page beside the sheet's own buttons — especially not on a win,
    * where a bare route push would silently discard the clear, the reward and the held region.
