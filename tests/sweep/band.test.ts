@@ -13,8 +13,13 @@ import { CEILING_EXEMPT, CLEAR_RATE_CEILING, CLEAR_RATE_FLOOR, OFF_THE_CURVE } f
  * because a gate that only runs in a minutes-long harness is a gate nobody exercises.
  */
 describe('the band the season answers to', () => {
-  it('exempts exactly one case from the ceiling — the last stand, and only from the ceiling', () => {
-    expect([...CEILING_EXEMPT]).toEqual(['heart']);
+  /**
+   * Empty since the run sweep measured the last stand at the entry a run actually makes and the
+   * case was retuned against it — see `band.ts`. An exemption is a case the season stopped holding
+   * to its own rule, so the list being empty is the state to defend, not a gap to fill.
+   */
+  it('exempts no case from the ceiling', () => {
+    expect([...CEILING_EXEMPT]).toEqual([]);
   });
 
   it('keeps exactly one case off the season curve — the last stand', () => {

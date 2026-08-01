@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "sweep": "vitest run --config vitest.sweep.config.ts",
     "sweep:maturation": "vitest run --config vitest.sweep-maturation.config.ts",
+    "sweep:runs": "vitest run --config vitest.sweep-runs.config.ts",
     "verify": "npm run lint && npm run typecheck && npm run typecheck:game && npm run test && npm run build",
     "cap:sync": "npm run build && npx cap sync ios"
   },

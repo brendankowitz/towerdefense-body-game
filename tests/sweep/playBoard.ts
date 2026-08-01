@@ -59,6 +59,29 @@ export function unlockedKinds(daysElapsed: number): readonly DefenderKind[] {
 }
 
 /**
+ * The board at one index of the odometer, spot 0 turning fastest. Exported because a sweep that
+ * walks the whole space wants a generator and a sweep that samples it wants to name the board at
+ * an index — and the two must decode an index the same way or they are enumerating two different
+ * spaces under one name.
+ */
+export function boardAt(
+  kinds: readonly DefenderKind[],
+  spotCount: number,
+  index: number,
+): readonly DefenderKind[] {
+  const board: DefenderKind[] = [];
+  const first = kinds[0];
+  if (first === undefined) return board;
+
+  let rest = index;
+  for (let spot = 0; spot < spotCount; spot += 1) {
+    board.push(kinds[rest % kinds.length] ?? first);
+    rest = Math.floor(rest / kinds.length);
+  }
+  return board;
+}
+
+/**
  * Every board of `kinds` over `spotCount` spots, in odometer order. `kinds.length ** spotCount`
  * of them: 5^5 = 3125 for a four-cell dock plus one, 6^5 = 7776 for the full dock.
  */
@@ -66,21 +89,9 @@ export function* everyBoard(
   kinds: readonly DefenderKind[],
   spotCount: number,
 ): Generator<readonly DefenderKind[]> {
-  const board: DefenderKind[] = [];
-  const first = kinds[0];
-  if (first === undefined) return;
-  for (let i = 0; i < spotCount; i += 1) board.push(first);
-
+  if (kinds[0] === undefined) return;
   const total = kinds.length ** spotCount;
-  for (let n = 0; n < total; n += 1) {
-    let rest = n;
-    for (let spot = 0; spot < spotCount; spot += 1) {
-      const kind = kinds[rest % kinds.length];
-      if (kind !== undefined) board[spot] = kind;
-      rest = Math.floor(rest / kinds.length);
-    }
-    yield [...board];
-  }
+  for (let n = 0; n < total; n += 1) yield boardAt(kinds, spotCount, n);
 }
 
 /**
@@ -208,21 +219,40 @@ export function runBuildPhase(
   return { built, grown: grownFirst + grownAfter };
 }
 
-export function playBoard(
-  caseId: CaseId,
-  clearedCount: number,
+/**
+ * Everything about a run that decides how a board plays, handed in rather than derived from a
+ * count of cleared cases.
+ *
+ * `playBoard` derives all of this from `clearedCount`, which is exactly right for a board sweep:
+ * it walks the season in order, so the day, the immunity and the clears are one number. A run is
+ * the case where they come apart — a day is spent whether the case was won or lost, ground is
+ * retaken and re-cleared, and the last stand is reached on whatever day the roads happened to
+ * fall. `runSweep.ts` is that caller, and this is the shape it needs.
+ */
+export interface BoardContext {
+  readonly caseId: CaseId;
+  /** What the profile has earned, not what the season order implies. */
+  readonly immunity: Readonly<Record<StrainId, number>>;
+  readonly clearedCount: number;
+  /** 1-based, and the only thing that decides which cells the dock offers. */
+  readonly day: number;
+  /** MMR, earned. False everywhere the board sweep plays, since it enters no case with a profile. */
+  readonly blocksAmnesia: boolean;
+}
+
+export function playBoardIn(
+  context: BoardContext,
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
   kinds: GrowableSet,
 ): BoardOutcome {
   const state = createSimState({
-    caseId,
-    immunity: immunityAfter(clearedCount),
-    clearedCount,
-    // Day and case index track each other one for one — day 1 is zero days elapsed, the case at
-    // index 0 — so this reproduces the schedule `unlockedKinds` above already measures by index.
-    day: clearedCount + 1,
+    caseId: context.caseId,
+    immunity: context.immunity,
+    clearedCount: context.clearedCount,
+    day: context.day,
     totalKills: 0,
+    blocksAmnesia: context.blocksAmnesia,
   });
 
   let built = 0;
@@ -262,4 +292,30 @@ export function playBoard(
 
     advanceToNextWave(state);
   }
+}
+
+/**
+ * The season-order board play, and the one every recorded clear rate in this repo was measured
+ * under: the case at index `clearedCount`, met on the day a clean run would meet it, with the
+ * immunity a clean run would have earned by then and no vaccine blocking anything.
+ *
+ * A thin wrapper rather than the other way round, so nothing about the board sweep changed when
+ * the run sweep needed a context of its own.
+ */
+export function playBoard(
+  caseId: CaseId,
+  clearedCount: number,
+  board: readonly DefenderKind[],
+  policy: MaturationPolicy,
+  kinds: GrowableSet,
+): BoardOutcome {
+  return playBoardIn({
+    caseId,
+    immunity: immunityAfter(clearedCount),
+    clearedCount,
+    // Day and case index track each other one for one — day 1 is zero days elapsed, the case at
+    // index 0 — so this reproduces the schedule `unlockedKinds` above already measures by index.
+    day: clearedCount + 1,
+    blocksAmnesia: false,
+  }, board, policy, kinds);
 }

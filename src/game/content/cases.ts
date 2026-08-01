@@ -509,34 +509,67 @@ export const CASES: readonly CaseDefinition[] = [
     // core is by definition one nothing before it stopped, so the brief hiding the wave table is
     // the truest thing it could do — see the comment on `NOVEL`.
     //
-    // Its clear rate is a property of the run that reaches it, not of this board in isolation, and
-    // is measured against whole runs rather than tuned here — see task-12-report.md.
+    // **Its clear rate is a property of the run that reaches it, and that is now measured rather
+    // than deferred.** `tests/sweep/runSweep.ts` plays the whole board space at the day, immunity
+    // and vaccines runs actually arrive at the core with — which is nothing, on every count: a run
+    // gets here by *losing* ground, so the arrival this case is authored against is day 14 with
+    // zero cases cleared and zero immunity, not the full dock and capped immunity the board sweep
+    // enters every case at.
+    //
+    // **As authored it was the easiest case in the season, by a distance.** 38.4% of boards cleared
+    // at the board sweep's entry and 21.0% at the arrival a run actually makes — against a season
+    // running 5.2% to 14.0%, and a band whose ceiling is 15%. The cause was the same one the season
+    // has found four times now: summed over its five spots a phagocyte covered **23.2 seconds** of
+    // vessel here, the most generous board ever authored for this game, half again the 15 to 19
+    // seconds the rest of the season sits at. Three measured passes:
+    //
+    // - **The five spots pushed 12 units off the vessel** — 23.2s of coverage down to 19.6s — was
+    //   worth 21.0% to 14.6% at the arrival entry.
+    // - **Pushing further stopped working, and that is specific to this case.** 16 units (17.5s)
+    //   measured 16.4% and 20 units (14.6s) measured 13.7% — non-monotone, because this table sends
+    //   toxins and `applyToxinStun` is not gated on the case rule: a spot far enough out to cover
+    //   less vessel is also far enough out to stop being stunned. Geometry saturates here around
+    //   14%, which is why it could not do the job alone.
+    // - **Vesper is the dial that finished it.** Untaggable and regenerating, so it is the half of
+    //   every wave the board cannot answer cheaply: 2/3/3/4/5 up to 3/4/5/6/8 was worth 14.6% to
+    //   **9.8%**, roughly a point per body — three times what a staph is worth on any other case.
+    //   The late-wave mass on top of it (waves 3 to 5, nowhere earlier, for the reason the
+    //   bronchitis case records) took it to **5.3%**, at the arrival entry, which is the band floor.
+    //
+    // At the board sweep's own entry it now clears **13.0%**, inside the band — so the ceiling
+    // exemption `band.ts` carried for this case, and named this measurement as the thing that would
+    // settle it, is retired.
     id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',
     credits: 'staph', tier: 3,
     story: 'Every road to the core has fallen. Whatever is arriving here already got past everything else, all of it, at once.',
     rules: [NOVEL],
     startingEnergy: 410,
     waves: [
-      [{ kind: 'staph', count: 8 }, { kind: 'vesper', count: 2 }],
-      [{ kind: 'staph', count: 9 }, { kind: 'virus', count: 6 }, { kind: 'vesper', count: 3 }],
+      [{ kind: 'staph', count: 8 }, { kind: 'vesper', count: 3 }],
+      [{ kind: 'staph', count: 9 }, { kind: 'virus', count: 6 }, { kind: 'vesper', count: 4 }],
       [
-        { kind: 'staph', count: 10 }, { kind: 'toxin', count: 5 }, { kind: 'film', count: 3 },
-        { kind: 'vesper', count: 3 },
-      ],
-      [
-        { kind: 'staph', count: 11 }, { kind: 'mrsa', count: 2 }, { kind: 'spore', count: 5 },
-        { kind: 'vesper', count: 4 },
-      ],
-      [
-        { kind: 'staph', count: 13 }, { kind: 'virus', count: 8 }, { kind: 'mrsa', count: 3 },
+        { kind: 'staph', count: 11 }, { kind: 'toxin', count: 6 }, { kind: 'film', count: 4 },
         { kind: 'vesper', count: 5 },
+      ],
+      [
+        { kind: 'staph', count: 14 }, { kind: 'mrsa', count: 3 }, { kind: 'spore', count: 7 },
+        { kind: 'vesper', count: 6 },
+      ],
+      [
+        { kind: 'staph', count: 17 }, { kind: 'virus', count: 11 }, { kind: 'mrsa', count: 4 },
+        { kind: 'vesper', count: 8 },
       ],
     ],
     path: [
       [398, 130], [268, 110], [178, 148], [104, 224], [150, 320], [252, 336],
       [298, 240], [206, 196], [140, 260], [206, 356], [320, 366], [398, 300],
     ],
-    spots: [[274, 218], [104, 152], [304, 168], [340, 254], [84, 314]],
+    // The five spots the profile search landed on, each moved 12 units directly away from the
+    // nearest point of the vessel. The profile is kept — the spread from spot 2's long look at the
+    // coil down to spot 4's glance is the same shape it was authored with — and every one of the
+    // five still holds all six cells for over a second, so nothing here became a reach demand. What
+    // changed is only how much vessel the board sees at once.
+    spots: [[279, 207], [95, 144], [302, 180], [351, 258], [73, 319]],
   },
 ];
 
