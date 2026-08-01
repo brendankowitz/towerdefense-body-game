@@ -57,7 +57,14 @@ function parseFront(value: unknown): Front | null {
     siege[node as BodyNodeId] = days;
   }
 
-  return { infected, held, siege, day: raw.day, rngState: raw.rngState };
+  // Absent rather than rejected: every save written before the last stand existed has no `lost`
+  // at all, and it is telling the truth — a run in progress before this field existed had not
+  // lost the heart case, because there was no heart case yet to lose. Present and not a boolean
+  // is the one shape that is actually corrupt.
+  if (raw.lost !== undefined && typeof raw.lost !== 'boolean') return null;
+  const lost = raw.lost === true;
+
+  return { infected, held, siege, day: raw.day, rngState: raw.rngState, lost };
 }
 
 /**

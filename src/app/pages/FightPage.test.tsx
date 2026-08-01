@@ -477,6 +477,33 @@ describe('FightPage', () => {
     const { profile } = await renderFightLost();
     expect(profile.front.day).toBe(2);
     expect(profile.front.infected.length).toBeGreaterThan(1);
+    // An ordinary loss is not the run ending — only the heart case does that (see below).
+    expect(profile.front.lost).toBe(false);
+  });
+
+  /**
+   * The one case where losing does not just cost a day: the heart has no next day to try again
+   * on, so losing it has to leave a mark `endDay` alone would not — `front.lost`, which is the
+   * only thing `isRunLost` reads. Driven through the real page rather than through `front.ts`
+   * directly, because the fact this proves is that `FightPage` is the caller that makes the call.
+   */
+  it('marks the run lost, and keeps it lost, when the heart case is lost', async () => {
+    await renderFight(`/play/${CASE_BY_ID.heart.id}`);
+    act(() => { screen.getByTestId('start-wave').click(); });
+
+    let seconds = 0;
+    for (let frame = 0; frame < 4000 && screen.queryByTestId('result-cta') === null; frame += 1) {
+      seconds += 1 / 30;
+      tickFrame(seconds);
+    }
+    const cta = screen.queryByTestId('result-cta');
+    if (cta === null) throw new Error('the heart case was expected to be lost with nothing built');
+
+    act(() => { cta.click(); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+    expect(screen.getByTestId('location').textContent).toBe('/');
+    expect(persistedProfile().front.lost).toBe(true);
   });
 
   it('holds the region and ends the day when a case is cleared', async () => {

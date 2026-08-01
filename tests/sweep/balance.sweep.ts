@@ -53,6 +53,18 @@ import { EVERY_GROWABLE, everyBoard, playBoard, unlockedKinds } from './playBoar
  */
 const BAND_EXCEPTIONS: Partial<Record<CaseId, number>> = {};
 
+/**
+ * The one case this sweep measures without gating: the heart. Every other case is entered at a
+ * fixed, known point in the season — `clearedCount` cases cleared, that immunity, that dock — so
+ * "every affordable board" is a real population of runs a player could actually be in. The last
+ * stand has no such fixed point. It is reached by losing ground, not by clearing it, so the bank,
+ * the immunity and even which cells are unlocked all vary with how the run that got there went —
+ * the opposite of what this harness assumes about every other row. Measured anyway (the number is
+ * printed below), because a rate is still worth seeing; asserted against Task 13's whole-run sweep
+ * instead, which is the instrument that can actually see the run this case is fought at the end of.
+ */
+const UNGATED: ReadonlySet<CaseId> = new Set(['heart']);
+
 interface SweepCase {
   readonly caseId: CaseId;
   /** Cases cleared before this one — what decides which cells the dock offers. */
@@ -305,6 +317,7 @@ describe('affordable-board sweep', () => {
 
   it('clears every case at a rate a player can actually stumble into', () => {
     for (const result of results) {
+      if (UNGATED.has(result.caseId)) continue;
       const rate = result.clears / result.boards;
       const floor = BAND_EXCEPTIONS[result.caseId] ?? CLEAR_RATE_FLOOR;
       expect(
@@ -318,9 +331,16 @@ describe('affordable-board sweep', () => {
     }
   });
 
-  /** Read through a function, not a const: `results` is only filled once `beforeAll` has run. */
+  /**
+   * Read through a function, not a const: `results` is only filled once `beforeAll` has run.
+   * The heart is dropped here for the same reason it is skipped above: the curve this measures is
+   * a season played case by case at a known point in progression, and the last stand is neither —
+   * its own rate would read as the season going easier at the very end, which is not what it is.
+   */
   const season = (): readonly SeasonCase[] =>
-    results.map((result) => ({ caseId: result.caseId, rate: result.clears / result.boards }));
+    results
+      .filter((result) => !UNGATED.has(result.caseId))
+      .map((result) => ({ caseId: result.caseId, rate: result.clears / result.boards }));
 
   /*
    * The two curve checks, and what each is for is in `curve.ts` rather than restated here.

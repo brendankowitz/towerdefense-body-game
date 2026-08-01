@@ -33,16 +33,22 @@ const { ProfileProvider, useProfile } = await import('./ProfileProvider');
 const CASE = CASE_BY_ID.forearm;
 
 function Probe() {
-  const { profile, saveError, recordClear, endDay, shoreUp, resetRun, dismissSaveError } = useProfile();
+  const {
+    profile, saveError, recordClear, recordLoss, endDay, shoreUp, resetRun, dismissSaveError,
+  } = useProfile();
   return (
     <div>
       <span data-testid="day">{profile.front.day}</span>
       <span data-testid="bank">{profile.bank}</span>
       <span data-testid="immunity">{profile.immunity[CASE.credits]}</span>
       <span data-testid="held">{profile.front.held.length}</span>
+      <span data-testid="lost">{String(profile.front.lost)}</span>
       <span data-testid="save-error">{String(saveError)}</span>
       <button type="button" data-testid="clear" onClick={() => { recordClear(CASE.id, 7); }}>
         clear
+      </button>
+      <button type="button" data-testid="record-loss" onClick={() => { recordLoss(); }}>
+        record loss
       </button>
       <button type="button" data-testid="end-day" onClick={() => { endDay(); }}>
         end day
@@ -177,6 +183,24 @@ describe('ProfileProvider', () => {
     expect(screen.getByTestId('immunity').textContent).toBe(String(expected.immunity[CASE.credits]));
     expect(screen.getByTestId('held').textContent).toBe('1');
     expect(state.saveCalls.at(-1)).toEqual(expected);
+  });
+
+  /**
+   * `recordLoss` is the one write in this provider that does not also advance the day — the last
+   * stand has no next day for `endDay` to open onto, so the fact it records has to stand on its
+   * own rather than riding along with a day the run is already over for.
+   */
+  it('marks the run lost on recordLoss, without moving the day', async () => {
+    render(<ProfileProvider><Probe /></ProfileProvider>);
+    await settle();
+
+    const fresh = createFreshProfile();
+    act(() => { screen.getByTestId('record-loss').click(); });
+    await settle();
+
+    expect(screen.getByTestId('lost').textContent).toBe('true');
+    expect(screen.getByTestId('day').textContent).toBe(String(fresh.front.day));
+    expect(state.saveCalls.at(-1)?.front.lost).toBe(true);
   });
 
   it('advances the day and lets the sickness move on endDay', async () => {

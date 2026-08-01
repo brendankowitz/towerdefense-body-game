@@ -3,7 +3,7 @@ export type PathogenKind =
   | 'staph' | 'film' | 'virus' | 'spore' | 'toxin' | 'mrsa' | 'pollen' | 'strep' | 'vesper';
 export type CaseId =
   | 'forearm' | 'throat' | 'stomach' | 'hand' | 'blister' | 'measles' | 'sinus'
-  | 'bronchitis' | 'relapse' | 'vesper';
+  | 'bronchitis' | 'relapse' | 'vesper' | 'heart';
 export type CaseRuleKind =
   | 'wound' | 'virus' | 'poison' | 'dormant' | 'amnesia' | 'allergy' | 'novel';
 

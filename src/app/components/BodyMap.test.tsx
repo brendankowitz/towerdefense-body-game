@@ -9,7 +9,7 @@ import type { Front } from '@game/front';
 const noop = () => undefined;
 
 const fresh = (overrides: Partial<Front> = {}): Front => ({
-  infected: ['forearm'], held: [], siege: {}, day: 1, rngState: 1, ...overrides,
+  infected: ['forearm'], held: [], siege: {}, day: 1, rngState: 1, lost: false, ...overrides,
 });
 
 describe('BodyMap', () => {
@@ -22,7 +22,7 @@ describe('BodyMap', () => {
   /** The exact fixture task 9 was written against — every state the front line can be in, at once. */
   it('draws every state the front line can be in', () => {
     const front: Front = {
-      infected: ['sinus'], held: ['forearm'], siege: { forearm: 2 }, day: 5, rngState: 1,
+      infected: ['sinus'], held: ['forearm'], siege: { forearm: 2 }, day: 5, rngState: 1, lost: false,
     };
     render(<BodyMap front={front} onSelectCase={noop} />);
 
@@ -33,7 +33,7 @@ describe('BodyMap', () => {
 
   it('says how long a besieged region has left, because that is the decision', () => {
     const front: Front = {
-      infected: ['shoulder'], held: ['forearm'], siege: { forearm: 2 }, day: 5, rngState: 1,
+      infected: ['shoulder'], held: ['forearm'], siege: { forearm: 2 }, day: 5, rngState: 1, lost: false,
     };
     render(<BodyMap front={front} onSelectCase={noop} />);
     expect(screen.getByTestId('map-siege-forearm')).toHaveTextContent('2');
@@ -129,7 +129,7 @@ describe('BodyMap', () => {
    * only a threat pulses — a besieged region is still held, so there is nothing there to circle.
    */
   it('gives a besieged region the threat ring without ever animating it', () => {
-    const front: Front = { infected: [], held: ['forearm'], siege: { forearm: 2 }, day: 1, rngState: 1 };
+    const front: Front = { infected: [], held: ['forearm'], siege: { forearm: 2 }, day: 1, rngState: 1, lost: false };
     const { container } = render(<BodyMap front={front} onSelectCase={noop} />);
     expect(screen.getByTestId('map-node-forearm')).toHaveAttribute('data-state', 'besieged');
     expect(container.querySelectorAll('.orbit')).toHaveLength(0);
@@ -156,7 +156,7 @@ describe('BodyMap', () => {
    * affordable, and it is never an interactive element pretending otherwise.
    */
   describe('the shore-up hint', () => {
-    const held: Front = { infected: [], held: ['forearm'], siege: {}, day: 1, rngState: 1 };
+    const held: Front = { infected: [], held: ['forearm'], siege: {}, day: 1, rngState: 1, lost: false };
 
     it('draws the hint on a held region when the page says the bank can afford it', () => {
       render(<BodyMap front={held} onSelectCase={noop} canShoreUp />);
@@ -164,7 +164,7 @@ describe('BodyMap', () => {
     });
 
     it('draws the hint on a besieged region too, alongside the days it has left', () => {
-      const besieged: Front = { infected: [], held: ['forearm'], siege: { forearm: 2 }, day: 1, rngState: 1 };
+      const besieged: Front = { infected: [], held: ['forearm'], siege: { forearm: 2 }, day: 1, rngState: 1, lost: false };
       render(<BodyMap front={besieged} onSelectCase={noop} canShoreUp />);
       expect(screen.getByTestId('map-siege-forearm')).toHaveTextContent('2');
       expect(screen.getByTestId('map-shoreup-forearm')).toBeInTheDocument();

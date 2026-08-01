@@ -89,6 +89,17 @@ const RELAPSING: CaseRule = {
   sub: 'Some of what you kill goes down instead of away, and gets back up where it fell',
 };
 
+/**
+ * The one rule met twice for the same reason it is met at all: nothing is known about a strain
+ * that reached the core, because whatever did was the one thing nothing before it stopped. Hiding
+ * the wave table is not a mechanic layered on top of that fact — it is the fact, stated as a rule.
+ */
+const NOVEL: CaseRule = {
+  kind: 'novel',
+  label: 'Novel',
+  sub: 'Nothing is known about this strain — the brief cannot list what is coming, and each wave shows you only what it sends',
+};
+
 export const CASES: readonly CaseDefinition[] = [
   {
     id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', credits: 'staph', tier: 1,
@@ -465,11 +476,7 @@ export const CASES: readonly CaseDefinition[] = [
     // easy as it will ever be and the unfamiliar half is untouched by any of them.
     id: 'vesper', node: 'footR', region: 'FOOT · CASE 13', title: 'Strain Vesper', credits: 'staph', tier: 3,
     story: 'A scratch from the garden, four days ago. Nothing in the body has met this before, and nothing has been written about what is coming.',
-    rules: [{
-      kind: 'novel',
-      label: 'Novel',
-      sub: 'Nothing is known about this strain — the brief cannot list what is coming, and each wave shows you only what it sends',
-    }],
+    rules: [NOVEL],
     startingEnergy: 410,
     waves: [
       [{ kind: 'vesper', count: 2 }, { kind: 'staph', count: 7 }],
@@ -480,6 +487,55 @@ export const CASES: readonly CaseDefinition[] = [
     ],
     path: [[214, 454], [206, 366], [96, 330], [78, 236], [166, 196], [180, 108], [292, 74], [300, -24]],
     spots: [[142, 396], [40, 296], [148, 262], [100, 154], [252, 148]],
+  },
+  {
+    // The last stand, fought once, at the end. The map only ever opens this case by spreading
+    // into it — `content/body.ts` marks the core, never a door — so the fiction and the mechanic
+    // agree: nothing about a systemic infection arrives from one place, and neither does this one.
+    //
+    // **No door, so no entry-and-exit pair to share.** Every other case's pair is spoken for
+    // (`2026-07-31-season-shape-review.md` §5's table), which is what is left once a case has no
+    // door of its own: the vessel runs in and out through the same edge, a loop through the
+    // middle rather than a crossing, which nothing else in the season does.
+    //
+    // **Five spots by profile, against vesper** — the case this one most resembles in what it
+    // asks: a novel, unmarkable strain that has to be fought at short range because the dock's
+    // longest reach does nothing for half of what is coming. Grid-searched cell by cell across
+    // all six defender ranges against vesper's own five-spot profile (season-shape review §5's
+    // method), which is why the numbers below read close to that case's rather than to any other.
+    //
+    // **The novel rule, reused rather than invented an eighth time.** A strain that reached the
+    // core is by definition one nothing before it stopped, so the brief hiding the wave table is
+    // the truest thing it could do — see the comment on `NOVEL`.
+    //
+    // Its clear rate is a property of the run that reaches it, not of this board in isolation, and
+    // is measured against whole runs rather than tuned here — see task-12-report.md.
+    id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',
+    credits: 'staph', tier: 3,
+    story: 'Every road to the core has fallen. Whatever is arriving here already got past everything else, all of it, at once.',
+    rules: [NOVEL],
+    startingEnergy: 410,
+    waves: [
+      [{ kind: 'staph', count: 8 }, { kind: 'vesper', count: 2 }],
+      [{ kind: 'staph', count: 9 }, { kind: 'virus', count: 6 }, { kind: 'vesper', count: 3 }],
+      [
+        { kind: 'staph', count: 10 }, { kind: 'toxin', count: 5 }, { kind: 'film', count: 3 },
+        { kind: 'vesper', count: 3 },
+      ],
+      [
+        { kind: 'staph', count: 11 }, { kind: 'mrsa', count: 2 }, { kind: 'spore', count: 5 },
+        { kind: 'vesper', count: 4 },
+      ],
+      [
+        { kind: 'staph', count: 13 }, { kind: 'virus', count: 8 }, { kind: 'mrsa', count: 3 },
+        { kind: 'vesper', count: 5 },
+      ],
+    ],
+    path: [
+      [398, 130], [268, 110], [178, 148], [104, 224], [150, 320], [252, 336],
+      [298, 240], [206, 196], [140, 260], [206, 356], [320, 366], [398, 300],
+    ],
+    spots: [[274, 218], [104, 152], [304, 168], [340, 254], [84, 314]],
   },
 ];
 

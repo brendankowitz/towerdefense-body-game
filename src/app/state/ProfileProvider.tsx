@@ -3,7 +3,7 @@ import {
 } from 'react';
 import { endDay as advanceFront } from '@game/front';
 import {
-  clearCase, createFreshProfile, frontRules, shoreUpRegion, type Profile,
+  clearCase, createFreshProfile, frontRules, recordCoreLoss, shoreUpRegion, type Profile,
 } from '@game/progression';
 import { createProgressRepository } from '@progress/createProgressRepository';
 import type { BodyNodeId, CaseId } from '@game/types';
@@ -12,6 +12,8 @@ interface ProfileContextValue {
   readonly profile: Profile;
   readonly saveError: boolean;
   readonly recordClear: (caseId: CaseId, totalKills: number) => void;
+  /** The last stand lost. The one loss the profile remembers — see `recordCoreLoss`. */
+  readonly recordLoss: () => void;
   readonly shoreUp: (node: BodyNodeId) => void;
   readonly endDay: () => void;
   readonly resetRun: () => void;
@@ -70,6 +72,9 @@ export function ProfileProvider({ children }: { readonly children: ReactNode }) 
     saveError,
     recordClear: (caseId, totalKills) => {
       persist(clearCase(profileRef.current, caseId, totalKills));
+    },
+    recordLoss: () => {
+      persist(recordCoreLoss(profileRef.current));
     },
     shoreUp: (node) => {
       const shored = shoreUpRegion(profileRef.current, node);

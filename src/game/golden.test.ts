@@ -145,6 +145,17 @@ const SCENARIOS: readonly Scenario[] = [
     board: [['mast', 0], ['phago', 1], ['nk', 2], ['mem', 3], ['anti', 4]],
     matureKind: 'anti',
   },
+  // The last stand, with every vaccine held the same way vesper's scenario carries it — the two
+  // are the same kind of fight, fought at the same point in a run. The antibody is grown here
+  // against a wave half of which it cannot mark, so this is the one board in the net that proves
+  // the high-affinity form still fires its mark and its pulse against a strain neither touches.
+  {
+    caseId: 'heart',
+    waveIndex: 4,
+    immunity: { staph: IMMUNITY_MAX, film: IMMUNITY_MAX, virus: IMMUNITY_MAX },
+    board: [['clot', 0], ['mast', 1], ['nk', 2], ['phago', 3], ['anti', 4]],
+    matureKind: 'anti',
+  },
 ];
 
 function armBoard(scenario: Scenario): SimState {

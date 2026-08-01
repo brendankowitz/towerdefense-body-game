@@ -83,7 +83,10 @@ test('leaving through the header after a wave has started still spends the day',
  */
 test('a lost run cannot be reached by URL — the brief and the fight both send it back to the map', async ({ page }) => {
   const fresh = createFreshProfile();
-  const lost: Profile = { ...fresh, front: { ...fresh.front, infected: ['heart'] } };
+  // `lost` is what makes this a lost run — the sickness merely reaching the core starts the last
+  // stand rather than ending the run, so `infected` alone would not reproduce what this test
+  // needs (see `front.ts`).
+  const lost: Profile = { ...fresh, front: { ...fresh.front, infected: ['heart'], lost: true } };
   await seedProfile(page, lost);
 
   await page.goto('/play/forearm');

@@ -201,11 +201,20 @@ describe('MapPage', () => {
    * the one place that reads it.
    */
   describe('when the run is lost', () => {
+    /**
+     * `lost` is what makes this a lost run, not `infected` — the sickness merely reaching the
+     * core is the last stand starting, not the run ending (`front.ts`). `'heart'` is kept in
+     * `infected` anyway because that is what a genuinely lost run looks like: the last stand was
+     * fought there and lost, so the sickness is still standing on it.
+     */
     function lostProfile(): Profile {
       const fresh = createFreshProfile();
       const [firstHot] = hotCases(fresh.front);
       if (firstHot === undefined) throw new Error('fixture expects an open front');
-      return { ...fresh, front: { ...fresh.front, infected: ['heart', nodeOf(firstHot)] } };
+      return {
+        ...fresh,
+        front: { ...fresh.front, infected: ['heart', nodeOf(firstHot)], lost: true },
+      };
     }
 
     it('says the sickness reached the heart and offers only starting a new body', async () => {

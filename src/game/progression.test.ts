@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  blocksAmnesia, clearCase, createFreshProfile, frontRules, nextCaseId, seasonRows, shoreUpRegion,
-  strainRows, vaccineRows, type Profile,
+  blocksAmnesia, clearCase, createFreshProfile, frontRules, nextCaseId, recordCoreLoss, seasonRows,
+  shoreUpRegion, strainRows, vaccineRows, type Profile,
 } from './progression';
 import { CASES } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
-import { createFront, hotCases, nodeOf, wallDays, wallStatus, type Front } from './front';
+import { createFront, hotCases, isRunLost, nodeOf, wallDays, wallStatus, type Front } from './front';
 import type { CaseId, StrainId } from './types';
 
 /**
@@ -168,6 +168,24 @@ describe('clearCase', () => {
     const after = clearCase(profile, firstHot, 12);
     expect(after.front.held).toContain(nodeOf(firstHot));
     expect(after.front.infected).not.toContain(nodeOf(firstHot));
+  });
+});
+
+describe('recordCoreLoss', () => {
+  it('marks the run lost without touching what the front already recorded', () => {
+    const fresh = createFreshProfile();
+    const profile: Profile = { ...fresh, front: { ...fresh.front, infected: ['heart'] } };
+
+    const after = recordCoreLoss(profile);
+    expect(isRunLost(after.front)).toBe(true);
+    expect(after.front.infected).toEqual(profile.front.infected);
+    expect(after.front.held).toEqual(profile.front.held);
+  });
+
+  it('leaves the profile it was given untouched', () => {
+    const profile = createFreshProfile();
+    recordCoreLoss(profile);
+    expect(profile).toEqual(createFreshProfile());
   });
 });
 
@@ -333,7 +351,7 @@ describe('frontRules', () => {
 describe('seasonRows', () => {
   /** A front built by hand, the way `front.test.ts` builds one, so a row's shape never depends on where the RNG happened to open the season's door. */
   function frontWith(overrides: Partial<Front>): Front {
-    return { infected: [], held: [], siege: {}, day: 1, rngState: 1, ...overrides };
+    return { infected: [], held: [], siege: {}, day: 1, rngState: 1, lost: false, ...overrides };
   }
 
   function profileWithFront(overrides: Partial<Front>, cleared: readonly CaseId[] = []): Profile {

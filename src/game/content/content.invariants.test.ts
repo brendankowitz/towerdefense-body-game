@@ -79,15 +79,27 @@ describe('case coherence', () => {
   /**
    * The map counts held regions against `CASE_REGIONS`, so a case anchored anywhere else is a
    * region the player can hold and the counter will never credit — the numerator and the
-   * denominator would be measuring different things. The core is the thing being defended and a
-   * joint is pass-through; neither is somewhere illness settles.
+   * denominator would be measuring different things. A joint is pass-through and nobody is ever
+   * meant to hold it; the core is the one exception, defended rather than held, and only the case
+   * named for it may sit there — everything else that reaches the core does so by losing a region,
+   * never by claiming one.
    */
-  it('anchors every case to a region a case can be fought over, never the core or a joint', () => {
+  it('anchors every case to a region a case can be fought over, never a joint, and the core only for the case named for it', () => {
     const regions = new Set(CASE_REGIONS.map((n) => n.id));
     for (const c of CASES) {
+      if (c.node === 'heart') {
+        expect(c.id, 'a case sits on the core without being the heart case').toBe('heart');
+        continue;
+      }
       expect(regions, `case ${c.id} sits on ${c.node}, which is not a region to hold`)
         .toContain(c.node);
     }
+  });
+
+  it('gives the core the one case that is fought on it, and no other', () => {
+    const onCore = CASES.filter((c) => c.node === 'heart');
+    expect(onCore).toHaveLength(1);
+    expect(onCore[0]?.id).toBe('heart');
   });
 
   it('gives every case a region of its own, so two cases never claim one node', () => {
@@ -95,9 +107,16 @@ describe('case coherence', () => {
     expect(new Set(nodes).size).toBe(nodes.length);
   });
 
-  /** A season cannot promise more regions than the body has to give. */
-  it('never lists more cases than there are regions to fight them over', () => {
-    expect(CASES.length).toBeLessThanOrEqual(CASE_REGIONS.length);
+  /**
+   * A season cannot promise more regions than the body has to give — but the core is defended
+   * rather than held, so it is not one of those regions and the heart case does not count against
+   * this. Counting it would turn a season of ten holdable regions and one defended core into a
+   * denominator of eleven, which is not what `CASE_REGIONS.length` (the map's own denominator)
+   * measures.
+   */
+  it('never lists more holdable cases than there are regions to hold', () => {
+    const holdable = CASES.filter((c) => c.node !== 'heart');
+    expect(holdable.length).toBeLessThanOrEqual(CASE_REGIONS.length);
   });
 
   /**

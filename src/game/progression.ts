@@ -2,7 +2,8 @@ import { CASES, CASE_BY_ID } from './content/cases';
 import { CASE_CLEAR_BANK, FRESH_PROFILE, IMMUNITY_MAX, SHORE_UP_COST } from './content/rules';
 import { STRAIN_ROWS, VACCINES } from './content/vaccines';
 import {
-  caseAt, createFront, holdRegion, hotCases, shoreUp, nodeOf, wallStatus, type Front, type FrontRules,
+  caseAt, createFront, holdRegion, hotCases, loseCore, shoreUp, nodeOf, wallStatus,
+  type Front, type FrontRules,
 } from './front';
 import type { BodyNodeId, CaseId, StrainId, Tier } from './types';
 
@@ -58,6 +59,16 @@ export function clearCase(profile: Profile, caseId: CaseId, totalKills: number):
     kills: totalKills,
     front: holdRegion(profile.front, nodeOf(caseId)),
   };
+}
+
+/**
+ * The last stand lost. `endDay` still runs afterward the same as any other fight the player
+ * leaves — a day passes and the sickness still takes its step — but nothing about that matters
+ * once this has been called: `isRunLost` reads `front.lost` from here on, whatever else the day
+ * goes on to do.
+ */
+export function recordCoreLoss(profile: Profile): Profile {
+  return { ...profile, front: loseCore(profile.front) };
 }
 
 /** The case the body needs next, or null when nothing is left today. */

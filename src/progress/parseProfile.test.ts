@@ -81,4 +81,21 @@ describe('parseProfile', () => {
     const front = { ...valid.front, siege: { forearm: 1 } };
     expect(parseProfile({ ...valid, front })).toBeNull();
   });
+
+  /**
+   * A save written before the last stand existed has no `lost` field at all, and that is a true
+   * save rather than a corrupt one — the field's absence has to parse as `false`, not as a reject.
+   */
+  it('accepts a save from before the heart case existed, reading the missing loss as false', () => {
+    const front = Object.fromEntries(
+      Object.entries(valid.front).filter(([key]) => key !== 'lost'),
+    );
+    const parsed = parseProfile({ ...valid, front });
+    expect(parsed?.front.lost).toBe(false);
+  });
+
+  it('rejects a lost flag that is not a boolean', () => {
+    const front = { ...valid.front, lost: 'true' };
+    expect(parseProfile({ ...valid, front })).toBeNull();
+  });
 });

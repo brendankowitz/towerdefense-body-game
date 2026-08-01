@@ -43,7 +43,7 @@ function createLoop(caseId: CaseId, profile: Profile): GameLoop {
  */
 function Fight({ caseId }: { readonly caseId: CaseId }) {
   const history = useHistory();
-  const { profile, recordClear, endDay } = useProfile();
+  const { profile, recordClear, recordLoss, endDay } = useProfile();
 
   const rendererRef = useRef<BoardRenderer | null>(null);
   // A case that is lost or won both leave this screen (`endDay` and a route push) rather than
@@ -126,6 +126,11 @@ function Fight({ caseId }: { readonly caseId: CaseId }) {
         history.push('/');
         return;
       case 'lost':
+        // Every other case can be lost and tried again the next day for free — the region just
+        // stays hot. The heart cannot: losing the last stand is the run's only bad ending, and
+        // `recordLoss` is what makes that permanent rather than one more day the sickness steps
+        // past.
+        if (definition.node === 'heart') recordLoss();
         leaveFight();
         return;
       case null:

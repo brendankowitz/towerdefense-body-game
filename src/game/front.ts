@@ -24,6 +24,19 @@ export interface Front {
   readonly siege: Readonly<Partial<Record<BodyNodeId, number>>>;
   readonly day: number;
   readonly rngState: number;
+  /**
+   * The one loss this layer remembers, and the only fact here that is set once and never
+   * unset: the heart case was fought and lost. Nothing else about a case is memory — every
+   * other loss just leaves the region `infected` for another day, the way it always has.
+   *
+   * Its absence is what makes `infected.includes('heart')` and this different questions.
+   * `stepSickness` walks onto the core the instant the last road falls, the same as it would
+   * walk onto any other open ground, so a heart in `infected` only means the sickness is
+   * *besieging* the core — which is the last stand starting, not the run ending. Losing that
+   * fight is a separate event this field is the only record of, and it is why `isRunLost` reads
+   * this rather than `infected`.
+   */
+  readonly lost: boolean;
 }
 
 /** The node a case is fought over, by case. Built once; the mapping never changes during a run. */
@@ -55,6 +68,7 @@ export function createFront(seed: number): Front {
     siege: {},
     day: 1,
     rngState: rng.state,
+    lost: false,
   };
 }
 
@@ -126,22 +140,50 @@ export function isCoreBesieged(front: Front): boolean {
 }
 
 /**
- * The sickness standing on the core, which it reaches only by winning the case there. Besieged is
- * not lost: every road being taken is what *starts* the last stand, and the gap between the two is
- * the one fight the whole run has been protecting.
+ * Three different facts, and the whole shape of the ending is that they do not collapse into one
+ * another:
+ *
+ * - **Besieged** (`isCoreBesieged`) — every road to the core is in enemy hands. The core itself is
+ *   still untouched.
+ * - **Reached** (`front.infected.includes('heart')`) — the sickness has taken the one step left
+ *   once besieged, the same ordinary conquest `stepSickness` gives any open ground. This is what
+ *   *starts* the last stand: `hotCases` now offers the heart case, because there is a fight to
+ *   have. A run in this state is not lost — it is the one moment the whole game has been building
+ *   toward, and ending it here would mean the fight this layer exists to protect never happens.
+ * - **Lost** (`front.lost`) — the last stand was fought and lost. This is the only one of the
+ *   three that ends the run, and the only one of the three this module remembers as a fact rather
+ *   than derives from `infected` — every other case's loss is not memory at all, it just leaves
+ *   the region hot for another day.
  */
 export function isRunLost(front: Front): boolean {
-  return front.infected.includes('heart');
+  return front.lost;
 }
 
 /**
- * Won when every case region — the ground a season is actually fought over — is held, and the
- * sickness is not standing on the core. The heart is not itself a case region, so holding the ten
- * without that second check would let a run be won and lost at the same instant: the body is not
- * saved while the thing it is built around is occupied, however much ground around it is held.
+ * The heart case lost: the run's only bad ending, and the one loss `Front` keeps a record of.
+ * Every other case can be lost and tried again the next day for free — the region simply stays
+ * `infected` and nothing here changes — but the last stand has no next day, so this is the fact
+ * that has to outlive the fight that produced it. `infected` and `held` are left exactly as they
+ * were: the sickness is still standing on the core, which is the truth, and `lost` is the only
+ * new thing this records.
+ */
+export function loseCore(front: Front): Front {
+  return { ...front, lost: true };
+}
+
+/**
+ * Won when every case region — the ground a season is actually fought over — is held, the run is
+ * not lost, and the core is not currently under an unresolved last stand. The heart is not itself
+ * a case region, so holding the ten alone is not enough: without the second check a run could be
+ * won and lost at the same instant, and without the third a run could be declared won while the
+ * sickness is still standing on the core, mid-fight, simply because the last stand had not yet
+ * been decided either way. In practice a besieged core needs every road — several of them case
+ * regions — in enemy hands, which already rules out holding all ten; the check stays because nothing
+ * here should depend on that being true of the graph rather than being true by construction.
  */
 export function isRunWon(front: Front): boolean {
-  return !isRunLost(front) && CASE_REGIONS.every((node) => front.held.includes(node.id));
+  return !isRunLost(front) && !front.infected.includes('heart')
+    && CASE_REGIONS.every((node) => front.held.includes(node.id));
 }
 
 /**
