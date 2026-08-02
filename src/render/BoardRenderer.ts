@@ -2,6 +2,7 @@ import { Application, Container } from 'pixi.js';
 import { FAST_MULTIPLIER } from '@game/content/rules';
 import { MAX_FRAME_SECONDS } from '@game/loop';
 import type { CaseId, SimState } from '@game/types';
+import { ArrivalLayer } from './layers/ArrivalLayer';
 import { BeamLayer } from './layers/BeamLayer';
 import { EnemyLayer } from './layers/EnemyLayer';
 import { PathLayer } from './layers/PathLayer';
@@ -25,6 +26,7 @@ export class BoardRenderer {
   readonly #world = new Container();
   readonly #path: PathLayer;
   readonly #towers: TowerLayer;
+  readonly #arrivals: ArrivalLayer;
   readonly #beams = new BeamLayer();
   readonly #puffs = new PuffLayer();
   readonly #enemies = new EnemyLayer();
@@ -36,13 +38,16 @@ export class BoardRenderer {
     this.#host = host;
     this.#path = new PathLayer(caseId);
     this.#towers = new TowerLayer(caseId);
+    this.#arrivals = new ArrivalLayer(caseId);
 
-    // Draw order, from the reference: vessel, then cells and the ranges they claim, then
-    // what they fire, then what is coming. Threats are never hidden behind anything — which
-    // is also why puffs go under the enemies rather than over them.
+    // Draw order, from the reference: vessel, then cells and the ranges they claim — arrivals
+    // among them, since a mount is answered the same way a build spot is — then what they fire,
+    // then what is coming. Threats are never hidden behind anything — which is also why puffs
+    // go under the enemies rather than over them.
     this.#world.addChild(
       this.#path.container,
       this.#towers.container,
+      this.#arrivals.container,
       this.#beams.container,
       this.#puffs.container,
       this.#enemies.container,
@@ -101,6 +106,7 @@ export class BoardRenderer {
       Math.min(elapsedSeconds, MAX_FRAME_SECONDS) * (state.fast ? FAST_MULTIPLIER : 1);
 
     this.#towers.draw(state, effectSeconds, motion);
+    this.#arrivals.draw(state, effectSeconds, motion);
     this.#beams.draw(state);
     this.#puffs.draw(state, effectSeconds, motion);
     this.#enemies.draw(state);
@@ -110,6 +116,7 @@ export class BoardRenderer {
   destroy(): void {
     this.#path.destroy();
     this.#towers.destroy();
+    this.#arrivals.destroy();
     this.#beams.destroy();
     this.#puffs.destroy();
     this.#enemies.destroy();
