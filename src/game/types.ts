@@ -160,8 +160,11 @@ export interface Arrival {
   /**
    * Marks left before this arrival is spent. Ammunition, not a troop with a lifespan — it leaves
    * the board the moment this reaches zero, and never on a clock nothing shows the player.
+   *
+   * `readonly` because nothing assigns to it in place: `stepArrivals` counts a local `uses` down
+   * and rebuilds the arrival with `{ ...arrival, uses }` rather than mutating this field.
    */
-  uses: number;
+  readonly uses: number;
 }
 
 export interface SimState {

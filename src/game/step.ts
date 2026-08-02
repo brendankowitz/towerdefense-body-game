@@ -63,6 +63,11 @@ export function step(state: SimState, dt: number): void {
   // The single gate for the whole feature: every clear rate in cases.ts, and the golden
   // snapshot, were measured with this off, so a call for help and the arrival answering it stay
   // behind the one flag that turned them both on when it was time to measure what they are worth.
+  //
+  // Called synchronously in this order, not deferred a frame: an arrival pushed by `callArrivals`
+  // is already in `state.arrivals` by the time `stepArrivals` runs, so it can land and start
+  // marking bodies the same frame it was answered. A call the player earned should not sit idle
+  // for a frame before doing anything.
   if (ARRIVALS_ENABLED) {
     callArrivals(state);
     stepArrivals(state, dt);
