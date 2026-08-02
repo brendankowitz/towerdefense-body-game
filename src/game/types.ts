@@ -149,6 +149,16 @@ export interface Beam {
   readonly source: 'anti' | 'nk' | 'mem';
 }
 
+/**
+ * Help a call for help actually bought, and where it landed. `kind` is fixed to `'antibody'` by
+ * every arrival `callArrivals` produces today — Task 6 is what reads memory and starts choosing
+ * `'killer'` instead, once something exists that a mark-only reach actually needs.
+ */
+export interface Arrival {
+  readonly mountIndex: number;
+  readonly kind: 'antibody' | 'killer';
+}
+
 export interface SimState {
   readonly caseId: CaseId;
   /**
@@ -210,6 +220,12 @@ export interface SimState {
    * `inflammation` is not: a running total of the response, not of a wave.
    */
   recognition: Partial<Record<StrainId, number>>;
+  /**
+   * What a call for help has actually bought, in mount order. Empty on every case until a strain's
+   * recognition clears `RECOGNITION_PER_CALL` and the roll after it lands — `callArrivals` is the
+   * only writer, and never puts two of these on the same `mountIndex`.
+   */
+  arrivals: Arrival[];
 
   towers: Tower[];
   enemies: Enemy[];

@@ -29,6 +29,12 @@ export function hashState(state: SimState): string {
   // and one that killed none are the same board by every other field here, and they are one kill
   // apart from being different games.
   mix(state.inflammation);
+  // Marks banked toward the next call for help, per strain. Hashed for the same reason
+  // `inflammation` is: a run one mark away from a call and one call in are different games, and
+  // three fixed reads keep that true without depending on which keys `recognition` happens to have.
+  mix(state.recognition.staph ?? 0);
+  mix(state.recognition.virus ?? 0);
+  mix(state.recognition.film ?? 0);
   mix(state.fever);
   mix(state.waveKills);
   mix(state.waveLeaks);
@@ -72,6 +78,13 @@ export function hashState(state: SimState): string {
     mix(enemy.hp);
     mix(enemy.tag);
     mix(enemy.generation);
+  }
+
+  // What a call for help has actually bought, and where it landed. Hashed for the same reason a
+  // mark is: two runs alike in every other field and one call apart are different games.
+  for (const arrival of state.arrivals) {
+    mixText(arrival.kind);
+    mix(arrival.mountIndex);
   }
 
   // What a dormancy case has killed and is not finished with. Hashed for the same reason the

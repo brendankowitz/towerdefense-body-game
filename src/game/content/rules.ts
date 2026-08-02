@@ -295,3 +295,18 @@ export const SHORE_UP_COST = 120;
  * changes every number in the project may not arrive before the instrument that can see it.
  */
 export const ARRIVALS_ENABLED = false;
+
+/**
+ * Marks a strain must bank, from `noteRecognition`, before a call for help is even rolled. A
+ * placeholder — Task 9 measures what this should be once a board exists that plays it, the way
+ * `MOUNT_CLUSTER_RADIUS` above is measured once something reads `mounts`.
+ */
+export const RECOGNITION_PER_CALL = 5;
+
+/**
+ * The chance a call is answered, per point of immunity behind the strain it was banked on — the
+ * same shape `DOOR_RESIST_PER_CLEAR` gives a door, because both are "one clear buys this much of a
+ * chance" dials on the same `immunity` magnitude. A placeholder for the same reason: Task 9 is what
+ * measures it, once `ARRIVALS_ENABLED` lets a board actually roll it.
+ */
+export const RESPONSE_PER_CLEAR = 0.25;

@@ -82,6 +82,7 @@ export function createSimState(input: SimInput): SimState {
     bleedTimer: 0,
     inflammation: 0,
     recognition: {},
+    arrivals: [],
 
     towers: [],
     enemies: [],

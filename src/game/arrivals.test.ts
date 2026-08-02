@@ -1,9 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { noteRecognition } from './arrivals';
+import { callArrivals, noteRecognition } from './arrivals';
 import { startWave } from './commands';
 import { CASES, caseHasRule } from './content/cases';
-import { IMMUNITY_MAX } from './content/rules';
+import { IMMUNITY_MAX, RECOGNITION_PER_CALL } from './content/rules';
 import { addEnemy, simFor } from './testing';
+import type { SimState } from './types';
+
+/**
+ * A body ready to answer, tuned by the one call each test cares about. `memory` defaults to full
+ * immunity — "armed" means ready — so a test that only names `recognition` still exercises a roll
+ * that can succeed, rather than one silently gated shut by an untouched default.
+ */
+function armed(overrides: {
+  recognition?: number; memory?: number; rngState?: number;
+} = {}): SimState {
+  const state = simFor('forearm', { immunity: { staph: overrides.memory ?? IMMUNITY_MAX } });
+  state.recognition = { staph: overrides.recognition ?? 0 };
+  if (overrides.rngState !== undefined) state.rngState = overrides.rngState;
+  return state;
+}
 
 describe('recognition', () => {
   it('counts a tagged body toward the strain it belongs to', () => {
@@ -62,5 +77,49 @@ describe('recognition', () => {
     noteRecognition(state, addEnemy(state, wiping.wipes));
 
     expect(state.recognition[wiping.wipes] ?? 0).toBe(0);
+  });
+});
+
+describe('calling for help', () => {
+  /** The threshold is the whole of the pacing: below it nothing is spent and nothing is rolled. */
+  it('rolls nothing until recognition reaches the threshold', () => {
+    const state = armed({ recognition: RECOGNITION_PER_CALL - 1 });
+    const before = state.rngState;
+    callArrivals(state);
+    expect(state.arrivals).toEqual([]);
+    expect(state.rngState, 'a roll was spent below the threshold').toBe(before);
+  });
+
+  it('spends the threshold and rolls once it is reached', () => {
+    const state = armed({ recognition: RECOGNITION_PER_CALL });
+    callArrivals(state);
+    expect(state.recognition.staph).toBe(0);
+    expect(state.rngState).not.toBe(0);
+  });
+
+  /**
+   * A rate, not a draw: one roll proves nothing about a probability. Walked over many seeds, a body
+   * that knows a strain calls help more often than one that half knows it.
+   */
+  it('calls help more often the better the body knows the strain', () => {
+    const rate = (memory: number): number => {
+      let called = 0;
+      for (let seed = 1; seed <= 400; seed += 1) {
+        const state = armed({ recognition: RECOGNITION_PER_CALL, memory, rngState: seed });
+        callArrivals(state);
+        if (state.arrivals.length > 0) called += 1;
+      }
+      return called;
+    };
+
+    expect(rate(IMMUNITY_MAX)).toBeGreaterThan(rate(1));
+    expect(rate(0), 'no memory called help').toBe(0);
+  });
+
+  it('never puts two arrivals on one mount point', () => {
+    const state = armed({ recognition: RECOGNITION_PER_CALL * 20 });
+    for (let call = 0; call < 20; call += 1) callArrivals(state);
+    const used = state.arrivals.map((arrival) => arrival.mountIndex);
+    expect(new Set(used).size).toBe(used.length);
   });
 });
