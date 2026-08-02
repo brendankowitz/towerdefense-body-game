@@ -1,7 +1,11 @@
 import { CASE_BY_ID } from './content/cases';
-import { RECOGNITION_PER_CALL, RESPONSE_PER_CLEAR } from './content/rules';
+import { DEFENDERS } from './content/defenders';
+import { PATHOGENS } from './content/pathogens';
+import { ARRIVAL_USES, RECOGNITION_PER_CALL, RESPONSE_PER_CLEAR } from './content/rules';
 import { createRng } from './rng';
-import type { Enemy, PathogenKind, SimState, StrainId } from './types';
+import { distance } from './state';
+import { isTagged } from './systems/targeting';
+import type { Arrival, Enemy, PathogenKind, SimState, StrainId } from './types';
 
 /**
  * The pathogen this enemy belongs to, if the immunity screen tracks it at all. `PathogenKind` and
@@ -84,6 +88,50 @@ export function callArrivals(state: SimState): void {
     state.rngState = rng.state;
 
     if (mountIndex === undefined || !answered) continue;
-    state.arrivals.push({ mountIndex, kind: 'antibody' });
+    state.arrivals.push({ mountIndex, kind: 'antibody', uses: ARRIVAL_USES });
   }
+}
+
+/**
+ * What an arrival actually does, run from `step` the same pass the cells act in — so an arrival
+ * and a cell can never disagree about the order of a frame.
+ *
+ * Marks with the same field and the same duration the placed cell uses, `DEFENDERS.anti.tag`, so
+ * every downstream reader of `isTagged` — armour, the burn, the kill's reward — treats an
+ * arrival's mark and a cell's mark as the one thing they are; this never invents a second kind.
+ * Reach is the placed cell's own range for the same reason: an arrival is an antibody, not a rule
+ * invented beside one.
+ *
+ * Ammunition, not a timer. Against a particulate target an antibody is internalised bound to what
+ * it caught and degraded with it, so this spends one use per body it marks and the arrival leaves
+ * the instant it has none left — nothing here runs down on a clock the player cannot see.
+ */
+export function stepArrivals(state: SimState, dt: number): void {
+  // A step of no time passes nothing — the same invariant every other system in `step` holds,
+  // stated here because marking has no cooldown of its own to fall back on for it.
+  if (dt <= 0) return;
+
+  const mounts = CASE_BY_ID[state.caseId].mounts;
+  const remaining: Arrival[] = [];
+
+  for (const arrival of state.arrivals) {
+    const mount = mounts[arrival.mountIndex];
+    let uses = arrival.uses;
+
+    if (mount !== undefined) {
+      for (const enemy of state.enemies) {
+        if (uses <= 0) break;
+        if (enemy.hp <= 0 || isTagged(enemy)) continue;
+        if (PATHOGENS[enemy.kind].noTag === true) continue;
+        if (distance(mount[0], mount[1], enemy.x, enemy.y) > DEFENDERS.anti.range) continue;
+
+        enemy.tag = DEFENDERS.anti.tag;
+        uses -= 1;
+      }
+    }
+
+    if (uses > 0) remaining.push(uses === arrival.uses ? arrival : { ...arrival, uses });
+  }
+
+  state.arrivals = remaining;
 }

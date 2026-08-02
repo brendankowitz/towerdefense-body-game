@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { callArrivals, noteRecognition } from './arrivals';
+import { callArrivals, noteRecognition, stepArrivals } from './arrivals';
 import { startWave } from './commands';
 import { CASES, caseHasRule } from './content/cases';
-import { IMMUNITY_MAX, RECOGNITION_PER_CALL } from './content/rules';
-import { addEnemy, simFor } from './testing';
+import { DEFENDERS } from './content/defenders';
+import {
+  ARRIVAL_USES, IMMUNITY_MAX, RECOGNITION_PER_CALL, STEP_SECONDS,
+} from './content/rules';
+import { isTagged } from './systems/targeting';
+import { addEnemy, arrivedAt, mountPosition, simFor } from './testing';
 import type { SimState } from './types';
 
 /**
@@ -121,5 +125,42 @@ describe('calling for help', () => {
     for (let call = 0; call < 20; call += 1) callArrivals(state);
     const used = state.arrivals.map((arrival) => arrival.mountIndex);
     expect(new Set(used).size).toBe(used.length);
+  });
+});
+
+describe('an antibody arrival', () => {
+  it('marks bodies in reach of the mount point it landed on', () => {
+    const state = arrivedAt(0, 'antibody');
+    const near = addEnemy(state, 'staph', mountPosition(state, 0));
+    const far = addEnemy(state, 'staph', { x: 0, y: 0 });
+
+    stepArrivals(state, STEP_SECONDS);
+
+    expect(isTagged(near)).toBe(true);
+    expect(isTagged(far)).toBe(false);
+  });
+
+  /**
+   * Ammunition, not a timer. Against a particulate target an antibody is degraded with what it
+   * bound, so each mark spends one use and the arrival leaves when it is out — and the player can
+   * count what is left rather than guessing at a clock they cannot see.
+   */
+  it('spends one use per body it marks, and leaves when it is out', () => {
+    const state = arrivedAt(0, 'antibody');
+    for (let i = 0; i < ARRIVAL_USES; i += 1) addEnemy(state, 'staph', mountPosition(state, 0));
+
+    stepArrivals(state, STEP_SECONDS);
+
+    expect(state.arrivals).toEqual([]);
+  });
+
+  it('never spends a use on a body already carrying a mark', () => {
+    const state = arrivedAt(0, 'antibody');
+    const enemy = addEnemy(state, 'staph', mountPosition(state, 0));
+    enemy.tag = DEFENDERS.anti.tag;
+
+    stepArrivals(state, STEP_SECONDS);
+
+    expect(state.arrivals[0]?.uses).toBe(ARRIVAL_USES);
   });
 });

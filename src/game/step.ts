@@ -1,4 +1,5 @@
-import { WAVE_CLEAR_ENERGY } from './content/rules';
+import { callArrivals, stepArrivals } from './arrivals';
+import { ARRIVALS_ENABLED, WAVE_CLEAR_ENERGY } from './content/rules';
 import { acquireHolds, runDefenders } from './systems/damage';
 import { resolveDeaths } from './systems/deaths';
 import { applyDormantWake, applyWoundBleed } from './systems/hazards';
@@ -58,6 +59,14 @@ export function step(state: SimState, dt: number): void {
 
   applyMovement(state, dt, held, dead);
   runDefenders(state, dt, dead);
+
+  // The single gate for the whole feature: every clear rate in cases.ts, and the golden
+  // snapshot, were measured with this off, so a call for help and the arrival answering it stay
+  // behind the one flag that turned them both on when it was time to measure what they are worth.
+  if (ARRIVALS_ENABLED) {
+    callArrivals(state);
+    stepArrivals(state, dt);
+  }
 
   for (const tower of state.towers) {
     if (tower.kind === 'mast' && tower.flash > 0) tower.flash -= dt;

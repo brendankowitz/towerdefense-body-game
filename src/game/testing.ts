@@ -1,8 +1,11 @@
+import { CASE_BY_ID } from './content/cases';
 import { PATHOGENS } from './content/pathogens';
-import { TOWER_MAX_HP } from './content/rules';
+import { ARRIVAL_USES, TOWER_MAX_HP } from './content/rules';
 import { positionAt } from './path';
 import { createSimState } from './state';
-import type { CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainId, Tower } from './types';
+import type {
+  Arrival, CaseId, DefenderKind, Enemy, PathogenKind, SimState, StrainId, Tower,
+} from './types';
 
 /**
  * Fixture builders shared by the simulation tests. Lives in src/game so it obeys the same
@@ -51,6 +54,20 @@ export function addEnemy(
   state.nextEnemyId += 1;
   state.enemies.push(enemy);
   return enemy;
+}
+
+/** A board with one arrival already landed at full uses — what `stepArrivals` tests act on. */
+export function arrivedAt(mountIndex: number, kind: Arrival['kind'], caseId: CaseId = 'forearm'): SimState {
+  const state = simFor(caseId);
+  state.arrivals.push({ mountIndex, kind, uses: ARRIVAL_USES });
+  return state;
+}
+
+/** Where a mount point sits, in the shape `addEnemy`'s `opts` already accepts. */
+export function mountPosition(state: SimState, mountIndex: number): { x: number; y: number } {
+  const mount = CASE_BY_ID[state.caseId].mounts[mountIndex];
+  if (mount === undefined) throw new Error(`${state.caseId} has no mount ${String(mountIndex)}`);
+  return { x: mount[0], y: mount[1] };
 }
 
 interface TowerBase {

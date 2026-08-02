@@ -85,6 +85,7 @@ export function hashState(state: SimState): string {
   for (const arrival of state.arrivals) {
     mixText(arrival.kind);
     mix(arrival.mountIndex);
+    mix(arrival.uses);
   }
 
   // What a dormancy case has killed and is not finished with. Hashed for the same reason the

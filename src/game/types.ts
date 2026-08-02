@@ -157,6 +157,11 @@ export interface Beam {
 export interface Arrival {
   readonly mountIndex: number;
   readonly kind: 'antibody' | 'killer';
+  /**
+   * Marks left before this arrival is spent. Ammunition, not a troop with a lifespan — it leaves
+   * the board the moment this reaches zero, and never on a clock nothing shows the player.
+   */
+  uses: number;
 }
 
 export interface SimState {

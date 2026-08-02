@@ -293,8 +293,12 @@ export const SHORE_UP_COST = 120;
  * Off until `tests/sweep/arrivals.sweep.ts` has measured what turning it on is worth, because the
  * eleven clear rates in `cases.ts` were every one of them measured without it. A feature that
  * changes every number in the project may not arrive before the instrument that can see it.
+ *
+ * Typed `boolean` rather than left to infer the literal `false`: every reader of this flag —
+ * `step.ts` included — branches on it, and a literal type would make that branch dead code by
+ * construction rather than a runtime decision one flip is meant to change.
  */
-export const ARRIVALS_ENABLED = false;
+export const ARRIVALS_ENABLED: boolean = false;
 
 /**
  * Marks a strain must bank, from `noteRecognition`, before a call for help is even rolled. A
@@ -302,6 +306,13 @@ export const ARRIVALS_ENABLED = false;
  * `MOUNT_CLUSTER_RADIUS` above is measured once something reads `mounts`.
  */
 export const RECOGNITION_PER_CALL = 5;
+
+/**
+ * Marks one arrival can lay before it is spent and leaves the board. A placeholder for the same
+ * reason `RECOGNITION_PER_CALL` is: Task 9 measures what this should be, once `ARRIVALS_ENABLED`
+ * lets a board actually spend one.
+ */
+export const ARRIVAL_USES = 3;
 
 /**
  * The chance a call is answered, per point of immunity behind the strain it was banked on — the
