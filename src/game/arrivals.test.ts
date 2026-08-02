@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { callArrivals, noteRecognition, stepArrivals } from './arrivals';
+import { arrivalKindFor, callArrivals, noteRecognition, stepArrivals } from './arrivals';
 import { startWave } from './commands';
 import { CASES, caseHasRule } from './content/cases';
 import { DEFENDERS } from './content/defenders';
@@ -22,6 +22,17 @@ function armed(overrides: {
   state.recognition = { staph: overrides.recognition ?? 0 };
   if (overrides.rngState !== undefined) state.rngState = overrides.rngState;
   return state;
+}
+
+/**
+ * Swept rather than sampled once: `arrivalKindFor`'s own default reads as "never" (0.5 loses the
+ * coin), so a single call at the default would prove nothing about the branch existing at all.
+ */
+function everSendsKiller(memory: number): boolean {
+  for (let roll = 0; roll < 1; roll += 0.1) {
+    if (arrivalKindFor(memory, roll) === 'killer') return true;
+  }
+  return false;
 }
 
 describe('recognition', () => {
@@ -162,5 +173,43 @@ describe('an antibody arrival', () => {
     stepArrivals(state, STEP_SECONDS);
 
     expect(state.arrivals[0]?.uses).toBe(ARRIVAL_USES);
+  });
+});
+
+describe('a killer arrival', () => {
+  /**
+   * ADCC, and the guardrail the whole design rests on. A free killer that could hit anything would
+   * stack with every board and make placement matter less; one that can only touch what is marked
+   * is worth exactly what the player's own tagging makes it worth.
+   */
+  it('kills a marked body and cannot touch an unmarked one', () => {
+    const state = arrivedAt(0, 'killer');
+    const marked = addEnemy(state, 'staph', mountPosition(state, 0));
+    const bare = addEnemy(state, 'staph', mountPosition(state, 0));
+    marked.tag = DEFENDERS.anti.tag;
+    const bareHp = bare.hp;
+
+    stepArrivals(state, STEP_SECONDS);
+
+    expect(marked.hp).toBeLessThan(marked.maxHp);
+    expect(bare.hp, 'an unmarked body was hit').toBe(bareHp);
+  });
+
+  it('spends nothing on a board with nothing marked', () => {
+    const state = arrivedAt(0, 'killer');
+    addEnemy(state, 'staph', mountPosition(state, 0));
+    stepArrivals(state, STEP_SECONDS);
+    expect(state.arrivals[0]?.uses).toBe(ARRIVAL_USES);
+  });
+
+  /**
+   * What memory buys, and it comes from the biology rather than being assigned: a first exposure
+   * produces IgM, and IgG — the isotype ADCC runs on — is what repeat exposure produces.
+   */
+  it('is only ever sent to a body that has finished the strain', () => {
+    for (let memory = 0; memory < IMMUNITY_MAX; memory += 1) {
+      expect(arrivalKindFor(memory), `${String(memory)} clears sent a killer`).not.toBe('killer');
+    }
+    expect(everSendsKiller(IMMUNITY_MAX)).toBe(true);
   });
 });

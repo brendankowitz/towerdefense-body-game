@@ -150,9 +150,9 @@ export interface Beam {
 }
 
 /**
- * Help a call for help actually bought, and where it landed. `kind` is fixed to `'antibody'` by
- * every arrival `callArrivals` produces today — Task 6 is what reads memory and starts choosing
- * `'killer'` instead, once something exists that a mark-only reach actually needs.
+ * Help a call for help actually bought, and where it landed. `kind` is `'antibody'` until the
+ * strain's memory is maxed and `arrivalKindFor` starts a coin toss on `'killer'` instead — see
+ * `stepArrivals` for what each kind is actually allowed to touch.
  */
 export interface Arrival {
   readonly mountIndex: number;
