@@ -11,14 +11,22 @@ import { armourMultiplier, isTagged } from './systems/targeting';
 import type { Arrival, Enemy, PathogenKind, SimState, StrainId } from './types';
 
 /**
- * The pathogen this enemy belongs to, if the immunity screen tracks it at all. `PathogenKind` and
- * `StrainId` overlap on exactly three members, and `state.immunity`'s own keys are that overlap —
+ * The strain this pathogen belongs to, if the immunity screen tracks it at all. `PathogenKind` and
+ * `StrainId` overlap on exactly three members, and an immunity record's own keys are that overlap —
  * so this reads them rather than repeating the three names in a table of its own. A pollen or a
- * toxin is not a key `state.immunity` has, and is not a strain for the same reason it was never a
+ * toxin is not a key an immunity record has, and is not a strain for the same reason it was never a
  * vaccine: nobody was ever asked to beat it three times.
+ *
+ * Takes the record rather than the whole `SimState`, the way `hasRule` (state.ts) takes the
+ * narrowest shape it can: the brief screen asks this same question of a profile that has no
+ * simulation behind it yet, and a second three-name table on that side is exactly the drift this
+ * function exists to prevent.
  */
-function strainOf(state: SimState, kind: PathogenKind): StrainId | undefined {
-  return kind in state.immunity ? (kind as StrainId) : undefined;
+export function strainOf(
+  immunity: Readonly<Record<StrainId, number>>,
+  kind: PathogenKind,
+): StrainId | undefined {
+  return kind in immunity ? (kind as StrainId) : undefined;
 }
 
 /**
@@ -38,7 +46,7 @@ function strainOf(state: SimState, kind: PathogenKind): StrainId | undefined {
  * total of the response, not of a wave.
  */
 export function noteRecognition(state: SimState, enemy: Enemy): void {
-  const strain = strainOf(state, enemy.kind);
+  const strain = strainOf(state.immunity, enemy.kind);
   if (strain === undefined) return;
   if (state.immunity[strain] <= 0) return;
 

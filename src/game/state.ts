@@ -33,8 +33,12 @@ export interface SimInput {
  *
  * The profile is not touched. A wipe that outlived the case would be a save-game change, and the
  * fiction is that the memory comes back — measles takes the immunity for the illness, not forever.
+ *
+ * Exported because the brief screen has to promise what the *simulation* will read, not what the
+ * profile holds: a screen that applied the mask a second way could promise help this case is about
+ * to delete, which is the broken promise the Tetanus caveat in `vaccines.ts` exists to record.
  */
-function immunityFor(
+export function immunityFor(
   immunity: Readonly<Record<StrainId, number>>,
   wipes: StrainId | undefined,
   blocked: boolean,
