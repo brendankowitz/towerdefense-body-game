@@ -61,6 +61,18 @@ export interface CaseDefinition {
   readonly waves: readonly (readonly WaveEntry[])[];
   readonly path: readonly Point[];
   readonly spots: readonly Point[];
+  /**
+   * Where earned immunity can send help — antibodies that mark, and later killers that can only
+   * kill what is marked (spec: memory response). Clustered on the build spots rather than spread
+   * to fill gaps: the body reinforces where the player committed, so help arriving beside the
+   * cells the player chose to place is what makes that placement matter more. Help arriving
+   * wherever the board is weakest would be the game quietly correcting a bad board instead.
+   *
+   * Held to the same dwell floor as a build spot (`content.invariants.test.ts`, "mount points") —
+   * a mount covering nothing is help arriving where nothing can happen, the same dead-content
+   * defect as an unusable spot one tier out. Nothing reads this field yet; Task 9 is what does.
+   */
+  readonly mounts: readonly Point[];
 }
 
 /**
@@ -142,6 +154,9 @@ export const CASES: readonly CaseDefinition[] = [
     // carried: a spot far from the vessel should demand range. What it may not be is a spot no
     // *two* cells can use — see `content.invariants.test.ts`, build spots.
     spots: [[114, 78], [288, 144], [204, 324], [162, 180], [198, 30]],
+    // Grid-searched within MOUNT_CLUSTER_RADIUS of spot 1 and spot 3 for a stretch of vessel the
+    // opening cell clears the dwell floor on — see content.invariants.test.ts, "mount points".
+    mounts: [[130, 122], [260, 336]],
   },
   {
     id: 'throat', node: 'throat', region: 'THROAT · CASE 05', title: 'Flu', credits: 'virus', tier: 1,
@@ -178,6 +193,7 @@ export const CASES: readonly CaseDefinition[] = [
     // of where it was, and no case needed a wave table touched.
     path: [[186, -24], [178, 68], [96, 110], [104, 196], [212, 226], [268, 300], [186, 356], [86, 330], [-24, 356]],
     spots: [[138, 126], [150, 246], [300, 320], [292, 268], [210, 144]],
+    mounts: [[114, 126], [240, 320]],
   },
   {
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', credits: 'film', tier: 1,
@@ -196,6 +212,7 @@ export const CASES: readonly CaseDefinition[] = [
     // way round before it reaches anything.
     path: [[110, -24], [116, 88], [58, 168], [96, 268], [200, 310], [292, 250], [286, 148], [232, 92], [268, -24]],
     spots: [[248, 192], [148, 164], [36, 300], [208, 380], [340, 304]],
+    mounts: [[96, 136], [276, 244]],
   },
   {
     // Credits film because a biofilm is what lives in a splinter site, and Biofilm's serum drops
@@ -241,6 +258,7 @@ export const CASES: readonly CaseDefinition[] = [
     // cheapest cell in the dock for a second or more, so none of them is a reach demand.
     path: [[398, 110], [300, 96], [212, 140], [148, 92], [72, 130], [64, 226], [148, 268], [140, 356], [216, 396], [212, 454]],
     spots: [[132, 162], [72, 264], [348, 36], [348, 174], [186, 210]],
+    mounts: [[132, 114], [108, 300]],
   },
   {
     // The season's one repeat of a rule, and it is here to be the cheap case: no new mechanic, no
@@ -280,6 +298,7 @@ export const CASES: readonly CaseDefinition[] = [
     // longest vessel, which is what the comment above means by more vessel in the same board.
     path: [[96, 454], [104, 356], [50, 286], [80, 186], [166, 128], [258, 158], [292, 246], [232, 306], [148, 288], [120, 372], [214, 410], [268, 454]],
     spots: [[180, 264], [294, 336], [336, 174], [210, 378], [84, 96]],
+    mounts: [[166, 418], [228, 232]],
   },
   {
     // Measles, and the reason it is on a lung rather than on "whole body" as the design table has
@@ -323,6 +342,7 @@ export const CASES: readonly CaseDefinition[] = [
     // carelessly.
     path: [[240, -24], [232, 74], [140, 104], [72, 168], [96, 262], [196, 288], [246, 358], [340, 372], [398, 300]],
     spots: [[120, 186], [144, 330], [144, 30], [198, 402], [306, 66]],
+    mounts: [[188, 26], [120, 242]],
   },
   {
     // The rule that inverts the loop, and the last case of the season because six cases of
@@ -368,6 +388,7 @@ export const CASES: readonly CaseDefinition[] = [
     // twice and out through the roof. The pollen is going somewhere it was always going to go.
     path: [[-24, 300], [78, 316], [150, 372], [244, 356], [292, 276], [232, 210], [130, 232], [70, 160], [140, 96], [244, 118], [286, 40], [268, -24]],
     spots: [[54, 198], [150, 276], [288, 180], [348, 312], [66, 396]],
+    mounts: [[272, 236], [82, 146]],
   },
   {
     // The season's second multiplying case, and the first one authored against the season-shape
@@ -406,6 +427,7 @@ export const CASES: readonly CaseDefinition[] = [
     ],
     path: [[150, -24], [158, 96], [92, 168], [200, 240], [96, 312], [186, 372], [176, 454]],
     spots: [[192, 66], [62, 172], [236, 240], [60, 306], [140, 406]],
+    mounts: [[102, 128], [124, 402]],
   },
   {
     // The compound case: two rules at once, and the first case in the season that asks the player
@@ -445,6 +467,7 @@ export const CASES: readonly CaseDefinition[] = [
     ],
     path: [[398, 84], [318, 78], [64, 66], [50, 250], [304, 262], [316, 366], [140, 372], [130, 286], [236, 292], [244, 214], [-24, 202]],
     spots: [[186, 146], [180, 34], [356, 318], [186, 410], [18, 116]],
+    mounts: [[10, 148], [316, 322]],
   },
   {
     // The finale, and the one case in the season fought with no vaccine and no brief.
@@ -487,6 +510,7 @@ export const CASES: readonly CaseDefinition[] = [
     ],
     path: [[214, 454], [206, 366], [96, 330], [78, 236], [166, 196], [180, 108], [292, 74], [300, -24]],
     spots: [[142, 396], [40, 296], [148, 262], [100, 154], [252, 148]],
+    mounts: [[162, 400], [120, 206]],
   },
   {
     // The last stand, fought once, at the end. The map only ever opens this case by spreading
@@ -606,6 +630,7 @@ export const CASES: readonly CaseDefinition[] = [
     // five still holds all six cells for over a second, so nothing here became a reach demand. What
     // changed is only how much vessel the board sees at once.
     spots: [[279, 207], [95, 144], [302, 180], [351, 258], [73, 319]],
+    mounts: [[331, 314], [119, 192]],
   },
 ];
 

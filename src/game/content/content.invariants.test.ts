@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dwellSeconds } from '../coverage';
 import { isLastStand } from '../front';
+import { distance } from '../state';
 import {
   DEFENDERS, DEFENDER_BLURBS, DEFENDER_ORDER, unlockPhrase,
 } from './defenders';
@@ -9,7 +10,9 @@ import { PATHOGENS } from './pathogens';
 import { CASES, caseHasRule } from './cases';
 import { STRAIN_NAME, STRAIN_ROWS, VACCINES } from './vaccines';
 import { BODY_LINKS, BODY_NODES, CASE_REGIONS, ENTRY_REGIONS, INTERIOR_REGIONS } from './body';
-import { BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, TAG_REWARD_MULTIPLIER } from './rules';
+import {
+  BOARD_HEIGHT, BOARD_WIDTH, IMMUNITY_MAX, MOUNT_CLUSTER_RADIUS, TAG_REWARD_MULTIPLIER,
+} from './rules';
 import type { CaseRuleKind, Point } from '../types';
 
 // Structural invariants only — never gameplay values. A balance pass must be able to change
@@ -742,5 +745,42 @@ describe('build spots are usable', () => {
         `${c.id} offers nowhere the opening cell (${cheapest.label}) can hold anything for ${String(MIN_DWELL_SECONDS)}s`,
       ).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('mount points', () => {
+  /**
+   * Help that arrives where nothing can happen is decoration. The same measure that keeps a build
+   * spot honest keeps a mount point honest — `coverage.ts` is the shared definition, and this is
+   * the floor from the build-spot block applied one tier out.
+   */
+  it('puts every mount point over a stretch of vessel something could act on', () => {
+    const cheapest = Object.values(DEFENDERS).reduce((a, b) => (a.cost <= b.cost ? a : b));
+    for (const c of CASES) {
+      c.mounts.forEach((mount, index) => {
+        expect(
+          dwellSeconds(mount, c.path, cheapest.range),
+          `${c.id} mount ${String(index)} covers nothing worth arriving at`,
+        ).toBeGreaterThanOrEqual(1);
+      });
+    }
+  });
+
+  /**
+   * Clustered on the build spots, because the body reinforces where the player committed. A mount
+   * point far from every spot is help arriving where nothing exploits it.
+   */
+  it('clusters every mount point near a build spot', () => {
+    for (const c of CASES) {
+      c.mounts.forEach((mount, index) => {
+        const nearest = Math.min(...c.spots.map(([x, y]) => distance(x, y, mount[0], mount[1])));
+        expect(nearest, `${c.id} mount ${String(index)} is ${nearest.toFixed(0)} from any spot`)
+          .toBeLessThanOrEqual(MOUNT_CLUSTER_RADIUS);
+      });
+    }
+  });
+
+  it('gives every case at least one', () => {
+    for (const c of CASES) expect(c.mounts.length).toBeGreaterThan(0);
   });
 });

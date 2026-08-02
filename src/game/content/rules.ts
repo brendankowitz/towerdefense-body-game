@@ -10,6 +10,12 @@ export const IMMUNITY_MAX = 3;
 export const TOWER_MAX_HP = 100;
 export const BUILD_SPOT_RADIUS = 24;
 
+/**
+ * How far a mount point may sit from the build spot it clusters around. A placeholder — Task 9
+ * measures what this should be once something actually reads `mounts`.
+ */
+export const MOUNT_CLUSTER_RADIUS = 60;
+
 export const WAVE_CLEAR_ENERGY = 50;
 export const CASE_CLEAR_BANK = 180;
 
