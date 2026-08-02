@@ -1,3 +1,4 @@
+import { noteRecognition } from '../arrivals';
 import { PATHOGENS } from '../content/pathogens';
 import { TAGGED_BURST_MULTIPLIER } from '../content/rules';
 import type {
@@ -72,6 +73,7 @@ function tag(state: SimState, tower: AntibodyTower, dt: number, dead: ReadonlySe
 
     enemy.tag = stats.tag;
     tagged = true;
+    noteRecognition(state, enemy);
     state.beams.push({
       fromX: tower.x, fromY: tower.y, toX: enemy.x, toY: enemy.y, life: 0.2, source: 'anti',
     });

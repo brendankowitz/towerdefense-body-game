@@ -202,6 +202,14 @@ export interface SimState {
    * rule, and never reset between waves: it is a running total of the response, not of a wave.
    */
   inflammation: number;
+  /**
+   * Marks laid on a body of a strain the profile already has some memory of, banked per strain.
+   * Partial rather than a full `Record`, because most cases never earn a single entry: most
+   * pathogens are not one of the three `state.immunity` tracks, and even those three earn nothing
+   * until the profile has beaten them before. Never reset between waves, for the same reason
+   * `inflammation` is not: a running total of the response, not of a wave.
+   */
+  recognition: Partial<Record<StrainId, number>>;
 
   towers: Tower[];
   enemies: Enemy[];
