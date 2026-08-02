@@ -25,14 +25,26 @@ function armed(overrides: {
 }
 
 /**
- * Swept rather than sampled once: `arrivalKindFor`'s own default reads as "never" (0.5 loses the
- * coin), so a single call at the default would prove nothing about the branch existing at all.
+ * Every roll `arrivalKindFor` could plausibly be called with, real `rng.next()` output included:
+ * `[0, 1)` in tenths. Swept rather than sampled once — `arrivalKindFor`'s own default (`1`) always
+ * loses the coin, so a single call at the default proves nothing about the branch existing at all,
+ * whichever way the test wants to point that fact.
  */
+const ROLLS = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] as const;
+
+/** True the moment one roll in the swept range buys a killer at this memory level. */
 function everSendsKiller(memory: number): boolean {
-  for (let roll = 0; roll < 1; roll += 0.1) {
-    if (arrivalKindFor(memory, roll) === 'killer') return true;
-  }
-  return false;
+  return ROLLS.some((roll) => arrivalKindFor(memory, roll) === 'killer');
+}
+
+/**
+ * True only if *no* roll in the swept range ever buys a killer — the check the memory gate itself
+ * needs. A test that calls `arrivalKindFor(memory)` with no roll would pass whether or not the gate
+ * existed, because the default already reads as "antibody"; sweeping the same domain
+ * `everSendsKiller` does is what actually exercises the `memory < IMMUNITY_MAX` branch.
+ */
+function neverSendsKiller(memory: number): boolean {
+  return !everSendsKiller(memory);
 }
 
 describe('recognition', () => {
@@ -205,10 +217,16 @@ describe('a killer arrival', () => {
   /**
    * What memory buys, and it comes from the biology rather than being assigned: a first exposure
    * produces IgM, and IgG — the isotype ADCC runs on — is what repeat exposure produces.
+   *
+   * Swept across every roll `arrivalKindFor` could be called with, not called once at the
+   * parameter's own default: a call with no roll passed always reads as "antibody" regardless of
+   * whether the `memory < IMMUNITY_MAX` gate is even there, so a single-call assertion cannot tell
+   * a real gate from a deleted one. `neverSendsKiller` sweeps the same domain `everSendsKiller`
+   * does below, which is what actually exercises the gate on every memory short of a held vaccine.
    */
   it('is only ever sent to a body that has finished the strain', () => {
     for (let memory = 0; memory < IMMUNITY_MAX; memory += 1) {
-      expect(arrivalKindFor(memory), `${String(memory)} clears sent a killer`).not.toBe('killer');
+      expect(neverSendsKiller(memory), `${String(memory)} clears sent a killer`).toBe(true);
     }
     expect(everSendsKiller(IMMUNITY_MAX)).toBe(true);
   });

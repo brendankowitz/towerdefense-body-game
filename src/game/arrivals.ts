@@ -2,11 +2,12 @@ import { CASE_BY_ID } from './content/cases';
 import { DEFENDERS } from './content/defenders';
 import { PATHOGENS } from './content/pathogens';
 import {
-  ARRIVAL_USES, IMMUNITY_MAX, RECOGNITION_PER_CALL, RESPONSE_PER_CLEAR,
+  ARRIVAL_USES, IMMUNITY_MAX, KILLER_DAMAGE, KILLER_MIX_CHANCE, RECOGNITION_PER_CALL,
+  RESPONSE_PER_CLEAR,
 } from './content/rules';
 import { createRng } from './rng';
 import { distance } from './state';
-import { isTagged } from './systems/targeting';
+import { armourMultiplier, isTagged } from './systems/targeting';
 import type { Arrival, Enemy, PathogenKind, SimState, StrainId } from './types';
 
 /**
@@ -61,20 +62,22 @@ function openMounts(state: SimState): readonly number[] {
 
 /**
  * Which kind of help a successful call buys, given how many times the body has already cleared
- * the strain it was banked on. This is the biology, not a balance dial: a first exposure produces
- * IgM, and IgG — the isotype ADCC actually runs on — is what repeat exposure produces, so nothing
- * short of a held vaccine (`IMMUNITY_MAX`) ever buys a killer. No ratio constant sits beside it;
- * Task 9 is what earns one, once a board exists that can measure what the mix should be.
+ * the strain it was banked on. The gate is the biology, not a balance dial: a first exposure
+ * produces IgM, and IgG — the isotype ADCC actually runs on — is what repeat exposure produces, so
+ * nothing short of a held vaccine (`IMMUNITY_MAX`) ever buys a killer.
  *
- * `roll` is read only once memory is maxed — the coin a call at full memory turns on between an
- * antibody, which keeps marking bodies the killer still depends on, and a killer, which finally
- * answers those marks. Below the max the mix isn't a coin at all, so the parameter is never read;
- * defaulting it to the losing side of that coin (`0.5`) means a bare `arrivalKindFor(memory)` call
- * exercises the same "nothing sent" path a caller with no roll on hand would actually take.
+ * Which of the two a call at full memory buys *is* a balance dial, though, so it lives in
+ * `KILLER_MIX_CHANCE` where Task 9 can move it, rather than as a literal here — an antibody keeps
+ * marking bodies the killer still depends on, and a killer finally answers a mark already laid.
+ *
+ * `roll` is read only once memory is maxed; below the max the mix isn't a roll at all, so the
+ * parameter is never read there. Defaulting it to `1` — outside the `[0, 1)` a real roll ever
+ * lands in — means a bare `arrivalKindFor(memory)` call always takes the antibody path even at
+ * full memory, the same "nothing decided yet" reading a caller with no roll on hand should get.
  */
-export function arrivalKindFor(memory: number, roll = 0.5): Arrival['kind'] {
+export function arrivalKindFor(memory: number, roll = 1): Arrival['kind'] {
   if (memory < IMMUNITY_MAX) return 'antibody';
-  return roll < 0.5 ? 'killer' : 'antibody';
+  return roll < KILLER_MIX_CHANCE ? 'killer' : 'antibody';
 }
 
 /**
@@ -119,21 +122,24 @@ export function callArrivals(state: SimState): void {
  * An antibody marks with the same field and the same duration the placed cell uses,
  * `DEFENDERS.anti.tag`, so every downstream reader of `isTagged` — armour, the burn, the kill's
  * reward — treats an arrival's mark and a cell's mark as the one thing they are; this never
- * invents a second kind. A killer kills outright rather than rolling damage, the way `nk`'s own
- * execute does at its threshold — ADCC does not wound what it answers, it destroys it. Reach for
- * either is the cognate placed cell's own range: an arrival is that cell, not a rule invented
- * beside one.
+ * invents a second kind. A killer hits for `KILLER_DAMAGE`, the same way `nk`'s own `execute` hits
+ * for `dmg` — one shot, not a burn — because a killer cell is the shape ADCC actually mirrors in
+ * this game's roster, so an arrival of that kind is that cell rather than a rule invented beside
+ * one. It is not a guaranteed one-hit kill: a body a killer arrival cannot finish stays marked and
+ * wounded for whatever finishes it next, the placed `nk` cell included.
  *
- * **A killer can only kill what `isTagged` already says is marked.** That is ADCC, and it is also
- * the guardrail the free-arrival design rests on: a killer that could reach an unmarked body would
+ * **A killer can only touch what `isTagged` already says is marked.** That is ADCC — a killer cell
+ * does not choose its own targets, it destroys what antibody has flagged — and it is also the
+ * guardrail the free-arrival design rests on: a killer that could reach an unmarked body would
  * bypass the build-spot scarcity the whole game is priced on, so it is worth exactly what the
  * player's own tagging — from a placed `anti` cell or from an antibody arrival — made it worth. It
  * never marks anything itself, and there is no fallback path that lets it act on nothing.
  *
  * Ammunition, not a timer, for both kinds. Against a particulate target an antibody is
- * internalised bound to what it caught and degraded with it, and a killer cell is spent doing the
- * one thing ADCC does — so each spends one use per body it acts on and the arrival leaves the
- * instant it has none left. Nothing here runs down on a clock the player cannot see.
+ * internalised bound to what it caught and degraded with it, and a killer cell is spent on the one
+ * hit it lands — so each spends one use per body it acts on, whether or not that hit finished the
+ * body, and the arrival leaves the instant it has none left. Nothing here runs down on a clock the
+ * player cannot see.
  */
 export function stepArrivals(state: SimState, dt: number): void {
   // A step of no time passes nothing — the same invariant every other system in `step` holds,
@@ -162,7 +168,11 @@ export function stepArrivals(state: SimState, dt: number): void {
         } else {
           // The guardrail: nothing but a mark already on the body earns it a hit here.
           if (!isTagged(enemy)) continue;
-          enemy.hp = 0;
+          // armourMultiplier is always 1 on the branch above — a killer arrival can only ever
+          // reach a body isTagged already says is marked, and armour drops for exactly that
+          // case — but this still calls it rather than assuming so, the same way every other
+          // damage source in the game reaches hp through it and not around it.
+          enemy.hp -= KILLER_DAMAGE * armourMultiplier(state, enemy);
         }
 
         uses -= 1;

@@ -321,3 +321,28 @@ export const ARRIVAL_USES = 3;
  * measures it, once `ARRIVALS_ENABLED` lets a board actually roll it.
  */
 export const RESPONSE_PER_CLEAR = 0.25;
+
+/**
+ * The chance a call at full memory (`IMMUNITY_MAX`) buys a killer instead of another antibody. A
+ * placeholder for the same reason `RECOGNITION_PER_CALL` and `ARRIVAL_USES` are: this is a balance
+ * dial, not a fact about the biology, and Task 9 is what measures what it should be once a board
+ * exists to sweep it against. Below `IMMUNITY_MAX` this is never read at all — `arrivalKindFor`
+ * sends only antibodies there, which is the fact about the biology.
+ */
+export const KILLER_MIX_CHANCE = 0.5;
+
+/**
+ * Damage a killer arrival deals to the one marked body it hits, applied the same way `nk`'s own
+ * `dmg` is: straight off `hp`, scaled by `armourMultiplier`. That multiplier is always 1 here in
+ * practice — a killer arrival can only ever reach a body `isTagged` already says is marked, and
+ * `armourMultiplier` drops armour for exactly that case — so calling it costs nothing and keeps
+ * this on the one path every other damage source in the game already goes through, rather than a
+ * second one invented beside it.
+ *
+ * Started at `nk`'s own `dmg` (`content/defenders.ts`) rather than a fresh guess, since it is the
+ * paid cell this arrival stands in for and a free copy of it should not simply out-hit it — a
+ * literal here rather than an import of that value, because `defenders.ts` already imports from
+ * this module and a value cannot import back across that edge. A placeholder for the same reason
+ * `ARRIVAL_USES` is: Task 9 measures what this should be, once a board exists to spend one against.
+ */
+export const KILLER_DAMAGE = 58;
