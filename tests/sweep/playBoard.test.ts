@@ -211,10 +211,11 @@ describe('playBoard', () => {
 
 describe('the arrivals axis', () => {
   /**
-   * The axis has to be a real parameter before anything reads it, so every number recorded from
-   * here on says which side of it it was measured on. Passing `'none'` explicitly has to be the
-   * same game as leaving it off, or the default that keeps every existing five-argument call
-   * measuring what it always measured would be a lie.
+   * A tripwire, not a guard: `context.arrivals` is unread everywhere today, so this call and the
+   * five-argument one it compares against are byte-identical whatever the default is, and nothing
+   * here can currently fail. It holds nothing until the day something reads `context.arrivals` for
+   * real — Task 9 is where that is expected to happen, though an earlier task may get there first
+   * — and from that day this is what notices an accidental behaviour change under `'none'`.
    */
   it('plays the shipped game under none, the same as the five-argument call it replaces', () => {
     const board = boardOf('phago');
