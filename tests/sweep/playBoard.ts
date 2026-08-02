@@ -220,6 +220,22 @@ export function runBuildPhase(
 }
 
 /**
+ * Whether earned immunity sends help to the board during a fight — the axis this file gives the
+ * feature before the feature exists, for the same reason `MaturationPolicy` above did: a change
+ * that moves every clear rate in `cases.ts` may not arrive before the harness that can see it move.
+ *
+ * - `'none'` — the shipped game, and the only policy every rate in `cases.ts` has ever been
+ *   measured under. It is also what a caller gets by leaving the argument off `playBoard`, so the
+ *   five-argument call every existing sweep still makes plays on exactly as it always has.
+ * - `'earned'` — what tagging is meant to buy. Threaded as far as `BoardContext` below and no
+ *   further: nothing reads it off the context yet, because the axis has to be a real parameter
+ *   before anything reads it, or no number recorded from here on could say which side of it it was
+ *   measured on. `arrivals.sweep.ts` is the harness that measures what turning it on is worth, once
+ *   a model exists behind `ARRIVALS_ENABLED` (`content/rules.ts`) to gate it.
+ */
+export type ArrivalPolicy = 'none' | 'earned';
+
+/**
  * Everything about a run that decides how a board plays, handed in rather than derived from a
  * count of cleared cases.
  *
@@ -237,6 +253,11 @@ export interface BoardContext {
   readonly day: number;
   /** MMR, earned. False everywhere the board sweep plays, since it enters no case with a profile. */
   readonly blocksAmnesia: boolean;
+  /**
+   * Optional so `runSweep.ts` and `playRun.ts` keep building the context they always have.
+   * See `ArrivalPolicy` above for what it means and why `playBoardIn` does not read it yet.
+   */
+  readonly arrivals?: ArrivalPolicy;
 }
 
 export function playBoardIn(
@@ -304,6 +325,10 @@ export function playBoardIn(
  *
  * A thin wrapper rather than the other way round, so nothing about the board sweep changed when
  * the run sweep needed a context of its own.
+ *
+ * `arrivals` defaults to `'none'` for the same reason every other argument here has the value it
+ * does: every call in this repo, five-argument or six, has to keep playing the game its recorded
+ * rate was measured under unless it says otherwise.
  */
 export function playBoard(
   caseId: CaseId,
@@ -311,6 +336,7 @@ export function playBoard(
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
   kinds: GrowableSet,
+  arrivals: ArrivalPolicy = 'none',
 ): BoardOutcome {
   return playBoardIn({
     caseId,
@@ -319,5 +345,6 @@ export function playBoard(
     // index 0 — so this reproduces the schedule `unlockedKinds` above already measures by index.
     day: daysElapsed + 1,
     blocksAmnesia: false,
+    arrivals,
   }, board, policy, kinds);
 }

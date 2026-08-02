@@ -209,6 +209,20 @@ describe('playBoard', () => {
   });
 });
 
+describe('the arrivals axis', () => {
+  /**
+   * The axis has to be a real parameter before anything reads it, so every number recorded from
+   * here on says which side of it it was measured on. Passing `'none'` explicitly has to be the
+   * same game as leaving it off, or the default that keeps every existing five-argument call
+   * measuring what it always measured would be a lie.
+   */
+  it('plays the shipped game under none, the same as the five-argument call it replaces', () => {
+    const board = boardOf('phago');
+    expect(playBoard(CASE_ID, CLEARED, board, 'never', EVERY_GROWABLE, 'none'))
+      .toEqual(playBoard(CASE_ID, CLEARED, board, 'never', EVERY_GROWABLE));
+  });
+});
+
 /**
  * The comparison builds one row per entry here, so an empty or short set does not fail the sweep —
  * it silently deletes the rows the trap assertion runs over, and the sweep passes having checked

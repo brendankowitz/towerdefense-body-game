@@ -280,3 +280,12 @@ export const DOOR_RESIST_PER_CLEAR = 0.25;
 
 /** Bank spent to add one day to a wall. The only thing that competes with fighting for a day. */
 export const SHORE_UP_COST = 120;
+
+/**
+ * Whether earned immunity sends help to the board at all.
+ *
+ * Off until `tests/sweep/arrivals.sweep.ts` has measured what turning it on is worth, because the
+ * eleven clear rates in `cases.ts` were every one of them measured without it. A feature that
+ * changes every number in the project may not arrive before the instrument that can see it.
+ */
+export const ARRIVALS_ENABLED = false;
