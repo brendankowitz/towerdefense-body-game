@@ -192,7 +192,9 @@ function compareCase({ caseId, daysElapsed }: SweepCase): CaseComparison {
     // Every run is played before anything is counted, so `helped` and `hurt` compare against the
     // baseline rather than against whichever run the loop happened to reach first.
     const outcomes = RUNS.map(
-      (run) => playBoard(caseId, daysElapsed, board, run.policy, run.kinds),
+      // `'earned'` is the season-order immunity this comparison has always played, stated rather
+      // than defaulted — see `ArrivalPolicy` in `playBoard.ts` for why there is no default left.
+      (run) => playBoard(caseId, daysElapsed, board, run.policy, run.kinds, 'earned'),
     );
     const baseline = outcomes[RUNS.findIndex((run) => run.policy === 'never')];
     if (baseline === undefined) throw new Error('the comparison has no never run to compare to');

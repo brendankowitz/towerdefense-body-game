@@ -279,6 +279,9 @@ function heartReport(groups: readonly RunGroup[]): string {
         immunity: arrival.immunity,
         day: arrival.day,
         blocksAmnesia: arrival.blocksAmnesia,
+        // The memory the run turned up with, which is the whole point of enumerating at a real
+        // arrival rather than at full everything. See `ArrivalPolicy`.
+        arrivals: 'earned',
       }, board, 'never', EVERY_GROWABLE);
       if (outcome.cleared) clears += 1;
     }

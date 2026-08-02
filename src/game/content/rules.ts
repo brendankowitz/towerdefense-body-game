@@ -11,8 +11,17 @@ export const TOWER_MAX_HP = 100;
 export const BUILD_SPOT_RADIUS = 24;
 
 /**
- * How far a mount point may sit from the build spot it clusters around. A placeholder — Task 9
- * measures what this should be once something actually reads `mounts`.
+ * How far a mount point may sit from the build spot it clusters around.
+ *
+ * **Not swept, and the skip is logged by the instrument itself.** Nothing reads this at runtime:
+ * it is the bound `content.invariants.test.ts` holds authored mounts inside, so moving it changes
+ * no simulation and measures nothing at all until eleven boards have been re-authored against the
+ * new bound. `arrivals.sweep.ts` prints that on every run rather than leaving a reader to notice
+ * an absence, and the response landed where it was aimed at the current placement — so the honest
+ * record is that this was left alone, not a number nobody measured.
+ *
+ * What *was* measured about the placement is how much the second mount of each case is worth,
+ * which is the axis this bound governs the most: the note on the mounts in `cases.ts` has it.
  */
 export const MOUNT_CLUSTER_RADIUS = 60;
 
@@ -290,46 +299,180 @@ export const SHORE_UP_COST = 120;
 /**
  * Whether earned immunity sends help to the board at all.
  *
- * Off until `tests/sweep/arrivals.sweep.ts` has measured what turning it on is worth, because the
- * eleven clear rates in `cases.ts` were every one of them measured without it. A feature that
- * changes every number in the project may not arrive before the instrument that can see it.
+ * **On, and this is the measurement that turned it on.** `tests/sweep/arrivals.sweep.ts` plays the
+ * whole board space of all eleven cases — 66,600 boards — at no memory and at each of the three
+ * points of it, and it was run twice: once with this flag off, which measures what the three
+ * strain vaccines are worth on their own, and once with it on. Subtracting gives the response by
+ * itself, exactly, because both runs enumerate the same finite space on a deterministic simulation
+ * and neither carries sampling error.
  *
- * Typed `boolean` rather than left to infer the literal `false`: every reader of this flag —
- * `step.ts` included — branches on it, and a literal type would make that branch dead code by
+ *     memory       vaccines only     with the response      the response alone
+ *     1                    +0.0pp                +1.5pp                  +1.5pp
+ *     2                    +0.0pp                +2.7pp                  +2.7pp
+ *     3                    +4.5pp                +8.6pp                  +4.1pp
+ *
+ * Against a season baseline of 5.3% of boards clearing. Two things in that table matter more than
+ * the numbers. The first is that **memory 1 and memory 2 measure exactly zero with the flag off —
+ * not one board of 66,600 changes hands** — which is the standing proof that below `IMMUNITY_MAX`
+ * nothing in the simulation reads `state.immunity` except the response: the tetanus bounce, Flu B
+ * and the biofilm serum are every other reader and all three are `>= IMMUNITY_MAX` tests. The
+ * comparison's whole method rests on that, and it is measured rather than argued.
+ *
+ * The second is the ceiling every dial below was chosen against, which the same table hands over:
+ * the response at full memory is worth **less than the three vaccines it arrives alongside**, +4.1
+ * against +4.5. The immunity screen tells the player about the vaccine and says nothing about the
+ * arrival, so a response worth more than the thing the screen names would make the advertised half
+ * of memory the smaller half.
+ *
+ * The eleven rates in `cases.ts` were measured with this off and **every one of them has moved** —
+ * six of the eleven leave the 5–15% band at full memory, forearm and throat by more than thirty
+ * points. That is Task 10's work, and it is why this flip is committed on its own: the band is
+ * asserted by `npm run sweep`, which is not part of `npm run verify`, so the season can be re-tuned
+ * against a game that has this on rather than against one that has it off.
+ *
+ * **Provenance, exactly, because five spreads share it.** Every table below was swept one dial at a
+ * time out of the placeholder point, and that point had `KILLER_MIX_CHANCE` at 0.5 where 0.75 now
+ * ships — worth +0.3pp of response at full memory. So the tables are the reason each value is what
+ * it is, and they are not a reading of the combination that ships; the combination that ships is
+ * the run pasted into `.superpowers/sdd/2026-08-01-memory-response/task-9-report.md`, which is
+ * where the figures at the top of this block come from. Re-sweep before moving any of them.
+ *
+ * Typed `boolean` rather than left to infer the literal `true`: every reader of this flag —
+ * `step.ts` included — branches on it, and a literal type would make the other branch dead code by
  * construction rather than a runtime decision one flip is meant to change.
  */
-export const ARRIVALS_ENABLED: boolean = false;
+export const ARRIVALS_ENABLED: boolean = true;
 
 /**
- * Marks a strain must bank, from `noteRecognition`, before a call for help is even rolled. A
- * placeholder — Task 9 measures what this should be once a board exists that plays it, the way
- * `MOUNT_CLUSTER_RADIUS` above is measured once something reads `mounts`.
+ * Marks a strain must bank, from `noteRecognition`, before a call for help is even rolled.
+ *
+ * **Worth per step: the whole of the response's magnitude — it is the dial with the range.** Swept
+ * over the season's whole board space, every other dial at the value it ships at. The columns are
+ * the response *alone*, with the flag-off control subtracted:
+ *
+ *     RPC=2   memory 1 +2.9pp   memory 2 +5.7pp   memory 3 +9.2pp   lost/won at memory 1  10%
+ *     RPC=3            +2.3             +4.5              +6.9                           13%
+ *     RPC=5            +1.5             +2.7              +3.8                           20%
+ *     RPC=8            +0.6             +1.3              +3.1                           37%
+ *     RPC=12           +0.2             +0.6              +1.6                           66%
+ *     RPC=20           +0.2             +0.6              +1.0                           53%
+ *     RPC=30           +0.1             +0.2              +0.5                           63%
+ *
+ * **2 and 3 are out on the ceiling recorded above**: +9.2pp and +6.9pp are both more than the three
+ * vaccines' +4.5pp, so the unadvertised half of memory would be the larger half.
+ *
+ * **8 and above are out for a reason the aggregate hides, and it is the finding of this sweep.**
+ * The collateral of a stray mark is nearly *flat* in this dial while the benefit is not: boards
+ * lost to the response at one point of memory run 212, 226, 256, 228, 224, 170, 126 down that
+ * spread, while boards won run 2128, 1764, 1257, 614, 340, 319, 199. A rarer response is therefore
+ * not a gentler one — it is the same amount of interference arriving with less of the help that
+ * paid for it, and the last column is what that does. At 5 the first point of memory is worth
+ * something on ten of the eleven cases and costs three boards in 7776 on the eleventh (measles,
+ * -0.04pp). At 8 and above the hand case goes *negative* at one point of memory — -0.8pp at 8 and
+ * -0.9pp at 12 — which is a player handed a memory worse than not having one.
+ *
+ * 5 clears the ceiling and stays the right side of that floor.
  */
 export const RECOGNITION_PER_CALL = 5;
 
 /**
- * Marks one arrival can lay before it is spent and leaves the board. A placeholder for the same
- * reason `RECOGNITION_PER_CALL` is: Task 9 measures what this should be, once `ARRIVALS_ENABLED`
- * lets a board actually spend one.
+ * Marks one arrival can lay before it is spent and leaves the board.
+ *
+ * **Worth per step: roughly a point of season clear rate per use, and it does not tail off.**
+ * Response alone at full memory, everything else at its shipped value:
+ *
+ *     USES=1  +1.5pp     USES=2  +2.8pp     USES=3  +3.8pp     USES=5  +5.6pp     USES=8  +7.6pp
+ *
+ * 5 and 8 are over the vaccine ceiling recorded on `ARRIVALS_ENABLED` (+4.5pp). **3 is the largest
+ * value under it**; 1 and 2 give up a point and two points of a response that is already the
+ * smaller half of what memory buys.
+ *
+ * **The display was checked and is not what binds, which is worth writing down because it nearly
+ * was.** `ArrivalLayer` lays one pip per remaining use on a circle of `PIP_LAYOUT_RADIUS` with pips
+ * of `PIP_RADIUS`, so the clear space between neighbours is `2r*sin(pi/n) - 2R`: 4.39 at three
+ * uses, 2.49 at four, 1.05 at five, **0.00 at six**, and negative above. The layout reads as a
+ * count up to five and becomes a ring at six. The display ceiling is therefore 5 and the balance
+ * ceiling is 3 — anyone raising this past 5 has to re-lay the pips as well as re-measure.
  */
 export const ARRIVAL_USES = 3;
 
 /**
  * The chance a call is answered, per point of immunity behind the strain it was banked on — the
  * same shape `DOOR_RESIST_PER_CLEAR` gives a door, because both are "one clear buys this much of a
- * chance" dials on the same `immunity` magnitude. A placeholder for the same reason: Task 9 is what
- * measures it, once `ARRIVALS_ENABLED` lets a board actually roll it.
+ * chance" dials on the same `immunity` magnitude.
+ *
+ * **Worth per step, and a cliff at a third.** Response alone, everything else shipped:
+ *
+ *     RSP=0.05  memory 1 +0.4pp   memory 2 +0.7pp   memory 3 +1.2pp
+ *     RSP=0.10           +0.7             +1.3              +2.0
+ *     RSP=0.15           +1.0             +2.0              +2.7
+ *     RSP=0.25           +1.5             +2.7              +3.8
+ *     RSP=0.34           +2.1             +3.6              +6.1
+ *     RSP=0.50           +2.7             +5.1              +6.1
+ *
+ * **0.34 and 0.50 measured identical at full memory — the same clear count, the same 7261 boards
+ * won, the same arrivals.** `callArrivals` rolls against `min(1, immunity * this)`, so at a third
+ * and above a call at three points of memory is *always* answered and the top of the ladder stops
+ * being a chance at all. That is the cliff, and it is the same shape of finding
+ * `DOOR_RESIST_PER_CLEAR` records one tier out: past a third of `IMMUNITY_MAX` the dial stops being
+ * difficulty and starts being a switch.
+ *
+ * Two identities fall out of that table and are the reason to trust it: 0.05 at two points of
+ * memory and 0.10 at one point are the same effective chance and measured the same to the board, as
+ * did 0.50 at one point and 0.25 at two. The sweep is measuring this model and not something beside
+ * it.
+ *
+ * Both values above the cliff also break the vaccine ceiling (+6.1 against +4.5). **0.25 is the
+ * largest value on the safe side of it**, it gives the 25 / 50 / 75 per cent ladder a player can
+ * read straight off the three pips on the immunity screen, and it leaves a quarter chance that a
+ * call at full memory is not answered — so help is never a certainty.
  */
 export const RESPONSE_PER_CLEAR = 0.25;
 
 /**
- * The chance a call at full memory (`IMMUNITY_MAX`) buys a killer instead of another antibody. A
- * placeholder for the same reason `RECOGNITION_PER_CALL` and `ARRIVAL_USES` are: this is a balance
- * dial, not a fact about the biology, and Task 9 is what measures what it should be once a board
- * exists to sweep it against. Below `IMMUNITY_MAX` this is never read at all — `arrivalKindFor`
- * sends only antibodies there, which is the fact about the biology.
+ * The chance a call at full memory (`IMMUNITY_MAX`) buys a killer instead of another antibody.
+ *
+ * **Worth per step on the clear rate: nothing ordered.** Swept end to end, response alone at full
+ * memory, everything else shipped. The second column is boards the player loses to holding memory
+ * and the third is, of the boards it won, the share the baseline had lost on the case's last wave:
+ *
+ *     KMC=0     +4.0pp   lost 289   won late 43%
+ *     KMC=0.25  +3.7          282            45%
+ *     KMC=0.50  +3.8          238            46%
+ *     KMC=0.75  +4.1          220            48%
+ *     KMC=1.00  +4.7          192            47%
+ *
+ * The first column is not monotone — 4.0, 3.7, 3.8, 4.1 — and moves 0.7 points end to end, so the
+ * dial cannot be chosen on it. **The other two are monotone, and that is what it is chosen on**: a
+ * larger killer share costs the player fewer boards and rescues boards that were closer to won. The
+ * mechanism is the one `stepArrivals` is built around — a killer adds damage without adding a mark,
+ * and a mark is what disturbs a fight that was already going the player's way. At 1.00 the
+ * collateral of holding memory drops *below* what the three vaccines cost on their own, 192 against
+ * the control run's 244.
+ *
+ * **1.0 is out on the vaccine ceiling** recorded on `ARRIVALS_ENABLED` (+4.7 against +4.5), and it
+ * would mean no antibody arrival ever comes at full memory — a killer only ever acts on a mark
+ * already laid, so at 1.0 the help is worth exactly what the player's own `anti` cells made it
+ * worth. **0 is out because it deletes the killer from the game**: `arrivalKindFor` would never
+ * return one, and the killer branch of `stepArrivals`, the second colour in `ArrivalLayer` and the
+ * brief's own promise would all be content nothing could reach. 0.75 is the largest value under the
+ * ceiling and the best measured value of the two columns that move.
+ *
+ * **Two of the eleven cases do not obey this dial at all, and that is a defect rather than a
+ * rounding.** `createSimState` seeds every board's rng at 0, so on a case where nothing *else*
+ * draws from it, every board reaches its first call having consumed the same variates and draws the
+ * same kind roll. Measured on sinus: 24 answered calls over 120 boards, 23 of them rolling 0.944,
+ * all 24 coming out antibody. Vesper is the same — 169 answered calls, not one killer. The brief
+ * promises a killer at full memory on both (`Brief.tsx` asks `arrivalKindFor(memory, 0)`, which
+ * says yes for any positive value here) and neither case can deliver one at any setting under
+ * 0.944. It is not this dial's to fix.
+ *
+ * Below `IMMUNITY_MAX` this is never read at all — `arrivalKindFor` sends only antibodies there,
+ * which is the fact about the biology rather than a dial, and the sweep says so from the
+ * measurement: across the whole spread above, the memory-1 and memory-2 clear counts do not move by
+ * a single board out of 66,600.
  */
-export const KILLER_MIX_CHANCE = 0.5;
+export const KILLER_MIX_CHANCE = 0.75;
 
 /**
  * Damage a killer arrival deals to the one marked body it hits, applied the same way `nk`'s own
@@ -342,7 +485,17 @@ export const KILLER_MIX_CHANCE = 0.5;
  * Started at `nk`'s own `dmg` (`content/defenders.ts`) rather than a fresh guess, since it is the
  * paid cell this arrival stands in for and a free copy of it should not simply out-hit it — a
  * literal here rather than an import of that value, because `defenders.ts` already imports from
- * this module and a value cannot import back across that edge. A placeholder for the same reason
- * `ARRIVAL_USES` is: Task 9 measures what this should be, once a board exists to spend one against.
+ * this module and a value cannot import back across that edge.
+ *
+ * **Worth per step: 0.3 of a point up to the paid cell's damage, and almost nothing above it.**
+ * Response alone at full memory, swept at `KILLER_MIX_CHANCE` 0.5 and everything else shipped:
+ *
+ *     KD=29  +3.5pp     KD=58  +3.8pp     KD=87  +4.0pp     KD=116  +4.1pp
+ *
+ * Halving it costs 0.3 points; doubling it buys 0.2 and tripling it 0.3. The knee is at the value
+ * it started on, and that is the argument for keeping it: a killer arrival is spent on the one hit
+ * it lands, so what decides a fight is how many bodies it can finish rather than by how much it
+ * overkills each one, and past `nk`'s own damage most of the extra lands on things already dead.
+ * Paying a free arrival more than the cell it stands in for buys a tenth of a point.
  */
 export const KILLER_DAMAGE = 58;

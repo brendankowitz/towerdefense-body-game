@@ -194,7 +194,7 @@ describe('playRun', () => {
    */
   it('does not let one context change what another one measures', () => {
     const at = (immunity: Readonly<Record<StrainId, number>>): BoardContext =>
-      ({ caseId: 'vesper', immunity, day: 11, blocksAmnesia: false });
+      ({ caseId: 'vesper', immunity, day: 11, blocksAmnesia: false, arrivals: 'earned' });
     const cold: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
     const full: Readonly<Record<StrainId, number>> = { staph: 3, film: 3, virus: 3 };
 

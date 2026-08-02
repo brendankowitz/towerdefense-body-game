@@ -107,7 +107,10 @@ function sweepCase({ caseId, daysElapsed }: SweepCase): SweepResult {
     // `'never'` grows nothing, so the set it is handed cannot change the outcome. Passed as
     // every growable kind rather than as nothing, so this line says "a player who declines the
     // offers" and not "a player the harness never offers anything to".
-    const outcome = playBoard(caseId, daysElapsed, board, 'never', EVERY_GROWABLE);
+    // `'earned'` is the game: the season-order immunity this harness has always handed the board,
+    // now stated rather than defaulted. `'none'` is the arrivals sweep's control and would take
+    // the three vaccines off every late case here. See `ArrivalPolicy` in `playBoard.ts`.
+    const outcome = playBoard(caseId, daysElapsed, board, 'never', EVERY_GROWABLE, 'earned');
     boards += 1;
     if (outcome.stalled) stalls += 1;
 

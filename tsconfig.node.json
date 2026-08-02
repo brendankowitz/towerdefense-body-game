@@ -21,6 +21,7 @@
     "vitest.sweep.config.ts",
     "vitest.sweep-maturation.config.ts",
     "vitest.sweep-runs.config.ts",
+    "vitest.sweep-arrivals.config.ts",
     "vitest.setup.ts",
     "playwright.config.ts",
     "capacitor.config.ts",

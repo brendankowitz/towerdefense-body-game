@@ -31,6 +31,14 @@ const SPOTS = 5;
  */
 const CLEARED = CASES.length;
 
+/**
+ * A case whose own strain the season takes all the way to `IMMUNITY_MAX`, so a profile that has
+ * cleared the season plays it behind a vaccine and a profile with nothing behind it does not.
+ * Throat credits virus and so do measles and bronchitis, which is three clears and the Flu B
+ * shield — the largest single thing memory does to a board that is not an arrival.
+ */
+const VACCINATED_CASE = 'throat';
+
 function openState(): SimState {
   return createSimState({
     caseId: CASE_ID, immunity: immunityAfter(0), day: CLEARED + 1, totalKills: 0,
@@ -188,8 +196,8 @@ describe('playBoard', () => {
   it('carries the policy through a whole run', () => {
     const board = boardOf('phago');
 
-    const never = playBoard(LATE_CASE, LATE_CLEARS, board, 'never', EVERY_GROWABLE);
-    const surplus = playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', EVERY_GROWABLE);
+    const never = playBoard(LATE_CASE, LATE_CLEARS, board, 'never', EVERY_GROWABLE, 'earned');
+    const surplus = playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', EVERY_GROWABLE, 'earned');
 
     expect(never.grown).toBe(0);
     // Surplus only ever grows on a standing board, so this also says the board was built.
@@ -204,23 +212,43 @@ describe('playBoard', () => {
   it('carries the growable set through a whole run', () => {
     const board = boardOf('phago');
 
-    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['phago']).grown).toBeGreaterThan(0);
-    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['anti']).grown).toBe(0);
+    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['phago'], 'earned').grown)
+      .toBeGreaterThan(0);
+    expect(playBoard(LATE_CASE, LATE_CLEARS, board, 'surplus', ['anti'], 'earned').grown).toBe(0);
   });
 });
 
 describe('the arrivals axis', () => {
   /**
-   * A tripwire, not a guard: `context.arrivals` is unread everywhere today, so this call and the
-   * five-argument one it compares against are byte-identical whatever the default is, and nothing
-   * here can currently fail. It holds nothing until the day something reads `context.arrivals` for
-   * real — Task 9 is where that is expected to happen, though an earlier task may get there first
-   * — and from that day this is what notices an accidental behaviour change under `'none'`.
+   * The axis was a parameter nothing read for four tasks, and these two cases are what turned it
+   * into a measurement. `'none'` means *no memory of anything* rather than "no arrivals" — see
+   * `ArrivalPolicy` for the lever that was available and the vaccine isolation it costs — so both
+   * halves of that sentence want holding:
+   *
+   * - handed a profile with memory, the two policies must play **different** games, or the
+   *   arrivals comparison is four identical arms agreeing about nothing;
+   * - handed a profile with no memory, they must play the **same** game board for board, because
+   *   that is the claim `'none'` makes about itself and the only thing that makes a difference
+   *   measured against it attributable to memory alone.
+   *
+   * Neither depends on `ARRIVALS_ENABLED`: the three strain vaccines are enough to separate the
+   * arms on their own, which is exactly why the arrivals sweep has to run itself once with the
+   * flag off before it can read its own memory-3 column.
    */
-  it('plays the shipped game under none, the same as the five-argument call it replaces', () => {
+  const MEMORISED = CASES.length - 1;
+
+  it('plays a different game under none when the profile has memory to lose', () => {
     const board = boardOf('phago');
-    expect(playBoard(CASE_ID, CLEARED, board, 'never', EVERY_GROWABLE, 'none'))
-      .toEqual(playBoard(CASE_ID, CLEARED, board, 'never', EVERY_GROWABLE));
+
+    expect(playBoard(VACCINATED_CASE, MEMORISED, board, 'never', EVERY_GROWABLE, 'none'))
+      .not.toEqual(playBoard(VACCINATED_CASE, MEMORISED, board, 'never', EVERY_GROWABLE, 'earned'));
+  });
+
+  it('plays the same game under either policy when there is no memory to take away', () => {
+    const board = boardOf('phago');
+
+    expect(playBoard(VACCINATED_CASE, 0, board, 'never', EVERY_GROWABLE, 'none'))
+      .toEqual(playBoard(VACCINATED_CASE, 0, board, 'never', EVERY_GROWABLE, 'earned'));
   });
 });
 

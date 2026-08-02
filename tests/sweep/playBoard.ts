@@ -1,10 +1,10 @@
 import {
   advanceToNextWave, matureDefender, maturationAt, placeDefender, startWave, towerAt,
 } from '../../src/game/commands';
-import { CASES } from '../../src/game/content/cases';
+import { CASES, CASE_BY_ID } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '../../src/game/content/defenders';
 import { maturedFormOf } from '../../src/game/content/maturation';
-import { IMMUNITY_MAX, STEP_SECONDS } from '../../src/game/content/rules';
+import { ARRIVALS_ENABLED, IMMUNITY_MAX, STEP_SECONDS } from '../../src/game/content/rules';
 import { createSimState } from '../../src/game/state';
 import { step } from '../../src/game/step';
 import type { CaseId, DefenderKind, SimState, StrainId } from '../../src/game/types';
@@ -34,9 +34,40 @@ export interface BoardOutcome {
   readonly built: number;
   /** Cells the economy actually grew over the whole run. Always zero under `'never'`. */
   readonly grown: number;
+  /**
+   * Arrivals seen **standing on a mount at the end of a step**, and how many of those were
+   * killers. Not the number of calls answered, and the difference is measured rather than
+   * hand-waved — see below.
+   *
+   * Counted per step rather than read off `state.arrivals` at the end, because an arrival spends
+   * itself and leaves: the list is empty again by the time a wave is over, so the end state says
+   * nothing about how much help a run received. Zero under `'none'` by construction, and zero
+   * under `'earned'` whenever `ARRIVALS_ENABLED` is off.
+   *
+   * **It undercounts, on purpose, because the exact count is not available from out here.**
+   * `step` calls `callArrivals` and `stepArrivals` in the same pass, so an arrival that lands and
+   * spends all `ARRIVAL_USES` before that step returns is gone by the time anything outside `step`
+   * can look. Counting it exactly would mean intercepting the push — patching an array method on
+   * `SimState` from a test harness — and a diagnostic column is not worth that. Measured against a
+   * patched-push probe over 120 boards a case: relapse 685 seen of 917 answered, throat 422 of
+   * 624, sinus 15 of 24, vesper 143 of 169. The bias is worse for killers, which need an
+   * already-marked body and therefore spend out fastest where marks are thickest — throat saw 71
+   * of 227. Read the column as "help that was still there on the next frame", which is what it is.
+   *
+   * Nothing chosen from this harness is measured off these two fields: every tuning number is a
+   * clear rate. What they are for is the guard in `arrivals.sweep.ts` that a run which should have
+   * been helped was, so a comparison can never report four identical arms agreeing beautifully
+   * about nothing. An undercount is sound in that direction — a non-zero reading is proof help
+   * arrived, whatever it missed.
+   */
+  readonly standing: number;
+  readonly standingKillers: number;
   /** True if a wave hit the step ceiling — a bug in the sweep or a stall in the simulation. */
   readonly stalled: boolean;
 }
+
+/** No memory of anything, which is what `ArrivalPolicy`'s `'none'` hands the simulation. */
+const NO_MEMORY: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
 
 /**
  * What the profile carries into this case, derived from the cases cleared before it rather than
@@ -220,18 +251,38 @@ export function runBuildPhase(
 }
 
 /**
- * Whether earned immunity sends help to the board during a fight — the axis this file gives the
- * feature before the feature exists, for the same reason `MaturationPolicy` above did: a change
- * that moves every clear rate in `cases.ts` may not arrive before the harness that can see it move.
+ * Whether the profile's memory is on the board at all — the axis this file gave the feature before
+ * the feature existed, and which Task 9 made mean something.
  *
- * - `'none'` — the shipped game, and the only policy every rate in `cases.ts` has ever been
- *   measured under. It is also what a caller gets by leaving the argument off `playBoard`, so the
- *   five-argument call every existing sweep still makes plays on exactly as it always has.
- * - `'earned'` — what tagging is meant to buy. Threaded as far as `BoardContext` below and no
- *   further: nothing reads it off the context yet, because the axis has to be a real parameter
- *   before anything reads it, or no number recorded from here on could say which side of it it was
- *   measured on. `arrivals.sweep.ts` is the harness that measures what turning it on is worth, once
- *   a model exists behind `ARRIVALS_ENABLED` (`content/rules.ts`) to gate it.
+ * - `'earned'` — the board plays the immunity it was handed. Every rate recorded in this repo was
+ *   measured under this, whatever the argument was called at the time, because the immunity a
+ *   caller passes has always been used as passed.
+ * - `'none'` — the same board with **no memory of anything**: every strain zeroed before
+ *   `createSimState` sees it. The difference between the two is what memory is worth.
+ *
+ * **`'none'` is "no memory", not "no arrivals", and that is a decision with a cost.**
+ *
+ * `ARRIVALS_ENABLED` is a module constant, so a harness that wanted arrivals off in one arm and on
+ * in another inside a single process would have to reach into `src/game/` and teach it that a
+ * sweep exists — which this repo does not do, and which would put a test axis inside the shipped
+ * simulation forever to save one operator edit. Zeroing the immunity is the lever the harness
+ * already has, and it is also the game's own rule: `noteRecognition` banks nothing for a strain at
+ * zero, so "no memory, no response" is stated once, in `src/game/arrivals.ts`, and this policy
+ * simply asks for it.
+ *
+ * **What it costs is the vaccine at full memory.** The three strain vaccines fire at
+ * `IMMUNITY_MAX`, so at memory 3 the `'none'` arm has no vaccine either and the difference between
+ * the arms is the response *and* the vaccine together. Below `IMMUNITY_MAX` nothing but
+ * `noteRecognition` and `callArrivals` reads `state.immunity` at all — `applySpawn`'s tetanus
+ * bounce, `resolveDeaths`' Flu B and `armourMultiplier`'s serum are every other reader and all
+ * three are `>= IMMUNITY_MAX` — so at memory 1 and memory 2 the difference is the response and
+ * nothing else. `arrivals.sweep.ts` decomposes the memory-3 column by running itself once with
+ * `ARRIVALS_ENABLED` off, which measures the vaccine alone, and it *checks* the paragraph above
+ * rather than trusting it: with the flag off, memory 1 and memory 2 must come out identical to the
+ * baseline, board for board.
+ *
+ * Never optional, for the reason `GrowableSet` below is never optional: "the shipped game" and "no
+ * memory at all" are the two readings of a missing argument here, and they are different games.
  */
 export type ArrivalPolicy = 'none' | 'earned';
 
@@ -253,11 +304,27 @@ export interface BoardContext {
   readonly day: number;
   /** MMR, earned. False everywhere the board sweep plays, since it enters no case with a profile. */
   readonly blocksAmnesia: boolean;
-  /**
-   * Optional so `runSweep.ts` and `playRun.ts` keep building the context they always have.
-   * See `ArrivalPolicy` above for what it means and why `playBoardIn` does not read it yet.
-   */
-  readonly arrivals?: ArrivalPolicy;
+  /** See `ArrivalPolicy` above. Required, and for the reason stated there. */
+  readonly arrivals: ArrivalPolicy;
+}
+
+/**
+ * Which mounts have an arrival standing on them, as a bitmask.
+ *
+ * A landing is a discrete event nothing records — `Arrival` carries no age and should not, and an
+ * arrival is rebuilt (`{ ...arrival, uses }`) every time it spends a use, so object identity says
+ * nothing either. Occupancy is the field that does change, and `callArrivals` never puts two
+ * arrivals on one mount, so a mount going empty-to-occupied is exactly one landing — the same
+ * reading `ArrivalLayer` makes to time its entrance flourish.
+ *
+ * A bitmask and no allocation, because this runs on every step of every board of every arm: the
+ * balance sweep alone is a few hundred million steps, and a `Set` or a `find` here would be
+ * measurable against the simulation it is watching.
+ */
+function occupancyOf(state: SimState): number {
+  let mask = 0;
+  for (const arrival of state.arrivals) mask |= 1 << arrival.mountIndex;
+  return mask;
 }
 
 export function playBoardIn(
@@ -268,14 +335,23 @@ export function playBoardIn(
 ): BoardOutcome {
   const state = createSimState({
     caseId: context.caseId,
-    immunity: context.immunity,
+    immunity: context.arrivals === 'earned' ? context.immunity : NO_MEMORY,
     day: context.day,
     totalKills: 0,
     blocksAmnesia: context.blocksAmnesia,
   });
 
+  // Nothing can land under `'none'` — every strain is at zero, so `noteRecognition` banks nothing
+  // — and nothing can land with the feature off, so neither pays for the watch.
+  const watching = ARRIVALS_ENABLED
+    && context.arrivals === 'earned'
+    && CASE_BY_ID[context.caseId].mounts.length > 0;
+
   let built = 0;
   let grown = 0;
+  let standing = 0;
+  let standingKillers = 0;
+  let occupied = 0;
   for (;;) {
     const spend = runBuildPhase(state, board, policy, kinds);
     built += spend.built;
@@ -285,6 +361,18 @@ export function playBoardIn(
     let steps = 0;
     while (state.phase === 'wave') {
       step(state, STEP_SECONDS);
+      if (watching) {
+        const now = occupancyOf(state);
+        const fresh = now & ~occupied;
+        if (fresh !== 0) {
+          for (const arrival of state.arrivals) {
+            if ((fresh & (1 << arrival.mountIndex)) === 0) continue;
+            standing += 1;
+            if (arrival.kind === 'killer') standingKillers += 1;
+          }
+        }
+        occupied = now;
+      }
       steps += 1;
       if (steps > MAX_STEPS_PER_WAVE) {
         return {
@@ -293,6 +381,8 @@ export function playBoardIn(
           tissue: state.tissue,
           built,
           grown,
+          standing,
+          standingKillers,
           stalled: true,
         };
       }
@@ -305,6 +395,8 @@ export function playBoardIn(
         tissue: state.tissue,
         built,
         grown,
+        standing,
+        standingKillers,
         stalled: false,
       };
     }
@@ -326,9 +418,10 @@ export function playBoardIn(
  * A thin wrapper rather than the other way round, so nothing about the board sweep changed when
  * the run sweep needed a context of its own.
  *
- * `arrivals` defaults to `'none'` for the same reason every other argument here has the value it
- * does: every call in this repo, five-argument or six, has to keep playing the game its recorded
- * rate was measured under unless it says otherwise.
+ * `arrivals` had a default of `'none'` while nothing read it. It has none now: the day `'none'`
+ * started meaning "no memory of anything" is the day a defaulted argument would have silently
+ * taken the vaccines off every late case in the season, and a caller that leaves it off should not
+ * compile rather than quietly measure a different game.
  */
 export function playBoard(
   caseId: CaseId,
@@ -336,7 +429,7 @@ export function playBoard(
   board: readonly DefenderKind[],
   policy: MaturationPolicy,
   kinds: GrowableSet,
-  arrivals: ArrivalPolicy = 'none',
+  arrivals: ArrivalPolicy,
 ): BoardOutcome {
   return playBoardIn({
     caseId,

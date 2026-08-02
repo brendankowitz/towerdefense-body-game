@@ -281,6 +281,10 @@ function contextFor(profile: Profile, caseId: CaseId): BoardContext {
     immunity: profile.immunity,
     day: profile.front.day,
     blocksAmnesia: blocksAmnesia(profile),
+    // A run plays the memory it earned, which is what this harness has always handed the board.
+    // `'none'` is the arrivals sweep's control arm and means "no memory of anything" — see
+    // `ArrivalPolicy` — so it is not a thing a run is ever in.
+    arrivals: 'earned',
   };
 }
 

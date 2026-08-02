@@ -70,7 +70,21 @@ export interface CaseDefinition {
    *
    * Held to the same dwell floor as a build spot (`content.invariants.test.ts`, "mount points") —
    * a mount covering nothing is help arriving where nothing can happen, the same dead-content
-   * defect as an unusable spot one tier out. Nothing reads this field yet; Task 9 is what does.
+   * defect as an unusable spot one tier out.
+   *
+   * **Two per case, and that was measured rather than kept.** `arrivals.sweep.ts` was run over the
+   * whole season with the second mount of every case truncated away, against the same run with
+   * both. What the second mount is worth, per case, on the response alone at full memory:
+   *
+   *     throat +9.3pp   stomach +7.8   forearm +7.0   measles +2.0   hand +1.6   relapse +0.9
+   *     vesper +0.6   heart +0.5   bronchitis +0.4   blister +0.2   sinus -0.1
+   *
+   * — and +1.3pp over the season, against +2.5pp for the first mount alone and +3.8pp for both. So
+   * the second mount carries about a third of the effect and the first carries two thirds, which is
+   * the answer to the question that decides whether to author a third: it is not the second mount
+   * doing all the work, so there is no evidence that a third would do any. Adding one means a grid
+   * search per case against the vessel, eleven times, to buy a third helping of a diminishing
+   * return — so it was not done, and this is the measurement that says why not.
    */
   readonly mounts: readonly Point[];
 }
