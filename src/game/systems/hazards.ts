@@ -121,6 +121,15 @@ export function applyInflammation(state: SimState): void {
  *
  * The draw runs off the sim's own generator and writes the counter back, the way `buildQueue`
  * does, so a run is reproducible from its seed and the sweep measures a case rather than a shuffle.
+ *
+ * **It is also the roll `callSeed` (`arrivals.ts`) was fixed and this one was not.** `buildQueue`
+ * reseeds `state.rngState` from the case and the wave at every wave boundary, so on a board that
+ * has not called for help this draw is a fixed constant per (case, wave, death index) — the *n*-th
+ * body to die in wave *w* comes back on every board of that case, or on none of them, whatever the
+ * player built. `DORMANT_CHANCE` is therefore a share of deaths rather than a chance any particular
+ * death takes, which is the same defect the arrival rolls carried and is measured nowhere. Fixing
+ * it is the same one-line fold `callSeed` does; it is left alone because it moves the dormancy
+ * cases' balance and belongs with a sweep that can price the move.
  */
 export function scheduleDormancy(state: SimState, enemy: Enemy): void {
   if (!hasRule(state, 'dormant')) return;

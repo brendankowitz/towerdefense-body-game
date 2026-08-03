@@ -471,8 +471,14 @@ export const RESPONSE_PER_CLEAR = 0.25;
  * which is the fact about the biology rather than a dial, and the sweep says so from the
  * measurement: across the whole spread above, the memory-1 and memory-2 clear counts do not move by
  * a single board out of 66,600.
+ *
+ * Typed `number` rather than left to infer the literal, for the reason `ARRIVALS_ENABLED` is typed
+ * `boolean`: both ends of this dial delete one of `arrivalKindFor`'s two branches, so a test that
+ * wants to say "the dial is somewhere a killer and an antibody are both reachable" is asking a
+ * question about a runtime value. Under the literal type that question is a comparison the compiler
+ * has already answered, and it is one this sweep is expected to move.
  */
-export const KILLER_MIX_CHANCE = 0.75;
+export const KILLER_MIX_CHANCE: number = 0.75;
 
 /**
  * Damage a killer arrival deals to the one marked body it hits, applied the same way `nk`'s own

@@ -4,10 +4,10 @@ import { CASES } from '../../src/game/content/cases';
 import { DEFENDERS, DEFENDER_ORDER } from '../../src/game/content/defenders';
 import { maturedFormOf } from '../../src/game/content/maturation';
 import { createSimState } from '../../src/game/state';
-import type { DefenderKind, SimState } from '../../src/game/types';
+import type { DefenderKind, SimState, StrainId } from '../../src/game/types';
 import {
-  EVERY_GROWABLE, growCheapestFirst, immunityAfter, playBoard, runBuildPhase,
-  type GrowableSet, type MaturationPolicy,
+  EVERY_GROWABLE, growCheapestFirst, immunityAfter, playBoard, playBoardIn, runBuildPhase,
+  type ArrivalPolicy, type BoardOutcome, type GrowableSet, type MaturationPolicy,
 } from './playBoard';
 
 /**
@@ -227,15 +227,43 @@ describe('the arrivals axis', () => {
    *
    * - handed a profile with memory, the two policies must play **different** games, or the
    *   arrivals comparison is four identical arms agreeing about nothing;
-   * - handed a profile with no memory, they must play the **same** game board for board, because
-   *   that is the claim `'none'` makes about itself and the only thing that makes a difference
-   *   measured against it attributable to memory alone.
+   * - and the game `'none'` plays with that profile must be **the game a profile with no memory
+   *   plays**, board for board — because that is the whole of what `'none'` claims about itself,
+   *   and the only thing that makes a difference measured against it attributable to memory alone.
+   *
+   * The second used to be asserted at `immunityAfter(0)`, which is all zeros: both arms were handed
+   * nothing, so the two could not have differed whatever `'none'` did with them, and the test would
+   * have passed against a policy that ignored its argument entirely. Holding the day fixed and
+   * varying only the immunity is what makes it a comparison — which is why it goes through
+   * `playBoardIn` rather than `playBoard`, whose immunity and day are one number.
    *
    * Neither depends on `ARRIVALS_ENABLED`: the three strain vaccines are enough to separate the
    * arms on their own, which is exactly why the arrivals sweep has to run itself once with the
    * flag off before it can read its own memory-3 column.
    */
   const MEMORISED = CASES.length - 1;
+  const NO_MEMORY: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
+
+  /**
+   * Antibodies on the board, not the single kind the policy tests above use. A board that marks
+   * nothing banks no recognition, so the response cannot fire on it at all and the comparison would
+   * only ever be about the three vaccines — which fire at `IMMUNITY_MAX` and are therefore blind to
+   * a memory that is present but short of it. With marks being laid, every point of memory is live.
+   */
+  const MARKING_BOARD: readonly DefenderKind[] = ['anti', 'phago', 'anti', 'phago', 'nk'];
+
+  function playOn(
+    immunity: Readonly<Record<StrainId, number>>,
+    arrivals: ArrivalPolicy,
+  ): BoardOutcome {
+    return playBoardIn({
+      caseId: VACCINATED_CASE,
+      immunity,
+      day: MEMORISED + 1,
+      blocksAmnesia: false,
+      arrivals,
+    }, MARKING_BOARD, 'never', EVERY_GROWABLE);
+  }
 
   it('plays a different game under none when the profile has memory to lose', () => {
     const board = boardOf('phago');
@@ -244,11 +272,14 @@ describe('the arrivals axis', () => {
       .not.toEqual(playBoard(VACCINATED_CASE, MEMORISED, board, 'never', EVERY_GROWABLE, 'earned'));
   });
 
-  it('plays the same game under either policy when there is no memory to take away', () => {
-    const board = boardOf('phago');
+  it('under none plays the game a profile with no memory plays, on the same day', () => {
+    const memorised = immunityAfter(MEMORISED);
+    expect(
+      Object.values(memorised).some((held) => held > 0),
+      'the profile carries no memory, so there is nothing for none to take away',
+    ).toBe(true);
 
-    expect(playBoard(VACCINATED_CASE, 0, board, 'never', EVERY_GROWABLE, 'none'))
-      .toEqual(playBoard(VACCINATED_CASE, 0, board, 'never', EVERY_GROWABLE, 'earned'));
+    expect(playOn(memorised, 'none')).toEqual(playOn(NO_MEMORY, 'earned'));
   });
 });
 
