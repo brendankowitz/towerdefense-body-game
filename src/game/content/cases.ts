@@ -202,6 +202,17 @@ const NOVEL: CaseRule = {
  * so half a point moved on that case between its pass and `8e4a966` for reasons that are not this
  * feature's. That is a finding about the file and not about the control, and it is written up where
  * it belongs, on the case.
+ *
+ * **What this round did NOT re-measure, and the trap in it.** Every case below records what its
+ * *levers* were worth — a staph is three to four tenths of a point on the hand, sixty starting
+ * energy is a point and a half on the forearm, `INFLAMMATION_PER_PIP` 26 to 16 is 11.7 points on
+ * the sinus, and so on. **All of those were measured before `8e4a966` and none of them was re-taken
+ * here**, because nothing needed a lever moved and a lever nobody moves is a lever nobody measures.
+ * They are kept as the record of the passes that chose the numbers, and they should not be trusted
+ * as prices for a *future* pass without re-taking them — most of all on the cases the response
+ * reaches hardest. A staph on the relapse case is no longer only a body: it is also a body 34,453
+ * free arrivals are waiting to mark, and the pass that priced it at four tenths of a point was
+ * measuring a game in which none of them existed.
  */
 export const CASES: readonly CaseDefinition[] = [
   {
