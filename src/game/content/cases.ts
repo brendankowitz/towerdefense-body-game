@@ -390,9 +390,10 @@ export const CASES: readonly CaseDefinition[] = [
     // and a future case that reaches for it has misread the gate.
     //
     // **After the memory response: 5.3% → 5.8%**, re-measured after `8e4a966`, 409 → 449 of 7776.
-    // **+0.5 points off 14,678 arrivals** — the most help delivered to any case in the first eight
-    // and the least of it converted: three boards per thousand arrivals, against blister's
-    // twenty-seven and stomach's twenty-one off a fraction of the help.
+    // **+0.5 points off 14,678 arrivals** — the most help delivered to any case in the first eight,
+    // and close to the least done with it: **2.7 boards a thousand arrivals**, against stomach's
+    // twenty-one and blister's twenty-seven off a fraction of the help. Only measles (0.3) and the
+    // heart (2.4) get less out of an arrival, and measles has a rule that explains it.
     //
     // **Why is not measured here.** The obvious candidate is the rule above — dormancy stands back
     // up what the board killed, so a free mark can be spent on a body that returns unmarked — and
@@ -498,8 +499,10 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // **The memory response reaches this case and converts almost none of it, because its own rule
     // is in the way.** Re-measured after `8e4a966`: 461 → 463 of 7776, 5.9% → 6.0%, **two boards**
-    // off 6,148 arrivals — the worst conversion of any case in the season that receives help at
-    // all. The season hands it three points of film by day 6 and the amnesia rule takes exactly
+    // off 6,148 arrivals — 0.3 boards a thousand, the least any case in the season does with an
+    // arrival that helps it at all. (Sinus does worse still, but it does worse by *losing* boards,
+    // which is a different fact and has its own note.) The season hands it three points of film by
+    // day 6 and the amnesia rule takes exactly
     // those away, so it is fought at 1/0/1: the strain its table sends most of is the one strain it
     // cannot remember, and `createSimState` zeroes it before `noteRecognition` ever sees a body.
     //
