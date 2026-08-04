@@ -221,6 +221,24 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // The wave tables and the unlock schedule are one schedule, and this is where that first bit.
     // Every pathogen a case sends should have an answer the player has already been handed.
+    //
+    // **The memory response does not reach this case, and that is structural.** Re-measured after
+    // `8e4a966`: 34 of 243, 14.0%, the identical boards the flag-off control clears, with **zero**
+    // arrivals standing across the whole board space. It is entered at `immunityAfter(0)`, which is
+    // nothing on every strain — so `noteRecognition` banks nothing, `callArrivals` never rolls, and
+    // there is no setting of any dial in `rules.ts` that could change that. The opening case is the
+    // one case in the season the feature cannot touch in the arm the band is asserted on.
+    //
+    // **`arrivals.sweep.ts` reports this case at 44.0%, the season's worst number, and that is a
+    // different question rather than a contradiction.** That column enters this three-cell, day-one
+    // board holding three staph clears and three film clears, which is a profile no run has on day
+    // one — it is a *re-fight* by a player who already holds everything. This case is small enough
+    // (243 boards, three defender kinds) that one free arrival is a large share of the board's whole
+    // firepower, so it is the most sensitive case in the season to that entry and the least
+    // sensitive to this one. The instrument for a re-fight is `runSweep.ts`, which plays a case at
+    // the day and immunity runs actually arrive with; it has not been re-run since arrivals were
+    // turned on. Deliberately not tuned to here — see the Task 10 report for the measurement and
+    // the recommendation.
     startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 8 }],
@@ -251,6 +269,18 @@ export const CASES: readonly CaseDefinition[] = [
     // first that sends one, in its last wave. Starting energy carries the rest: at four cells the
     // board is a third smaller than it used to be, and the wave that kills three boards in four is
     // the first one.
+    //
+    // **The memory response does not reach this case either, for a sharper reason than forearm's.**
+    // Re-measured after `8e4a966`: 88 of 1024, 8.6%, identical to the flag-off control, with
+    // **zero** arrivals standing. This case *is* entered holding memory — one point of staph, from
+    // the forearm — and this table sends no staph at all. Every body in it is a virus, a spore, a
+    // film or an MRSA, and `noteRecognition` banks only for a strain the profile is already above
+    // zero on. A case can hold memory and still never make a call, and this is the one that does.
+    //
+    // That makes it the cleanest control in the season: it is the only case where the response is
+    // silent for a reason a wave table could change rather than a reason the season order fixes.
+    // Moving one staph into any wave here would switch the feature on for this case; nothing was
+    // moved, because the case is inside the band as it stands.
     startingEnergy: 380,
     waves: [
       [{ kind: 'virus', count: 6 }],
@@ -405,6 +435,17 @@ export const CASES: readonly CaseDefinition[] = [
     // 15.0 was worth **+3.5 points** on its own, which is ten times what either count lever bought.
     // A case losing most of its boards to the first wave is a geometry problem wearing a wave
     // table; check the spot coverage before touching a count.
+    //
+    // **The memory response reaches this case and converts almost none of it, because its own rule
+    // is in the way.** Re-measured after `8e4a966`: 461 → 463 of 7776, 5.9% → 6.0%, **two boards**
+    // off 6,148 arrivals — the worst conversion of any case in the season that receives help at
+    // all. The season hands it three points of film by day 6 and the amnesia rule takes exactly
+    // those away, so it is fought at 1/0/1: the strain its table sends most of is the one strain it
+    // cannot remember, and `createSimState` zeroes it before `noteRecognition` ever sees a body.
+    //
+    // The rule was authored for the fiction — immune amnesia is what measles does — and it prices
+    // the response as a side effect. No constant was chosen to make that true, and the case is
+    // inside the band either way, so nothing here was moved.
     id: 'measles', node: 'lungR', region: 'RIGHT LUNG · CASE 09', title: 'Measles',
     credits: 'virus', tier: 2, wipes: 'film',
     story: 'The rash has already faded. What is in the lung now is everything your body used to know how to stop.',
@@ -454,6 +495,16 @@ export const CASES: readonly CaseDefinition[] = [
     // The staph line is thin on purpose. Each one is a pip on the way out, so at three per wave a
     // board that ignores them loses on leaks alone, and the shape of a winning board — measured, it
     // is `nk,nk,anti,clot,clot` — is two cells that do nothing but slow.
+    //
+    // **The memory response is a liability here and should stay one.** Re-measured after `8e4a966`:
+    // 693 → **690** of 7776, 8.9% → 8.9%, a *loss* of three boards off 407 arrivals. It is the only
+    // case in the season the feature makes worse, and the reason is the rule above rather than a
+    // number: this case charges the player `INFLAMMATION_PER_PIP` per kill, so a free mark and a
+    // free kill are a bill and not a gift. `arrivals.sweep.ts` measures the same sign on the other
+    // arm — nine boards lost at full memory, none won, at every setting of every dial in `rules.ts`.
+    //
+    // No constant was chosen to make that true, on either sweep, and none should be chosen to undo
+    // it. A case whose whole identity is that killing costs you should charge for free killing too.
     id: 'sinus', node: 'sinus', region: 'SINUS · CASE 10', title: 'Hay fever', credits: 'staph', tier: 1,
     story: 'Grass season. None of what is drifting through here can hurt you, and your body has not been told.',
     rules: [{
