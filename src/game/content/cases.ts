@@ -193,9 +193,15 @@ const NOVEL: CaseRule = {
  * **How this was measured.** One unnarrowed `npm run sweep` (878s, four gates passed, no hook
  * timeout) plus eleven narrowed `SWEEP_CASES=` runs, and the two **agreed board for board on all
  * eleven cases** — which is what licenses the narrowed runs the per-case notes quote. The flag-off
- * control is the same eleven narrowed runs in a copy of the tree with `ARRIVALS_ENABLED` false, and
- * it reproduces the landing rate every comment below already recorded, which is the check that the
- * control really is the game those comments were written in.
+ * control is those same eleven narrowed runs in a copy of the tree with `ARRIVALS_ENABLED` false.
+ *
+ * **The control was checked against this file rather than trusted**, since it is the claim the
+ * whole before column rests on: six cases below state the rate their tuning pass landed on, and the
+ * control reproduces five of them to the tenth — forearm 14.0, hand 5.3, relapse 5.4, vesper 6.2,
+ * heart 13.0. **The sixth does not.** Blister's pass recorded 7.2% and the control measures 7.7%,
+ * so half a point moved on that case between its pass and `8e4a966` for reasons that are not this
+ * feature's. That is a finding about the file and not about the control, and it is written up where
+ * it belongs, on the case.
  */
 export const CASES: readonly CaseDefinition[] = [
   {
