@@ -432,45 +432,53 @@ export const RESPONSE_PER_CLEAR = 0.25;
 /**
  * The chance a call at full memory (`IMMUNITY_MAX`) buys a killer instead of another antibody.
  *
- * **Worth per step on the clear rate: nothing ordered.** Swept end to end, response alone at full
- * memory, everything else shipped. The second column is boards the player loses to holding memory
- * and the third is, of the boards it won, the share the baseline had lost on the case's last wave:
+ * **Worth per step on the clear rate: nothing ordered — and this is nevertheless the dial the
+ * vaccine ceiling had to be repaired with.** Swept end to end, response alone at full memory,
+ * everything else shipped. The second column is boards the player loses to holding memory and the
+ * third is, of the boards it won, the share the baseline had lost on the case's last wave:
  *
- *     KMC=0     +4.0pp   lost 289   won late 43%
- *     KMC=0.25  +3.7          282            45%
- *     KMC=0.50  +3.8          238            46%
- *     KMC=0.75  +4.1          220            48%
- *     KMC=1.00  +4.7          192            47%
+ *     KMC=0     +4.41pp   lost 238   won late 42%
+ *     KMC=0.25  +4.45          216            43%
+ *     KMC=0.50  +4.63          185            44%
+ *     KMC=0.75  +4.58          203            46%
+ *     KMC=1.00  +4.82          186            47%
  *
- * The first column is not monotone — 4.0, 3.7, 3.8, 4.1 — and moves 0.7 points end to end, so the
- * dial cannot be chosen on it. **The other two are monotone, and that is what it is chosen on**: a
- * larger killer share costs the player fewer boards and rescues boards that were closer to won. The
- * mechanism is the one `stepArrivals` is built around — a killer adds damage without adding a mark,
- * and a mark is what disturbs a fight that was already going the player's way. At 1.00 the
- * collateral of holding memory drops *below* what the three vaccines cost on their own, 192 against
- * the control run's 244.
+ * The first column is not monotone — 4.41, 4.45, 4.63, 4.58, 4.82 — and moves 0.4 points end to
+ * end, so **nothing about the size of the response can order this dial**. The collateral column is
+ * no longer monotone either (238, 216, 185, 203, 186), which it was under the fixed rolls; the
+ * late-rescue share still is, 42 through 47, and the mechanism is the one `stepArrivals` is built
+ * around — a killer adds damage without adding a mark, and a mark is what disturbs a fight that was
+ * already going the player's way.
  *
- * **1.0 is out on the vaccine ceiling** recorded on `ARRIVALS_ENABLED` (+4.7 against +4.5), and it
- * would mean no antibody arrival ever comes at full memory — a killer only ever acts on a mark
- * already laid, so at 1.0 the help is worth exactly what the player's own `anti` cells made it
- * worth. **0 is out because it deletes the killer from the game**: `arrivalKindFor` would never
- * return one, and the killer branch of `stepArrivals`, the second colour in `ArrivalLayer` and the
- * brief's own promise would all be content nothing could reach. 0.75 is the largest value under the
- * ceiling and the best measured value of the two columns that move.
+ * **0.75 → 0.25, and the ceiling is what moved it.** At 0.75 the response measures +4.58pp against
+ * the three vaccines' +4.51pp — over the ceiling recorded on `ARRIVALS_ENABLED` by 49 boards in
+ * 66,600. Of the five values only 0 (+4.41) and 0.25 (+4.45) come in under it, and **0 is out
+ * because it deletes the killer from the game**: `arrivalKindFor` would never return one, the
+ * killer branch of `stepArrivals`, the second colour in `ArrivalLayer` and the brief's own promise
+ * would all be content nothing could reach, and `arrivals.test.ts` asserts the dial is strictly
+ * inside its range for exactly that reason. 1.00 is out on the same test and would mean no antibody
+ * arrival ever comes at full memory. **0.25 is the only shippable value that holds the ceiling.**
  *
- * **Two of the eleven cases do not obey this dial at all, and that is a defect rather than a
- * rounding.** `createSimState` seeds every board's rng at 0, so on a case where nothing *else*
- * draws from it, every board reaches its first call having consumed the same variates and draws the
- * same kind roll. Measured on sinus: 24 answered calls over 120 boards, 23 of them rolling 0.944,
- * all 24 coming out antibody. Vesper is the same — 169 answered calls, not one killer. The brief
- * promises a killer at full memory on both (`Brief.tsx` asks `arrivalKindFor(memory, 0)`, which
- * says yes for any positive value here) and neither case can deliver one at any setting under
- * 0.944. It is not this dial's to fix.
+ * **Why this dial and not a bigger one, which is the whole argument.** Three other dials could have
+ * brought the response under +4.51: `RESPONSE_PER_CLEAR` to 0.15 (+2.92), `ARRIVAL_USES` to 2
+ * (+3.26), `RECOGNITION_PER_CALL` to 8 (+2.90). Each overshoots a 0.07-point break by more than a
+ * point and a half, and — measured, not argued — **each one takes the hand case negative at one
+ * point of memory**: −0.40pp, −0.36pp and −0.41pp respectively, a player handed a memory worse than
+ * not having one. This dial cannot do that to anyone, and that is a property rather than a
+ * coincidence: below `IMMUNITY_MAX` `arrivalKindFor` sends only antibodies, so the whole spread
+ * above leaves memory 1 and memory 2 **identical to the board** — 4323 and 5157 clears, 1027 won
+ * and 258 lost, at every one of the five values. It is the only lever in the set that reaches the
+ * ceiling without being able to reach the floor.
  *
- * Below `IMMUNITY_MAX` this is never read at all — `arrivalKindFor` sends only antibodies there,
- * which is the fact about the biology rather than a dial, and the sweep says so from the
- * measurement: across the whole spread above, the memory-1 and memory-2 clear counts do not move by
- * a single board out of 66,600.
+ * **What the step cost**, 0.75 → 0.25: 0.13pp of response at full memory (85 boards), 13 more
+ * boards of collateral, and three points of the late-rescue share. That is the price of holding the
+ * ceiling, and it is paid entirely in the columns this dial is otherwise chosen on.
+ *
+ * **The two cases that could not obey this dial now do.** Under the old stream the kind roll was a
+ * fixed constant per (case, wave, call index), so sinus answered 24 calls across 120 boards with 23
+ * of them rolling 0.944 and vesper answered 169 without a single killer — a dial two cases ignored
+ * and a promise `Brief.tsx` could not keep. `callSeed` folds the board's own progress in before the
+ * draw, and `arrivals.test.ts` holds both kinds arriving across a spread of boards at full memory.
  *
  * Typed `number` rather than left to infer the literal, for the reason `ARRIVALS_ENABLED` is typed
  * `boolean`: both ends of this dial delete one of `arrivalKindFor`'s two branches, so a test that
@@ -478,7 +486,7 @@ export const RESPONSE_PER_CLEAR = 0.25;
  * question about a runtime value. Under the literal type that question is a comparison the compiler
  * has already answered, and it is one this sweep is expected to move.
  */
-export const KILLER_MIX_CHANCE: number = 0.75;
+export const KILLER_MIX_CHANCE: number = 0.25;
 
 /**
  * Damage a killer arrival deals to the one marked body it hits, applied the same way `nk`'s own
