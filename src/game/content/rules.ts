@@ -307,35 +307,55 @@ export const SHORE_UP_COST = 120;
  * and neither carries sampling error.
  *
  *     memory       vaccines only     with the response      the response alone
- *     1                    +0.0pp                +1.5pp                  +1.5pp
- *     2                    +0.0pp                +2.7pp                  +2.7pp
- *     3                    +4.5pp                +8.6pp                  +4.1pp
+ *     1                   +0.00pp               +1.15pp                 +1.15pp
+ *     2                   +0.00pp               +2.41pp                 +2.41pp
+ *     3                   +4.51pp               +8.96pp                 +4.45pp
  *
- * Against a season baseline of 5.3% of boards clearing. Two things in that table matter more than
- * the numbers. The first is that **memory 1 and memory 2 measure exactly zero with the flag off —
- * not one board of 66,600 changes hands** — which is the standing proof that below `IMMUNITY_MAX`
- * nothing in the simulation reads `state.immunity` except the response: the tetanus bounce, Flu B
- * and the biofilm serum are every other reader and all three are `>= IMMUNITY_MAX` tests. The
- * comparison's whole method rests on that, and it is measured rather than argued.
+ * Against a season baseline of 5.3% of boards clearing (3554 of 66,600), reaching 14.3% at full
+ * memory. **Two decimals rather than one, because the margin at the bottom of the third column is
+ * six hundredths of a point and rounding hides it.** Two things in that table matter more than the
+ * numbers. The first is that **memory 1 and memory 2 measure exactly zero with the flag off — not
+ * one board of 66,600 changes hands, on any of the eleven cases** — which is the standing proof
+ * that below `IMMUNITY_MAX` nothing in the simulation reads `state.immunity` except the response:
+ * the tetanus bounce, Flu B and the biofilm serum are every other reader and all three are
+ * `>= IMMUNITY_MAX` tests. The comparison's whole method rests on that, and it is measured rather
+ * than argued.
  *
  * The second is the ceiling every dial below was chosen against, which the same table hands over:
- * the response at full memory is worth **less than the three vaccines it arrives alongside**, +4.1
- * against +4.5. The immunity screen tells the player about the vaccine and says nothing about the
- * arrival, so a response worth more than the thing the screen names would make the advertised half
- * of memory the smaller half.
+ * the response at full memory is worth **less than the three vaccines it arrives alongside**,
+ * +4.45 against +4.51 — 36 boards of margin. The immunity screen tells the player about the vaccine
+ * and says nothing about the arrival, so a response worth more than the thing the screen names
+ * would make the advertised half of memory the smaller half.
+ *
+ * **That ceiling was broken and had to be repaired**, which is the whole story of this
+ * re-measurement. Under the fixed arrival rolls the response measured +4.1pp; with the rolls
+ * decorrelated (`callSeed`) every outcome moved and it measured **+4.58pp at the tuning that was
+ * committed** — over the vaccines rather than under them. `KILLER_MIX_CHANCE` came down 0.75 → 0.25
+ * to restore it, and the note on that constant records why it rather than any of the three larger
+ * dials that could also have done it.
+ *
+ * **The comparison is generous to the response and it broke the ceiling anyway.** "The vaccines"
+ * is what they are worth on top of nothing; "the response" is what it adds on top of the vaccines.
+ * The two overlap — both rescue boards that were nearly won — so the marginal quantity is the
+ * smaller of the two ways to measure it, and the harness has no arm that could measure the other
+ * way round without teaching `src/game/` that a sweep exists. Read the ceiling as the lenient test
+ * it is.
  *
  * The eleven rates in `cases.ts` were measured with this off and **every one of them has moved** —
- * six of the eleven leave the 5–15% band at full memory, forearm and throat by more than thirty
- * points. That is Task 10's work, and it is why this flip is committed on its own: the band is
- * asserted by `npm run sweep`, which is not part of `npm run verify`, so the season can be re-tuned
- * against a game that has this on rather than against one that has it off.
+ * four of the eleven leave the 5–15% band at full memory (forearm 44.0%, throat 45.8%, blister
+ * 24.0%, stomach 23.2%), forearm and throat by thirty points and more. That is Task 10's work: the
+ * band is asserted by `npm run sweep`, which is not part of `npm run verify`, so the season can be
+ * re-tuned against a game that has this on rather than against one that has it off.
  *
  * **Provenance, exactly, because five spreads share it.** Every table below was swept one dial at a
- * time out of the placeholder point, and that point had `KILLER_MIX_CHANCE` at 0.5 where 0.75 now
- * ships — worth +0.3pp of response at full memory. So the tables are the reason each value is what
- * it is, and they are not a reading of the combination that ships; the combination that ships is
- * the run pasted into `.superpowers/sdd/2026-08-01-memory-response/task-9-report.md`, which is
- * where the figures at the top of this block come from. Re-sweep before moving any of them.
+ * time out of the point this flip was committed at, which had `KILLER_MIX_CHANCE` at 0.75 where
+ * 0.25 now ships. That dial is never read below `IMMUNITY_MAX`, so it cannot touch the memory-1 and
+ * memory-2 columns of any table below — measured, not assumed: the whole spread of it leaves those
+ * two columns identical to the board. It moves a memory-3 column by at most 0.2 of a point, and the
+ * two values that decide a ceiling were re-measured at the shipped 0.25 rather than carried over.
+ * The figures at the top of this block are the run at the shipped combination, pasted into
+ * `.superpowers/sdd/2026-08-01-memory-response/task-9-remeasure-report.md`. Re-sweep before moving
+ * any of them.
  *
  * Typed `boolean` rather than left to infer the literal `true`: every reader of this flag —
  * `step.ts` included — branches on it, and a literal type would make the other branch dead code by
