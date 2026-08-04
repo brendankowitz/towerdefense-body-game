@@ -366,32 +366,31 @@ export const ARRIVALS_ENABLED: boolean = true;
 /**
  * Marks a strain must bank, from `noteRecognition`, before a call for help is even rolled.
  *
- * **Worth per step: the whole of the response's magnitude — it is the dial with the range.** Swept
- * over the season's whole board space, every other dial at the value it ships at. The columns are
- * the response *alone*, with the flag-off control subtracted:
+ * **Worth per step: the whole of the response's magnitude — it is the dial with the range.**
+ * Re-confirmed rather than re-spread after the roll fix, at the neighbours the two bounds turn on,
+ * over the season's whole board space with every other dial at the value it ships at. The columns
+ * are the response *alone*, with the flag-off control subtracted:
  *
- *     RPC=2   memory 1 +2.9pp   memory 2 +5.7pp   memory 3 +9.2pp   lost/won at memory 1  10%
- *     RPC=3            +2.3             +4.5              +6.9                           13%
- *     RPC=5            +1.5             +2.7              +3.8                           20%
- *     RPC=8            +0.6             +1.3              +3.1                           37%
- *     RPC=12           +0.2             +0.6              +1.6                           66%
- *     RPC=20           +0.2             +0.6              +1.0                           53%
- *     RPC=30           +0.1             +0.2              +0.5                           63%
+ *     RPC=3   memory 1 +1.99pp   memory 2 +4.11pp   memory 3 +6.48pp   lost/won at memory 1  17%
+ *     RPC=5            +1.15              +2.41              +4.45                           25%
+ *     RPC=8            +0.68              +1.31              +2.89                           34%
  *
- * **2 and 3 are out on the ceiling recorded above**: +9.2pp and +6.9pp are both more than the three
- * vaccines' +4.5pp, so the unadvertised half of memory would be the larger half.
+ * **3 is out on the ceiling recorded above**: +6.48pp is more than the three vaccines' +4.51pp, so
+ * the unadvertised half of memory would be the larger half.
  *
- * **8 and above are out for a reason the aggregate hides, and it is the finding of this sweep.**
- * The collateral of a stray mark is nearly *flat* in this dial while the benefit is not: boards
- * lost to the response at one point of memory run 212, 226, 256, 228, 224, 170, 126 down that
- * spread, while boards won run 2128, 1764, 1257, 614, 340, 319, 199. A rarer response is therefore
- * not a gentler one — it is the same amount of interference arriving with less of the help that
- * paid for it, and the last column is what that does. At 5 the first point of memory is worth
- * something on ten of the eleven cases and costs three boards in 7776 on the eleventh (measles,
- * -0.04pp). At 8 and above the hand case goes *negative* at one point of memory — -0.8pp at 8 and
- * -0.9pp at 12 — which is a player handed a memory worse than not having one.
+ * **8 is out for a reason the aggregate hides, and it is still the finding of this sweep.** The
+ * collateral of a stray mark is nearly *flat* in every dial while the benefit is not. Across all
+ * fifteen full-season runs of this re-measurement — five different dials, every value of each —
+ * boards lost to the response at one point of memory sit between **217 and 279** with no trend at
+ * all, while boards won run from **372 to 1843** and move monotonically with every one of them. A
+ * rarer response is therefore not a gentler one: it is the same amount of interference arriving
+ * with less of the help that paid for it, and the last column is what that does. At 5 the first
+ * point of memory is worth something on nine of the eleven cases, costs three boards in 7776 on
+ * measles (+0.03pp, the smallest positive in the season) and costs sinus three, which its own rule
+ * explains. **At 8 the hand case goes negative — -0.41pp at one point of memory.**
  *
- * 5 clears the ceiling and stays the right side of that floor.
+ * 5 clears the ceiling and stays the right side of that floor, and it is the only value tested that
+ * does both.
  */
 export const RECOGNITION_PER_CALL = 5;
 
@@ -399,13 +398,16 @@ export const RECOGNITION_PER_CALL = 5;
  * Marks one arrival can lay before it is spent and leaves the board.
  *
  * **Worth per step: roughly a point of season clear rate per use, and it does not tail off.**
- * Response alone at full memory, everything else at its shipped value:
+ * Re-confirmed at the neighbours after the roll fix. Response alone at full memory, everything else
+ * at its shipped value:
  *
- *     USES=1  +1.5pp     USES=2  +2.8pp     USES=3  +3.8pp     USES=5  +5.6pp     USES=8  +7.6pp
+ *     USES=2  +3.22pp     USES=3  +4.45pp     USES=5  +6.07pp
  *
- * 5 and 8 are over the vaccine ceiling recorded on `ARRIVALS_ENABLED` (+4.5pp). **3 is the largest
- * value under it**; 1 and 2 give up a point and two points of a response that is already the
- * smaller half of what memory buys.
+ * **3 is pinned from both sides.** 5 is over the vaccine ceiling recorded on `ARRIVALS_ENABLED`
+ * (+6.07 against +4.51). 2 is under the ceiling but under the floor as well: it takes the hand case
+ * to **-0.36pp at one point of memory**, which is a player handed a memory worse than not having
+ * one. The same is true of every other way of making the response rarer, and the note on
+ * `RECOGNITION_PER_CALL` has the measurement that says why.
  *
  * **The display was checked and is not what binds, which is worth writing down because it nearly
  * was.** `ArrivalLayer` lays one pip per remaining use on a circle of `PIP_LAYOUT_RADIUS` with pips
@@ -421,31 +423,42 @@ export const ARRIVAL_USES = 3;
  * same shape `DOOR_RESIST_PER_CLEAR` gives a door, because both are "one clear buys this much of a
  * chance" dials on the same `immunity` magnitude.
  *
- * **Worth per step, and a cliff at a third.** Response alone, everything else shipped:
+ * **Worth per step, and a cliff at a third.** Response alone. The first three columns are
+ * `KILLER_MIX_CHANCE`-invariant and measured over the whole ladder; the last is the two values a
+ * ceiling turns on, re-measured at the 0.25 that ships. The last column of all is the worst any
+ * single case does at *one* point of memory, sinus excepted — its rule charges the player for
+ * killing, so free kills are a bill there whatever this is set to.
  *
- *     RSP=0.05  memory 1 +0.4pp   memory 2 +0.7pp   memory 3 +1.2pp
- *     RSP=0.10           +0.7             +1.3              +2.0
- *     RSP=0.15           +1.0             +2.0              +2.7
- *     RSP=0.25           +1.5             +2.7              +3.8
- *     RSP=0.34           +2.1             +3.6              +6.1
- *     RSP=0.50           +2.7             +5.1              +6.1
+ *     RSP=0.05  memory 1 +0.22pp   memory 2 +0.39pp   memory 3 +0.97pp                worst -1.48
+ *     RSP=0.10           +0.39              +0.95              +1.96                        -1.12
+ *     RSP=0.15           +0.67              +1.40              +2.92    (+2.87)             -0.40
+ *     RSP=0.25           +1.15              +2.41              +4.58    (+4.45)             +0.03
+ *     RSP=0.34           +1.61              +3.39              +6.11    (+5.68)             +0.22
+ *     RSP=0.50           +2.41              +5.00              +6.11                        +3.14
  *
- * **0.34 and 0.50 measured identical at full memory — the same clear count, the same 7261 boards
- * won, the same arrivals.** `callArrivals` rolls against `min(1, immunity * this)`, so at a third
- * and above a call at three points of memory is *always* answered and the top of the ladder stops
- * being a chance at all. That is the cliff, and it is the same shape of finding
+ * **0.25 is pinned from both sides, and that is new.** Above it, 0.34 breaks the vaccine ceiling
+ * recorded on `ARRIVALS_ENABLED` (+5.68 against +4.51). Below it, 0.15 takes the **hand** case to
+ * -0.40pp at one point of memory — a player handed a memory worse than not having one — and 0.10
+ * and 0.05 take it to -1.12 and -1.48. At 0.25 the worst case in the season is measles at +0.03pp
+ * and nothing is negative. It is the only value on the ladder that clears both bounds.
+ *
+ * **0.34 and 0.50 measured identical at full memory — the same clear count, the same 7267 boards
+ * won, the same 227,363 arrivals standing.** `callArrivals` rolls against `min(1, immunity * this)`,
+ * so at a third and above a call at three points of memory is *always* answered and the top of the
+ * ladder stops being a chance at all. That is the cliff, and it is the same shape of finding
  * `DOOR_RESIST_PER_CLEAR` records one tier out: past a third of `IMMUNITY_MAX` the dial stops being
  * difficulty and starts being a switch.
  *
  * Two identities fall out of that table and are the reason to trust it: 0.05 at two points of
- * memory and 0.10 at one point are the same effective chance and measured the same to the board, as
- * did 0.50 at one point and 0.25 at two. The sweep is measuring this model and not something beside
- * it.
+ * memory and 0.10 at one point are the same effective chance and measured the same to the board —
+ * 3811 clears, 515 boards won, 29,975 standing — as did 0.50 at one point and 0.25 at two, at 5157,
+ * 1843 and 141,992. Those held under the fixed rolls and they hold under the real ones, which is a
+ * stronger statement: the seed now depends on the board, so two runs agreeing to the board agree
+ * because the model is the same and not because the stream was.
  *
- * Both values above the cliff also break the vaccine ceiling (+6.1 against +4.5). **0.25 is the
- * largest value on the safe side of it**, it gives the 25 / 50 / 75 per cent ladder a player can
- * read straight off the three pips on the immunity screen, and it leaves a quarter chance that a
- * call at full memory is not answered — so help is never a certainty.
+ * 0.25 also gives the 25 / 50 / 75 per cent ladder a player can read straight off the three pips on
+ * the immunity screen, and it leaves a quarter chance that a call at full memory is not answered —
+ * so help is never a certainty.
  */
 export const RESPONSE_PER_CLEAR = 0.25;
 
@@ -521,15 +534,25 @@ export const KILLER_MIX_CHANCE: number = 0.25;
  * literal here rather than an import of that value, because `defenders.ts` already imports from
  * this module and a value cannot import back across that edge.
  *
- * **Worth per step: 0.3 of a point up to the paid cell's damage, and almost nothing above it.**
- * Response alone at full memory, swept at `KILLER_MIX_CHANCE` 0.5 and everything else shipped:
+ * **Worth per step: a quarter point up to the paid cell's damage, and almost nothing above it —
+ * except a broken ceiling.** Re-measured after the roll fix, response alone at full memory,
+ * everything else at its shipped value:
  *
- *     KD=29  +3.5pp     KD=58  +3.8pp     KD=87  +4.0pp     KD=116  +4.1pp
+ *     KD=29  +4.20pp     KD=58  +4.45pp     KD=87  +4.58pp     KD=116  +4.61pp
  *
- * Halving it costs 0.3 points; doubling it buys 0.2 and tripling it 0.3. The knee is at the value
- * it started on, and that is the argument for keeping it: a killer arrival is spent on the one hit
- * it lands, so what decides a fight is how many bodies it can finish rather than by how much it
- * overkills each one, and past `nk`'s own damage most of the extra lands on things already dead.
- * Paying a free arrival more than the cell it stands in for buys a tenth of a point.
+ * Halving it costs 0.25 points; doubling it buys 0.13 and tripling it 0.16. The knee is at the
+ * value it started on, and that is the first argument for keeping it: a killer arrival is spent on
+ * the one hit it lands, so what decides a fight is how many bodies it can finish rather than by how
+ * much it overkills each one, and past `nk`'s own damage most of the extra lands on things already
+ * dead.
+ *
+ * The second argument is new and it is harder. **87 and 116 both break the vaccine ceiling**
+ * recorded on `ARRIVALS_ENABLED` — +4.58 and +4.61 against +4.51 — so 58 is not merely the knee,
+ * it is the largest value the response is allowed to have. Under the fixed rolls the whole spread
+ * sat a clear half-point under that ceiling and this dial was free; it is not free now.
+ *
+ * Below `IMMUNITY_MAX` this is never read, and the spread says so from the measurement rather than
+ * from `arrivalKindFor`'s source: across all four values the memory-1 and memory-2 clear counts are
+ * identical to the board, 4323 and 5157.
  */
 export const KILLER_DAMAGE = 58;

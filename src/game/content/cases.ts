@@ -74,17 +74,23 @@ export interface CaseDefinition {
    *
    * **Two per case, and that was measured rather than kept.** `arrivals.sweep.ts` was run over the
    * whole season with the second mount of every case truncated away, against the same run with
-   * both. What the second mount is worth, per case, on the response alone at full memory:
+   * both. Re-measured after the arrival rolls were decorrelated (`callSeed`), at the shipped
+   * tuning. What the second mount is worth, per case, on the response alone at full memory:
    *
-   *     throat +9.3pp   stomach +7.8   forearm +7.0   measles +2.0   hand +1.6   relapse +0.9
-   *     vesper +0.6   heart +0.5   bronchitis +0.4   blister +0.2   sinus -0.1
+   *     forearm +10.7pp   throat +8.4   stomach +6.6   measles +3.8   hand +1.8   relapse +1.3
+   *     blister +1.2   bronchitis +1.1   vesper +0.2   heart -0.1   sinus -0.1
    *
-   * — and +1.3pp over the season, against +2.5pp for the first mount alone and +3.8pp for both. So
-   * the second mount carries about a third of the effect and the first carries two thirds, which is
-   * the answer to the question that decides whether to author a third: it is not the second mount
-   * doing all the work, so there is no evidence that a third would do any. Adding one means a grid
-   * search per case against the vessel, eleven times, to buy a third helping of a diminishing
+   * — and +1.55pp over the season, against +2.90pp for the first mount alone and +4.45pp for both.
+   * So the second mount carries about a third of the effect and the first carries two thirds, which
+   * is the answer to the question that decides whether to author a third: it is not the second
+   * mount doing all the work, so there is no evidence that a third would do any. Adding one means a
+   * grid search per case against the vessel, eleven times, to buy a third helping of a diminishing
    * return — so it was not done, and this is the measurement that says why not.
+   *
+   * **One mount is not a shippable alternative anyway**, which the re-measurement added: truncated
+   * to one, the hand case goes to -0.37pp at a single point of memory, so a player who had beaten
+   * that strain once would be handed a memory worse than not having one. Two clears that floor on
+   * every case the season has.
    */
   readonly mounts: readonly Point[];
 }
