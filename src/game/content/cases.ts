@@ -687,6 +687,17 @@ export const CASES: readonly CaseDefinition[] = [
     // 2.3-point gap they had before the feature. Nothing was moved. **That a late case can double
     // on a feature nothing tuned it against is a Concern in the Task 10 report, not a defect this
     // comment can settle.**
+    //
+    // **And it is now the case a growth ceiling would bind on first.** `npm run sweep:maturation`
+    // was re-run whole after `8e4a966` (4040s, four assertions passed) and this case tops the
+    // season under every growth policy: 17.2% under `surplus`, 15.0% under `only anti`, **20.6% at
+    // `best of all runs`** — the highest non-opening figure in the season on any policy. It breaks
+    // nothing, because `balance.sweep.ts` measures `'never'` and that is where the band is
+    // asserted. It also *widens* the no-trap margin rather than threatening it: `only anti` wins
+    // 406 boards here and loses 111, and that **+295 is 84% of the antibody's whole season margin
+    // of +351**. Free marks make a grown cell more worth having, not less. A future round that
+    // wants a ceiling on grown runs should price it here and expect the rest of the season to have
+    // slack.
     id: 'relapse', node: 'gut', region: 'GUT · CASE 12', title: 'Relapse', credits: 'staph', tier: 1,
     story: 'You had this in the spring. It never fully left, and what it makes goes after your own cells.',
     rules: [RELAPSING, TOXIC],
