@@ -706,6 +706,22 @@ export const CASES: readonly CaseDefinition[] = [
     // It credits staph, which the season has already finished. That is deliberate: by the time this
     // is played every vaccine the game can give is held, so the familiar half of each wave is as
     // easy as it will ever be and the unfamiliar half is untouched by any of them.
+    //
+    // **After the memory response: 6.2% → 7.0%**, re-measured after `8e4a966`, 482 → 547 of 7776,
+    // +0.8 points off 10,965 arrivals and 2,194 killers.
+    //
+    // **This case is entered at 3/3/3, and it is one of the two measurements that says full memory
+    // is not what breaks a case.** The season finishes every vaccine by day 10, so the board sweep
+    // meets this case at exactly the profile `arrivals.sweep.ts` calls memory 3 — the arm that reads
+    // 44.0% on the forearm and 45.8% on the throat — and it moves eight tenths of a point. The
+    // paragraph above already says why, one sentence earlier than the feature existed: **the
+    // antibody does nothing here.** Strain Vesper carries `noTag`, so an antibody arrival skips it
+    // exactly as a placed one does, and a killer arrival may only touch what `isTagged` already
+    // says is marked — so 2,194 free killers are 2,194 shots at the familiar half of the table and
+    // none at all at the half that decides the case.
+    //
+    // Free help is worth what the wave table lets it touch, and that is content rather than a dial.
+    // Nothing in `rules.ts` distinguishes this case from the forearm; the wave tables do.
     id: 'vesper', node: 'footR', region: 'FOOT · CASE 13', title: 'Strain Vesper', credits: 'staph', tier: 3,
     story: 'A scratch from the garden, four days ago. Nothing in the body has met this before, and nothing has been written about what is coming.',
     rules: [NOVEL],
@@ -808,6 +824,32 @@ export const CASES: readonly CaseDefinition[] = [
     // this case sitting well above the board band's
     // floor at the arrival entry, which is a content decision the next pass owns. It is written
     // here rather than left in a report so that pass starts from a number.
+    //
+    // **After the memory response: 13.0% → 13.6%** at this harness's entry, re-measured after
+    // `8e4a966`, 1013 → 1056 of 7776, +0.6 points off 17,809 arrivals and 3,730 killers — the
+    // season's second largest delivery of free help and two boards a thousand arrivals out of it,
+    // against blister's twenty-seven. Only measles converts less. The reason is vesper's: a fifth to
+    // a quarter of every wave here is Vesper by count, Vesper cannot be marked, and a killer arrival
+    // may only touch what is already marked. Still inside the band, so the exemption this case's
+    // own paragraph retired stays retired.
+    //
+    // **The range above is a flag-off range, and re-taking it is Task 11's.** `runSweep.ts` has not
+    // been re-run since arrivals were turned on, so every figure in the four-row table above and
+    // the run-level target under it are pre-feature numbers. Two of the four rows can be reasoned
+    // to without re-running it, and it is worth writing which:
+    //
+    // - **The 5.3% floor cannot have moved.** Day 14, nothing cleared, immunity 0/0/0 — with no
+    //   memory `noteRecognition` banks nothing and no call is ever rolled, exactly as on the
+    //   forearm. The same holds for the day-16 and day-39 rows: one strain at any depth is still
+    //   nothing for the strains this table sends alongside it.
+    // - **The 13.0% top is now 13.6%**, and that is measured rather than inferred. That row is day
+    //   166, six cleared, immunity 3/3/3 — and `day` reaches the simulation only through
+    //   `unlockedKinds`, which has offered all six cells since day 8, so day 166 at 3/3/3 and this
+    //   harness's own day-11 entry at 3/3/3 are the identical board space. It is the same 1056/7776.
+    //
+    // So the range is **5.3% to 13.6%** and it widened at the top by six tenths of a point. What
+    // that does to "a last stand won by a quarter of the runs that fight it" is a whole-run question
+    // and needs the whole-run instrument.
     id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',
     credits: 'staph', tier: 3,
     story: 'Every road to the core has fallen. Whatever is arriving here already got past everything else, all of it, at once.',
