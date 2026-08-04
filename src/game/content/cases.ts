@@ -132,6 +132,71 @@ const NOVEL: CaseRule = {
   sub: 'Nothing is known about this strain — the brief cannot list what is coming, and each wave shows you only what it sends',
 };
 
+/**
+ * The season, in the order a run meets it. Every case carries the record of what it was tuned with
+ * and what each lever was worth; this is the one thing that record cannot say per case.
+ *
+ * ---
+ *
+ * **THE MEMORY-RESPONSE RE-MEASUREMENT, after `8e4a966`.**
+ *
+ * `ARRIVALS_ENABLED` went true and every rate below it was measured before that, so every one of
+ * them was suspect. All eleven were re-measured on `npm run sweep` — the instrument `band.ts` is
+ * asserted on — against a control that is the identical run with the flag off, which is exactly the
+ * game these comments were written in. **Nothing needed a lever moved.** Every case is inside the
+ * 5–15% band and both curve checks pass. What follows is the measurement that says so, and the
+ * per-case notes below are re-measurements rather than tunings.
+ *
+ * **The arm matters, and it is not the arrivals sweep's.** `balance.sweep.ts` enters each case at
+ * the day *and the immunity* a clean season walk reaches it on — `immunityAfter(daysElapsed)`,
+ * which climbs one strain at a time and reaches its cap only at day 10. `arrivals.sweep.ts`'s
+ * memory-3 column enters *every* case with all three strains at their cap, which is a re-fight and
+ * not a walk. The two disagree by a great deal on the early cases and that is not a contradiction;
+ * the note on `forearm` says what to do with it.
+ *
+ *     case         entry     flag off   flag on   response   help standing (killers)
+ *     forearm      0/0/0       14.0%     14.0%      +0.0            0
+ *     throat       1/0/0        8.6%      8.6%      +0.0            0
+ *     stomach      1/0/1        7.4%     10.1%      +2.7        3,974
+ *     hand         1/1/1        5.3%      5.8%      +0.5       14,678
+ *     blister      1/2/1        7.7%     12.3%      +4.6       13,121
+ *     measles      1/3/1 *      5.9%      6.0%      +0.1        6,148
+ *     sinus        1/3/2        8.9%      8.9%      −0.0          407
+ *     bronchitis   2/3/2        5.2%      6.1%      +0.9        7,851  (46)
+ *     relapse      2/3/3        5.4%     11.2%      +5.8       34,453  (741)
+ *     vesper       3/3/3        6.2%      7.0%      +0.8       10,965  (2,194)
+ *     heart        3/3/3       13.0%     13.6%      +0.6       17,809  (3,730)
+ *
+ * Immunity is staph/film/virus. `*` is measles, whose own rule wipes the film it is holding, so it
+ * is actually fought at 1/0/1. `help standing` is arrivals seen on a mount at the end of a step,
+ * summed over the whole board space — undercounted by construction (`BoardOutcome` in
+ * `playBoard.ts` says by how much), so read it as proof help arrived and never as a count of calls.
+ *
+ * **Three things the table says that no single case's comment can.**
+ *
+ * **Full memory is not what moves a case.** Vesper and heart are entered at 3/3/3 here — the season
+ * finishes every vaccine by day 10 — so they are fought at exactly the profile the arrivals sweep
+ * calls memory 3, and they move +0.8 and +0.6, the two smallest positive figures in the column
+ * after measles. What moves a case is a wave table every body of which can be *marked*, and those
+ * two send an untaggable strain as half of theirs.
+ *
+ * **The largest mover is the case with the most staph in it.** Relapse sends 15 to 27 staph a wave
+ * into two points of staph memory and three of film, and takes the season's biggest step at +5.8.
+ * Free marks are worth what the table gives them to mark, which is why the spread here runs from
+ * nothing to nearly six points on a feature that has one setting.
+ *
+ * **A rule can take the response away, and two of them do.** Measles is handed three points of film
+ * by day 6 and its own amnesia rule takes exactly those away, so it converts 6,148 arrivals into
+ * two boards; sinus charges the player per kill, so free kills are a bill and it *loses* three.
+ * Neither was tuned to be true and neither should be tuned away.
+ *
+ * **How this was measured.** One unnarrowed `npm run sweep` (878s, four gates passed, no hook
+ * timeout) plus eleven narrowed `SWEEP_CASES=` runs, and the two **agreed board for board on all
+ * eleven cases** — which is what licenses the narrowed runs the per-case notes quote. The flag-off
+ * control is the same eleven narrowed runs in a copy of the tree with `ARRIVALS_ENABLED` false, and
+ * it reproduces the landing rate every comment below already recorded, which is the check that the
+ * control really is the game those comments were written in.
+ */
 export const CASES: readonly CaseDefinition[] = [
   {
     id: 'forearm', node: 'forearm', region: 'FOREARM · CASE 04', title: 'Deep cut', credits: 'staph', tier: 1,
