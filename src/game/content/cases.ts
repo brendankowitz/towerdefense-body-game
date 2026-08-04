@@ -314,6 +314,18 @@ export const CASES: readonly CaseDefinition[] = [
     id: 'stomach', node: 'stomach', region: 'STOMACH · CASE 06', title: 'Food poisoning', credits: 'film', tier: 1,
     story: 'The shellfish. Toxins are going after your own cells instead of the tissue.',
     rules: [TOXIC],
+    // **The first case in the season the memory response reaches at all.** Re-measured after
+    // `8e4a966`: 230 → 315 of 3125, **7.4% → 10.1%**, +2.7 points off 3,974 arrivals and no
+    // killers. It is the first case whose table sends a strain the profile already remembers — one
+    // point of staph, from the forearm — and `arrivalKindFor` gates the killer on `IMMUNITY_MAX`,
+    // which nothing has reached by day 3, so every arrival here is an antibody.
+    //
+    // The step is worth stating beside the geometry note below, because they point opposite ways:
+    // this case's identity is that position is a liability, and a free mark is position the player
+    // did not have to pay for. It is still comfortably inside the band at both ends, so no spot was
+    // moved — and moving one is the wrong first reach here anyway, for the reason the note on
+    // `POISON_RADIUS` in the season-shape review gives: this case has an interior optimum for spot
+    // distance and both sides of it are cliffs.
     startingEnergy: 320,
     waves: [
       [{ kind: 'staph', count: 12 }, { kind: 'toxin', count: 3 }],
@@ -359,6 +371,18 @@ export const CASES: readonly CaseDefinition[] = [
     // replaced by a trend, and any case after the first is now free anywhere between the floor and
     // the opening case's rate. See `tests/sweep/curve.ts`. Nothing here needs that precision again,
     // and a future case that reaches for it has misread the gate.
+    //
+    // **After the memory response: 5.3% → 5.8%**, re-measured after `8e4a966`, 409 → 449 of 7776.
+    // **+0.5 points off 14,678 arrivals** — the most help delivered to any case in the first eight
+    // and the least of it converted: three boards per thousand arrivals, against blister's
+    // twenty-seven and stomach's twenty-one off a fraction of the help.
+    //
+    // **Why is not measured here.** The obvious candidate is the rule above — dormancy stands back
+    // up what the board killed, so a free mark can be spent on a body that returns unmarked — and
+    // nothing run for this re-measurement tested it. It is written down as a candidate rather than
+    // as an explanation, because the difference between those two is most of this file's
+    // discipline. The case is inside the band and this is the direction that costs it nothing, so
+    // nothing was moved.
     startingEnergy: 400,
     waves: [
       [{ kind: 'staph', count: 10 }, { kind: 'spore', count: 3 }],
@@ -397,6 +421,25 @@ export const CASES: readonly CaseDefinition[] = [
     // Crediting staph here instead would have left every immunity under three at that point and
     // made the rule after this one inert on a first run. The fiction goes along quietly: a blister
     // that has been walked on for a day is a closed wet pocket, which is where biofilm lives.
+    //
+    // **After the memory response: 7.7% → 12.3%**, re-measured after `8e4a966`, 597 → 958 of 7776.
+    // **+4.6 points off 13,121 arrivals**, the season's second largest step and its best conversion
+    // — twenty-seven boards a thousand arrivals against hand's three, on a third less help.
+    //
+    // **What makes this case the one the response is best at is the same thing the paragraph above
+    // chose it for.** It is the third film case, so it is entered holding *two* points of film, and
+    // `callArrivals` answers a call with chance `immunity[strain] * RESPONSE_PER_CLEAR` — so a film
+    // call here is answered twice as often as the same call one case earlier. And this table is
+    // staph and film and nothing else the profile does not know: every body in it except the spores
+    // and the MRSA is a strain the response can bank on. Deep memory crossed with a table made of
+    // it, which is the shape the season table on `CASES` names as what actually moves a case.
+    //
+    // **The 7.2% above is stale, and by more than arrivals.** The flag-off control — the same run
+    // with the feature off, which is the game that paragraph was written in — now measures **7.7%**.
+    // Half a point moved between that tuning pass and `8e4a966` for reasons that are not this
+    // feature's, most likely the antibody mark gaining a real duration (`balance.sweep.ts`'s
+    // `BAND_EXCEPTIONS` note records that change bringing the whole curve with it). The pass's own
+    // number is left standing as the record of the pass; this is the measurement that supersedes it.
     id: 'blister', node: 'footL', region: 'FOOT · CASE 08', title: 'Blister', credits: 'film', tier: 1,
     story: 'New boots, eleven kilometres. The skin rubbed through this morning and it has not closed.',
     rules: [BLEEDING],
@@ -550,6 +593,16 @@ export const CASES: readonly CaseDefinition[] = [
     // What actually moved it was reach: 10.9 seconds of vessel covered by a phagocyte across the
     // five spots, the thinnest board in the season, pulled in to 19.1. See the season-shape review
     // for the general form of that — spot offset is worth roughly ten times what a body is.
+    //
+    // **After the memory response: 5.2% → 6.1%**, re-measured after `8e4a966`, 405 → 475 of 7776,
+    // +0.9 points off 7,851 arrivals. **The first case in season order a killer ever arrives on** —
+    // 46 of them, because film reaches three by day 8 and `arrivalKindFor` gates the killer on
+    // `IMMUNITY_MAX`. Every arrival on the seven cases before this one is an antibody.
+    //
+    // It is also the case the change buys the most headroom for. 5.2% was two tenths of a point off
+    // the band floor, which is the least margin any case in the season had; 6.1% is a point clear
+    // of it. The eight passes recorded above were spent getting this case *up* to the floor, and
+    // the feature is the first thing since that moved it in the same direction.
     id: 'bronchitis', node: 'lungL', region: 'LEFT LUNG · CASE 11', title: 'Bronchitis', credits: 'virus', tier: 1,
     story: 'The cough that stayed a fortnight. The airway is raw, and everything you break apart leaves two behind.',
     rules: [{ kind: 'virus', label: 'Multiplying', sub: 'Every virus and every Strep that dies splits into two smaller ones' }],
@@ -590,6 +643,26 @@ export const CASES: readonly CaseDefinition[] = [
     // Mass is the wrong dial here for the same reason it is on the bronchitis case: cutting waves 2
     // to 5 by an eighth measured 4.1% to 3.7%. What finally landed it at 5.4% was trading toxins
     // for staph at equal health — the stun is what makes a partial board fail, not the mass.
+    //
+    // **After the memory response: 5.4% → 11.2%**, re-measured after `8e4a966`, 421 → 874 of 7776.
+    // **+5.8 points, the largest step any case in the season takes**, off 34,453 arrivals and 741
+    // killers — also the most help delivered to any case anywhere in the sweep, two and a half
+    // times the next.
+    //
+    // **The last tuning pass is why, and it is the same sentence read the other way round.** What
+    // landed this case at 5.4% was trading toxins for staph, and staph is the one strain the
+    // profile is deepest in by day 9. The table now sends 15 to 27 of them a wave into two points
+    // of staph memory and three of film, so nearly every body that dies here is one
+    // `noteRecognition` banks. A lever chosen for what the stun does turned out to be the lever
+    // that decides how much free help this case attracts, and nothing measured that at the time
+    // because the feature did not exist.
+    //
+    // It is now the third-easiest board on the curve, behind forearm at 14.0% and blister at 12.3%,
+    // and still 2.8 points under the case the season opens with — so `pushoverFailures` is not
+    // close, and the halves the trend check compares are 10.2% front against 7.8% back, the same
+    // 2.3-point gap they had before the feature. Nothing was moved. **That a late case can double
+    // on a feature nothing tuned it against is a Concern in the Task 10 report, not a defect this
+    // comment can settle.**
     id: 'relapse', node: 'gut', region: 'GUT · CASE 12', title: 'Relapse', credits: 'staph', tier: 1,
     story: 'You had this in the spring. It never fully left, and what it makes goes after your own cells.',
     rules: [RELAPSING, TOXIC],
