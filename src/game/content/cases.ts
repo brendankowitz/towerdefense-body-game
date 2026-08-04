@@ -616,8 +616,12 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // **After the memory response: 5.2% → 6.1%**, re-measured after `8e4a966`, 405 → 475 of 7776,
     // +0.9 points off 7,851 arrivals. **The first case in season order a killer ever arrives on** —
-    // 46 of them, because film reaches three by day 8 and `arrivalKindFor` gates the killer on
-    // `IMMUNITY_MAX`. Every arrival on the seven cases before this one is an antibody.
+    // 46 of them. Every arrival on the seven cases before this one is an antibody, and it takes
+    // three conditions at once to change that, which is why it takes until day 8: `arrivalKindFor`
+    // gates the killer on `IMMUNITY_MAX`, so the case must *hold* a strain at three, **and** send
+    // that strain, **and** not have it wiped. Film reaches three by day 6 — but measles wipes film,
+    // and sinus sends only pollen and staph, so neither can spend it. This is the first case that
+    // holds film at three and sends film.
     //
     // It is also the case the change buys the most headroom for. 5.2% was two tenths of a point off
     // the band floor, which is the least margin any case in the season had; 6.1% is a point clear
