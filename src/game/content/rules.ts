@@ -334,12 +334,14 @@ export const SHORE_UP_COST = 120;
  * to restore it, and the note on that constant records why it rather than any of the three larger
  * dials that could also have done it.
  *
- * **The comparison is generous to the response and it broke the ceiling anyway.** "The vaccines"
- * is what they are worth on top of nothing; "the response" is what it adds on top of the vaccines.
- * The two overlap — both rescue boards that were nearly won — so the marginal quantity is the
- * smaller of the two ways to measure it, and the harness has no arm that could measure the other
- * way round without teaching `src/game/` that a sweep exists. Read the ceiling as the lenient test
- * it is.
+ * **The direction of that comparison has not been measured.** "The vaccines" is what they are worth
+ * on top of nothing; "the response" is what it adds on top of the vaccines. The two overlap — both
+ * rescue boards that were nearly won — and the harness has no arm that could measure the marginal
+ * quantity the other way round without teaching `src/game/` that a sweep exists. That overlap could
+ * make this reading the smaller of the two, and so the ceiling a lenient one — or it could compound:
+ * a board that needs both the vaccine and the response to turn would understate what either buys
+ * alone, which makes the ceiling a strict one instead. Nothing run here tells the two apart; call it
+ * unmeasured rather than generous.
  *
  * The eleven rates in `cases.ts` were measured with this off and **every one of them has moved** —
  * four of the eleven leave the 5–15% band at full memory (forearm 44.0%, throat 45.8%, blister
@@ -351,8 +353,10 @@ export const SHORE_UP_COST = 120;
  * time out of the point this flip was committed at, which had `KILLER_MIX_CHANCE` at 0.75 where
  * 0.25 now ships. That dial is never read below `IMMUNITY_MAX`, so it cannot touch the memory-1 and
  * memory-2 columns of any table below — measured, not assumed: the whole spread of it leaves those
- * two columns identical to the board. It moves a memory-3 column by at most 0.2 of a point, and the
- * two values that decide a ceiling were re-measured at the shipped 0.25 rather than carried over.
+ * two columns identical to the board. It moves a memory-3 column by as much as four tenths of a
+ * point — `RESPONSE_PER_CLEAR` 0.34 reads +6.11 under the committed mix and +5.68 under the shipped
+ * one — and the values that decide the floor and the ceiling were re-measured at the shipped 0.25
+ * rather than carried over.
  * The figures at the top of this block are the run at the shipped combination, pasted into
  * `.superpowers/sdd/2026-08-01-memory-response/task-9-remeasure-report.md`. Re-sweep before moving
  * any of them.
@@ -378,16 +382,15 @@ export const ARRIVALS_ENABLED: boolean = true;
  * **3 is out on the ceiling recorded above**: +6.48pp is more than the three vaccines' +4.51pp, so
  * the unadvertised half of memory would be the larger half.
  *
- * **8 is out for a reason the aggregate hides, and it is still the finding of this sweep.** The
- * collateral of a stray mark is nearly *flat* in every dial while the benefit is not. Across all
- * fifteen full-season runs of this re-measurement — five different dials, every value of each —
- * boards lost to the response at one point of memory sit between **217 and 279** with no trend at
- * all, while boards won run from **372 to 1843** and move monotonically with every one of them. A
- * rarer response is therefore not a gentler one: it is the same amount of interference arriving
- * with less of the help that paid for it, and the last column is what that does. At 5 the first
- * point of memory is worth something on nine of the eleven cases, costs three boards in 7776 on
- * measles (+0.03pp, the smallest positive in the season) and costs sinus three, which its own rule
- * explains. **At 8 the hand case goes negative — -0.41pp at one point of memory.**
+ * **8 is out for a reason a single column hides, and it is still the finding of this sweep.** The
+ * clearest evidence is the `RESPONSE_PER_CLEAR` spread, the one table in this file that ran a full
+ * lost/won ladder at every value: the worst case at one point of memory runs -1.48, -1.12, -0.40,
+ * +0.03, +0.22, +3.14 as that dial rises from 0.05 to 0.50, monotonically, while the dial itself only
+ * ever changes how many marks get laid. A rarer response is therefore not a gentler one: it is the
+ * same amount of interference arriving with less of the help that paid for it. At 5 the first point
+ * of memory is worth something on nine of the eleven cases, nets two boards in 7776 on measles (+47
+ * won, -45 lost; +0.03pp, the smallest positive in the season) and costs sinus three, which its own
+ * rule explains. **At 8 the hand case goes negative — -0.41pp at one point of memory.**
  *
  * 5 clears the ceiling and stays the right side of that floor, and it is the only value tested that
  * does both.
@@ -492,16 +495,38 @@ export const RESPONSE_PER_CLEAR = 0.25;
  * inside its range for exactly that reason. 1.00 is out on the same test and would mean no antibody
  * arrival ever comes at full memory. **0.25 is the only shippable value that holds the ceiling.**
  *
- * **Why this dial and not a bigger one, which is the whole argument.** Three other dials could have
- * brought the response under +4.51: `RESPONSE_PER_CLEAR` to 0.15 (+2.92), `ARRIVAL_USES` to 2
- * (+3.26), `RECOGNITION_PER_CALL` to 8 (+2.90). Each overshoots a 0.07-point break by more than a
- * point and a half, and — measured, not argued — **each one takes the hand case negative at one
- * point of memory**: −0.40pp, −0.36pp and −0.41pp respectively, a player handed a memory worse than
- * not having one. This dial cannot do that to anyone, and that is a property rather than a
- * coincidence: below `IMMUNITY_MAX` `arrivalKindFor` sends only antibodies, so the whole spread
- * above leaves memory 1 and memory 2 **identical to the board** — 4323 and 5157 clears, 1027 won
- * and 258 lost, at every one of the five values. It is the only lever in the set that reaches the
- * ceiling without being able to reach the floor.
+ * **Five dials could bring the response under +4.51. Measured at the shipped configuration:**
+ *
+ *     RSP  0.25 → 0.15   +2.87   under by 1.64   hand -0.40   breaks the floor
+ *     RPC  5 → 8         +2.89   under by 1.62   hand -0.41   breaks the floor
+ *     USES 3 → 2         +3.22   under by 1.29   hand -0.36   breaks the floor
+ *     KD   58 → 29       +4.20   under by 0.31   hand +0.51   floor-safe
+ *     KMC  0.75 → 0.25   +4.45   under by 0.05   hand +0.51   floor-safe
+ *
+ * The first three overshoot a 0.07-point break by more than a point, and — measured, not argued —
+ * **each one takes the hand case negative at one point of memory**, a player handed a memory worse
+ * than not having one. `RESPONSE_PER_CLEAR` is continuous — 0.23 and 0.24 were never tested — so
+ * that overshoot is a property of the ladder it happened to be swept on, not of the dial itself;
+ * `RECOGNITION_PER_CALL` and `ARRIVAL_USES` are integers with nothing between the value that
+ * overshoots and the one that broke the ceiling, so for them the ladder and the dial are the same
+ * thing.
+ *
+ * **A second dial is floor-safe too, so this one is not the only lever with that property.**
+ * `KILLER_DAMAGE` is gated by `IMMUNITY_MAX` the same way this dial is — its own note measures
+ * memory 1 and memory 2 identical to the board across all four of its values, 4323 and 5157 — so 29
+ * also clears the ceiling without handing anyone a memory worse than none. `KILLER_MIX_CHANCE` was
+ * chosen over it because it keeps more of the response for the same repair: `KILLER_DAMAGE` 29 gives
+ * up 0.25pp more (+4.20 against +4.45), and it gives that up by halving the one number in this file
+ * that is pinned to something outside itself — `KILLER_DAMAGE` starts at `nk`'s own damage precisely
+ * so a free killer does not simply out-hit the paid cell it stands in for, and 29 spends that
+ * reasoning to buy the ceiling back. This dial only changes how often a killer arrives rather than
+ * how hard one hits, so it buys the same repair without unsettling a value chosen on other grounds.
+ * That is a preference between two working repairs, not the absence of a second one.
+ *
+ * Below `IMMUNITY_MAX` this dial is never read, which is what makes it floor-safe in the first
+ * place: `arrivalKindFor` sends only antibodies there, so the whole spread above leaves memory 1 and
+ * memory 2 **identical to the board** — 4323 and 5157 clears, 1027 won and 258 lost, at every one of
+ * the five values.
  *
  * **What the step cost**, 0.75 → 0.25: 0.13pp of response at full memory (85 boards), 13 more
  * boards of collateral, and three points of the late-rescue share. That is the price of holding the
