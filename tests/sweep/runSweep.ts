@@ -463,8 +463,8 @@ function worstFight(
  * **And the no-memory column is a control rather than a target on the late cases.** Relapse at 2.0%
  * and vesper at 1.4% are far under the band floor, which says those cases are authored to be met by
  * a profile that remembers something — the season hands them deep memory by the day they are
- * reached, and the board sweep's own entry gives them 3/3/3 for that reason. Reading those two rows
- * as "the case is unwinnable" would be reading a counterfactual as a season.
+ * reached, and the board sweep enters them at 2/3/3 and 3/3/3 for that reason. Reading those two
+ * rows as "the case is unwinnable" would be reading a counterfactual as a season.
  *
  * **The blister, which is the one context that leaves the band on the response alone.** Its dock is
  * full by day 5, so a re-fight buys it no cells, and its season-order entry holds no strain at the
