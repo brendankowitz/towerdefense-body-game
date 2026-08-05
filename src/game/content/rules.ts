@@ -171,8 +171,8 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  * All three targets met on both policies.
  *
  * **Re-measured with the memory response on, and none of the three moved.** Same instrument, same
- * 200 seeds, same policy, at `8e4a966` where the feature is live and the season re-measured against
- * it — the reading beside the one above:
+ * 200 seeds, same policy, run once unnarrowed after the season had been re-measured against the
+ * feature — the reading beside the one above:
  *
  *     won 49% / 47%   lost 33% / 39%   unresolved 19% / 14%
  *     median run  97 / 83 days   held 9 / 9 of 10   core reached 33% / 41%

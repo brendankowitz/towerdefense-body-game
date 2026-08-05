@@ -40,9 +40,27 @@ export const CLEAR_RATE_CEILING = 0.15;
  * fewer. What actually moves this case is holding all three strains at once; one strain at its cap
  * is worth nothing. `runSweep.ts` now picks the extremes on purpose.
  *
+ * **Re-measured with the memory response on: the arrivals moved, the case did not.** The same
+ * instrument at 200 seeds now spans **5.3% to 6.9%** across the extremes of the 49 distinct
+ * arrivals it saw — a narrower range than before, because arrivals shorten runs and the 13.0% row
+ * was a run that had lasted 166 days. The board space at 3/3/3 is still 13.6%; nothing arrives
+ * there. So the case is inside the band at both ends by more room than it was, and the exemption
+ * stays retired.
+ *
+ * **And this harness now says why the last stand answers to it rather than to the board sweep, as
+ * data.** `runSweep.ts`'s re-fight block counts how often each case is fought holding every strain
+ * its own table sends at the cap. Under the policy every pacing number is chosen against, the heart
+ * is fought that way **not once** — the only case in the season with that reading. Every other case
+ * is met again with memory the board sweep's season-order entry never gives it; the last stand is
+ * met once, at whatever the run had when the roads fell. The deferral in this docstring was an
+ * argument; it is now also a measurement, from an instrument that could have contradicted it.
+ *
  * Named rather than derived, and `band.test.ts` fails if this set grows — the same reason
  * `content.invariants.test.ts` names the four joints. Widening an exemption should cost a
- * decision, not a comma.
+ * decision, not a comma. **The re-fight arm is not a reason to grow it**, and `runSweep.ts` carries
+ * the measurement behind that: three of the four re-fight contexts a previous round enumerated are
+ * over this ceiling with `ARRIVALS_ENABLED` false, and the loudest of them is over it holding no
+ * memory at all.
  */
 export const CEILING_EXEMPT: ReadonlySet<CaseId> = new Set([]);
 

@@ -243,7 +243,18 @@ export interface RunOutcome {
   readonly clearDays: readonly number[];
   /** Case regions still held when it ended. Falls when a wall comes down. */
   readonly held: number;
-  readonly fights: number;
+  /**
+   * What every fight this run played was played under, in the order it played them. A count of
+   * fights is `fought.length` and used to be the whole of this field.
+   *
+   * A count cannot answer the question `runSweep.ts`'s re-fight report asks — not how many fights a
+   * run had but **what the player was holding when it had them**. Ground is retaken, so a case is
+   * met again with the memory of every clear since, and the season-order walk the board sweep
+   * measures is only the first of those meetings. The context is the whole of what a board plays
+   * under, so recording it rather than a summary of it means a later question about a re-fight can
+   * be asked of this list rather than of a field nobody thought to add.
+   */
+  readonly fought: readonly BoardContext[];
   readonly lostFights: number;
   /** Days with no fire to fight, which is the outbreak interval showing through as idle time. */
   readonly idleDays: number;
@@ -345,7 +356,7 @@ export function playRun(
   let profile: Profile = { ...createFreshProfile(), front: createFront(seed) };
   const hand = createRng(handSeed(seed));
 
-  let fights = 0;
+  const fought: BoardContext[] = [];
   let lostFights = 0;
   let idleDays = 0;
   let lastStands = 0;
@@ -359,7 +370,7 @@ export function playRun(
     cleared: profile.cleared.length,
     clearDays,
     held: heldRegions(profile),
-    fights,
+    fought,
     lostFights,
     idleDays,
     reachedCore,
@@ -382,7 +393,7 @@ export function playRun(
       idleDays += 1;
     } else {
       const context = contextFor(profile, caseId);
-      fights += 1;
+      fought.push(context);
       if (isLastStand(caseId)) {
         lastStands += 1;
         coreArrival ??= {

@@ -151,6 +151,46 @@ describe('playRun', () => {
   });
 
   /**
+   * `runSweep.ts`'s re-fight report reads nothing but this list, so a context recorded in the wrong
+   * place would silently move a measurement rather than fail anything — the same reason the arrival
+   * above is asserted against the run that produced it.
+   *
+   * **The day accounting is the assertion that can fail for a reason.** Every iteration of the loop
+   * either fights or spends an idle day and then ends the day, so a run that reports `days` has
+   * exactly `days - 1` of them behind it, split between the two. A context pushed on a day that was
+   * idle, pushed twice for one fight, or pushed on a path that then returns without spending the
+   * day, breaks this and breaks nothing else. Verified by mutation: moving the push into the branch
+   * that has no fire to fight turns this red and leaves every other test in the file green.
+   *
+   * The ordering clause is weaker on purpose — it says a list of fights is in the order they were
+   * fought, which is what makes "the worst one, tie-broken by the earliest day" a rule about a run
+   * rather than about an array.
+   */
+  it('records every fight it played, and only on the days it played one', () => {
+    for (const { seed, outcome } of RUNS) {
+      expect(
+        outcome.fought.length + outcome.idleDays,
+        `run ${String(seed)} did not account for every day it lived`,
+      ).toBe(outcome.days - 1);
+
+      let previous = 0;
+      for (const context of outcome.fought) {
+        expect(context.day, `run ${String(seed)} fought out of order`)
+          .toBeGreaterThanOrEqual(previous);
+        expect(context.day).toBeLessThanOrEqual(outcome.days);
+        previous = context.day;
+      }
+
+      if (outcome.lostAtCore) {
+        expect(
+          outcome.fought.at(-1)?.caseId,
+          `run ${String(seed)} played something after it lost the core`,
+        ).toBe('heart');
+      }
+    }
+  });
+
+  /**
    * Its own plays, from a cleared memo both times: what is being asserted is that a second play of a
    * seed matches the first, and a second play that only re-read a cache would assert the cache.
    */

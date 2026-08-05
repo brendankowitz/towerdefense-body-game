@@ -66,8 +66,15 @@ export interface BoardOutcome {
   readonly stalled: boolean;
 }
 
-/** No memory of anything, which is what `ArrivalPolicy`'s `'none'` hands the simulation. */
-const NO_MEMORY: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
+/**
+ * No memory of anything, which is what `ArrivalPolicy`'s `'none'` hands the simulation.
+ *
+ * Exported because it is also the only record in the sweeps that names all three strains and
+ * nothing else, and `strainOf` (`arrivals.ts`) answers "is this pathogen a strain the immunity
+ * screen tracks" by asking a record exactly that. `runSweep.ts` needs that question answered about
+ * a wave table, and a second three-name table over there is the drift `strainOf` exists to prevent.
+ */
+export const NO_MEMORY: Readonly<Record<StrainId, number>> = { staph: 0, film: 0, virus: 0 };
 
 /**
  * What the profile carries into this case, derived from the cases cleared before it rather than
