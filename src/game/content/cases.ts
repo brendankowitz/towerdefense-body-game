@@ -442,7 +442,7 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // **After the memory response: 7.7% → 12.3%**, re-measured after `8e4a966`, 597 → 958 of 7776.
     // **+4.6 points off 13,121 arrivals**, the season's second largest step and its best conversion
-    // — twenty-seven boards a thousand arrivals against hand's three, on a third less help.
+    // — twenty-seven boards a thousand arrivals against hand's three, on 11% less help.
     //
     // **What makes this case the one the response is best at is the same thing the paragraph above
     // chose it for.** It is the third film case, so it is entered holding *two* points of film, and
@@ -503,8 +503,10 @@ export const CASES: readonly CaseDefinition[] = [
     // arrival that helps it at all. (Sinus does worse still, but it does worse by *losing* boards,
     // which is a different fact and has its own note.) The season hands it three points of film by
     // day 6 and the amnesia rule takes exactly
-    // those away, so it is fought at 1/0/1: the strain its table sends most of is the one strain it
-    // cannot remember, and `createSimState` zeroes it before `noteRecognition` ever sees a body.
+    // those away, so it is fought at 1/0/1: film is wiped and `createSimState` zeroes it before
+    // `noteRecognition` ever sees a body — but film is not the strain its table leans on. The table
+    // sends 55 virus across the season against 18 film, so the amnesia rule is taking the case's
+    // deepest immunity, not its most-answered strain.
     //
     // The rule was authored for the fiction — immune amnesia is what measles does — and it prices
     // the response as a side effect. No constant was chosen to make that true, and the case is
@@ -670,8 +672,8 @@ export const CASES: readonly CaseDefinition[] = [
     //
     // **After the memory response: 5.4% → 11.2%**, re-measured after `8e4a966`, 421 → 874 of 7776.
     // **+5.8 points, the largest step any case in the season takes**, off 34,453 arrivals and 741
-    // killers — also the most help delivered to any case anywhere in the sweep, two and a half
-    // times the next.
+    // killers — also the most help delivered to any case anywhere in the sweep, 1.93 times the
+    // next (the heart, at 17,809).
     //
     // **The last tuning pass is why, and it is the same sentence read the other way round.** What
     // landed this case at 5.4% was trading toxins for staph, and staph is the one strain the

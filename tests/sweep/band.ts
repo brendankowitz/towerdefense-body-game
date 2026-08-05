@@ -31,7 +31,7 @@ export const CLEAR_RATE_CEILING = 0.15;
  * whole board space at the arrivals runs actually make — median day 14 to 16, nothing or almost
  * nothing cleared — and the case was retuned against that rather than against this one (`cases.ts`
  * records the three passes and the range). Across the extremes of those arrivals it clears **5.3%
- * to 13.0%**, the floor of that range being the band floor and the ceiling of it being this
+ * to 13.6%**, the floor of that range being the band floor and the ceiling of it being this
  * harness's own entry — which a run only reaches by having nearly won already. So the case is
  * inside the band at both ends and there is nothing left to exempt.
  *

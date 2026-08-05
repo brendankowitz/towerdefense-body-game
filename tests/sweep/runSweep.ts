@@ -196,7 +196,7 @@ function gateReport(groups: readonly RunGroup[]): string {
  * So the selection is deliberately the extremes: least and most immunity, fewest and most cases
  * cleared. Four contexts is a quarter of an hour of enumeration and that budget is better spent on
  * the ends of the range than on four neighbours, because what the report has to support is a
- * **range** rather than a point. Selecting that way measured the real top at **13.0%** against the
+ * **range** rather than a point. Selecting that way measured the real top at **13.6%** against the
  * 5.3% floor — higher than the head-of-list sample had found, which is the argument for picking the
  * ends rather than for picking more of them.
  */

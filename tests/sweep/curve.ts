@@ -38,10 +38,17 @@
  *
  * **Neither carries a tolerance constant, deliberately.** Slack is structural — averaging inside a
  * half, and a ceiling set by a measured case rather than a chosen margin — so there is no number
- * here to quietly widen when a tuning is inconvenient. On the season as measured — 13.2 / 6.3 / 5.5
- * / 5.3 — the halves average 9.8% against 5.4%, so inverting the trend takes a single case moving
- * 8.8 points, and tripping the pushover check takes the hardest case rising 6.9. Both are around
- * ten times what one body is worth.
+ * here to quietly widen when a tuning is inconvenient. On the season as it stood when this was
+ * written — four cases, 13.2 / 6.3 / 5.5 / 5.3 — the halves averaged 9.8% against 5.4%, so
+ * inverting the trend took a single case moving 8.8 points, and tripping the pushover check took
+ * the hardest case rising 6.9. Both were around ten times what one body was worth then.
+ *
+ * **That pushover margin has since narrowed to a fraction of it, and the memory response (Task 10)
+ * is why.** Eleven cases in, the case nearest the opener is blister at 12.3% against forearm's
+ * 14.0% — a budget of **1.7 points**, about two bodies rather than ten. Forearm cannot move (it
+ * enters at zero immunity, so no feature that answers a call can reach it), so this margin only
+ * shrinks further as later cases rise and the opener stays fixed. A future author spending against
+ * the 6.9 figure above would be spending a budget the season has already used five points of.
  *
  * **What it knowingly lets through:** a single mid-season case sitting just under the opening rate,
  * hard cases either side of it. It ties neither check — the average absorbs it and it never rises
