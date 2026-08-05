@@ -10,7 +10,7 @@ import { STRAIN_ROWS } from '@game/content/vaccines';
 import type { StrainId } from '@game/types';
 
 /**
- * `ARRIVALS_ENABLED` ships `false` until Task 9 measures the response, so every assertion that the
+ * `ARRIVALS_ENABLED` shipped `false` while the response was being measured, so every assertion that the
  * memory line *appears* would otherwise pass for the wrong reason — or rather fail for one, since
  * nothing at all can appear behind a flag that is off. Mocked through a getter rather than a fixed
  * value so the one test that needs the flag off can turn it off in the same file, and so the
@@ -202,7 +202,7 @@ describe('the memory line', () => {
   });
 
   /**
-   * `KILLER_MIX_CHANCE` is a Task 9 placeholder that may yet be measured down to zero, which would
+   * `KILLER_MIX_CHANCE` is a measured dial that a later sweep could take to zero, which would
    * make "marks and killers" a promise no board keeps. Asking `arrivalKindFor` what a full-memory
    * call can buy is what makes that a measurement this test follows rather than a copy edit.
    */

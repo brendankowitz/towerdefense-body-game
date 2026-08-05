@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 /**
  * The memory comparison, on its own config for the same reason the other three have one: it plays
- * the whole board space once per memory arm and takes minutes.
+ * the whole board space once per memory arm. Measured at over two hours a run; see the clock below.
  *
  *   npm run sweep:arrivals
  *

@@ -11,7 +11,8 @@ import {
 
 /**
  * THE MEMORY COMPARISON. Not part of `npm test`, and not part of any other sweep either — it
- * plays the whole board space four times over and takes minutes.
+ * plays the whole board space four times over and takes hours — 26 full runs of it measured
+ * between roughly one and two apiece, on a machine running several at once.
  *
  *   npm run sweep:arrivals
  *

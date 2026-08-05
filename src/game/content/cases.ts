@@ -870,10 +870,9 @@ export const CASES: readonly CaseDefinition[] = [
     // may only touch what is already marked. Still inside the band, so the exemption this case's
     // own paragraph retired stays retired.
     //
-    // **The range above is a flag-off range, and re-taking it is Task 11's.** `runSweep.ts` has not
-    // been re-run since arrivals were turned on, so every figure in the four-row table above and
-    // the run-level target under it are pre-feature numbers. Two of the four rows can be reasoned
-    // to without re-running it, and it is worth writing which:
+    // **The four-row table above is a flag-off range.** Two of its rows could be reasoned to before
+    // the whole-run instrument was re-run, and it is worth keeping which — the block below is what
+    // that instrument then measured, and the two agree:
     //
     // - **The 5.3% floor cannot have moved.** Day 14, nothing cleared, immunity 0/0/0 — with no
     //   memory `noteRecognition` banks nothing and no call is ever rolled, exactly as on the

@@ -411,11 +411,20 @@ export const SHORE_UP_COST = 120;
  * alone, which makes the ceiling a strict one instead. Nothing run here tells the two apart; call it
  * unmeasured rather than generous.
  *
- * The eleven rates in `cases.ts` were measured with this off and **every one of them has moved** —
- * four of the eleven leave the 5–15% band at full memory (forearm 44.0%, throat 45.8%, blister
- * 24.0%, stomach 23.2%), forearm and throat by thirty points and more. That is Task 10's work: the
- * band is asserted by `npm run sweep`, which is not part of `npm run verify`, so the season can be
- * re-tuned against a game that has this on rather than against one that has it off.
+ * **Four of the eleven leave the 5–15% band at full memory** — forearm 44.0%, throat 45.8%, blister
+ * 24.0%, stomach 23.2%, the first two by thirty points and more. Read what that arm is before
+ * spending it: all three strains at their cap is not the profile the band is defined on. `npm run
+ * sweep` enters each case at the immunity a season walk has actually earned by then, and on that
+ * arm the season was re-measured with this on and **every one of the eleven is inside the band with
+ * both curve checks passing — no lever moved**. `immunityAfter` climbs one strain at a time and only
+ * reaches its cap at day 10, and the two cases entered at 3/3/3 send an untaggable strain as a third
+ * to a fifth of every wave, so they move least of all.
+ *
+ * The full-memory column is a *re-fight* late in a run by a player who holds everything, and it was
+ * measured rather than gated: three of the five worst such fights in the season are inside the band,
+ * and of the two that are not, forearm brings 25.9 of its 45.9 points with no memory at all — it is
+ * over the ceiling on the dock schedule alone, before this feature exists. `runSweep.ts` carries
+ * that measurement and `band.ts` records why the exemption sets stay empty.
  *
  * **Provenance, exactly, because five spreads share it.** Every table below was swept one dial at a
  * time out of the point this flip was committed at, which had `KILLER_MIX_CHANCE` at 0.75 where

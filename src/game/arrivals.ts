@@ -75,7 +75,7 @@ function openMounts(state: SimState): readonly number[] {
  * nothing short of a held vaccine (`IMMUNITY_MAX`) ever buys a killer.
  *
  * Which of the two a call at full memory buys *is* a balance dial, though, so it lives in
- * `KILLER_MIX_CHANCE` where Task 9 can move it, rather than as a literal here — an antibody keeps
+ * `KILLER_MIX_CHANCE` where a sweep can move it, rather than as a literal here — an antibody keeps
  * marking bodies the killer still depends on, and a killer finally answers a mark already laid.
  *
  * `roll` is read only once memory is maxed; below the max the mix isn't a roll at all, so the
