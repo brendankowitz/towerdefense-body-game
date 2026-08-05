@@ -887,6 +887,39 @@ export const CASES: readonly CaseDefinition[] = [
     // So the range is **5.3% to 13.6%** and it widened at the top by six tenths of a point. What
     // that does to "a last stand won by a quarter of the runs that fight it" is a whole-run question
     // and needs the whole-run instrument.
+    //
+    // **The whole-run instrument has now been run, and it moved the arrivals rather than the case.**
+    // `npm run sweep:runs`, 200 seeds, arrivals on. The four extremes of the 49 distinct arrivals
+    // it saw, against the four rows above:
+    //
+    //     day  14   0 cleared  immunity 0/0/0   415/7776 =  5.3%
+    //     day  62   5 cleared  immunity 3/3/2   534/7776 =  6.9%
+    //     day  12   1 cleared  immunity 0/1/0   411/7776 =  5.3%
+    //     day  15   1 cleared  immunity 1/0/0   423/7776 =  5.4%
+    //
+    // **The floor held exactly and the top of the range fell from 13.0% to 6.9% — because no run
+    // arrives at 3/3/3 any more, not because the case got harder.** The 13.0% row was day 166, and
+    // arrivals took 24 days off the median `nearestToCore` run and 15 off `cheapest`: runs resolve
+    // sooner, so the very long run that had held nearly everything before reaching the core is no
+    // longer in the sample at all. The board space at 3/3/3 is still 13.6%, unchanged and measured
+    // above — what changed is that a run no longer gets there. A future round that lengthens runs
+    // will see the top of this range come back up without this case being touched.
+    //
+    // Two smaller readings in that table are the feature showing through rather than noise. At
+    // 0/1/0 this case now clears **411** boards where an empty profile clears 415: one point of film
+    // is enough to bank recognition and roll a call, and against a table this size the four boards
+    // it costs are worth more than the help is. At 1/0/0 it clears 423, eight boards the other way.
+    // Both are inside a handful of boards and neither is a lever; they are recorded because "one
+    // strain at any depth is nothing here" was the reasoning above and it is now measurably not
+    // quite nothing.
+    //
+    // **The run-level target is unchanged, and still missed by the same distance.** At 200 seeds
+    // with arrivals on the last stand is fought in **33 to 41 per cent** of runs and won in **0 to 2
+    // per cent** — the same 34-to-41 and 0-to-2 recorded above. So the memory response did not touch
+    // this case's run-level shape at all, and "a last stand won by a quarter of the runs that fight
+    // it" is still a content decision nobody has taken. The reason it is untouched is the one this
+    // case's own paragraph gives: a fifth to a quarter of every wave here is Vesper, Vesper cannot be
+    // marked, and a killer may only touch what is marked.
     id: 'heart', node: 'heart', region: 'HEART · CASE 14', title: 'The last stand',
     credits: 'staph', tier: 3,
     story: 'Every road to the core has fallen. Whatever is arriving here already got past everything else, all of it, at once.',

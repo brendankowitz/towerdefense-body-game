@@ -132,6 +132,17 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  * without discriminating between settings of it. `'learned'` resolves no runs at all and cannot be
  * tuned against.
  *
+ * **That description of `'stumbling'` is no longer true, and the memory response is what changed
+ * it.** Re-measured at 200 seeds with arrivals on, the player who draws a board at random **wins 6
+ * per cent of `nearestToCore` runs and 33 per cent of `cheapest` ones**, against none of either
+ * before. Nothing here moved; what moved is the board space that player draws from. The reason the
+ * same feature is nearly invisible on the row above is `'learning'` itself — it wins a case it has
+ * cleared once with certainty, so help that makes a board likelier to clear can only reach the
+ * fights it has not yet won. **The response is worth most to the player who is worst at the fight**,
+ * which is the direction a forgiving mechanic should lean and was not designed here either. It also
+ * narrows the bracket these numbers sit inside, and the pessimistic end of a bracket moving is worth
+ * knowing before the next value is chosen against it.
+ *
  * **Every number here was re-measured after a defect in the harness's rng.** The player's board
  * draws and the sickness's door draws ran off the same mulberry32 sequence, so the first variate
  * that chose a run's opening door was the identical variate that chose its first board. Replay was
@@ -158,6 +169,30 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  *     median run 121 / 98 days   held 9 / 8 of 10   core reached 32% / 42%
  *
  * All three targets met on both policies.
+ *
+ * **Re-measured with the memory response on, and none of the three moved.** Same instrument, same
+ * 200 seeds, same policy, at `8e4a966` where the feature is live and the season re-measured against
+ * it — the reading beside the one above:
+ *
+ *     won 49% / 47%   lost 33% / 39%   unresolved 19% / 14%
+ *     median run  97 / 83 days   held 9 / 9 of 10   core reached 33% / 41%
+ *
+ * All three targets still met on both policies, and every share is within two points of its
+ * pre-feature value — inside the roughly three-and-a-half point standard error at 200 seeds, so
+ * none of them is a move at all.
+ *
+ * **One figure moved further than noise and it is not a share: the median run is 24 days shorter on
+ * `nearestToCore` and 15 shorter on `cheapest`.** That is the whole of what arrivals did to the
+ * front line. Free help wins a fight the player would otherwise have lost, a won fight is ground
+ * retaken rather than a day given back, and a run that stops giving days back resolves sooner —
+ * which also shows up as the `cheapest` player finishing on 9 of the ten regions where they used to
+ * finish on 8. The season did not become easier or harder here; it became **shorter**, and the three
+ * targets are stated in terms these numbers still clear (a median past 30 days by a factor of three).
+ *
+ * So the direction to read off this is that arrivals reach the front line through the *fights*, not
+ * through anything these three constants govern. Doors open on the same interval, walls stand for
+ * the same days, and a beaten strain resists a door exactly as often. What changed is how often the
+ * player is standing on the ground when the door opens.
  *
  * **That reading is a re-measurement, and what changed was the model rather than any number here.**
  * `seedOutbreak` used to filter its candidate doors against `infected` and not against `held`, so a
@@ -206,6 +241,13 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  * The direction above 4 is the one already known: every further step buys a lower loss share by
  * turning runs into non-endings rather than into wins, because a player who outruns the seeding is
  * never offered the three doorless interior regions and can never hold all ten.
+ *
+ * **After the memory response: 3 stands, on a loss share that did not move.** The quantity this
+ * lever is chosen on is the loss share against the 25-to-60 target, and at 200 seeds it reads 33% /
+ * 39% with arrivals on against 32% / 40% before them — a margin over the floor of 8 and 14 points,
+ * where it was 7 and 15. Nothing here is worth a step of a lever that moves 4 to 16 points. The
+ * table above was not re-run: it is the provenance for why 3 rather than 4, and re-taking it would
+ * cost four full sweeps to re-confirm a spread whose shipped cell has not moved.
  */
 export const OUTBREAK_INTERVAL = 3;
 
@@ -260,6 +302,15 @@ export const OUTBREAK_INTERVAL = 3;
  * 100 under the new one, and the reason it is inert — a third of the core's approach is joints no
  * wall can stand on — does not depend on how often doors open. A re-sweep would cost half an hour to
  * confirm a structural fact. Whoever closes the joint gap should re-sweep at the shipped interval.
+ *
+ * **After the memory response: still inert, and this feature cannot reach it.** A wall is
+ * `SIEGE_BASE_DAYS + response`, and the response is immunity, which is earned exactly as it was — a
+ * clear credits one strain, capped, and free help changes nothing about that arithmetic. What
+ * arrivals change is how often a clear happens, which is ground held rather than wall length: the
+ * `cheapest` player now finishes holding 9 of the ten regions rather than 8. Re-sweeping this was
+ * declined for the third time, for the reason above and one more — a lever measured flat at 40 seeds
+ * under one rng and 100 under another, whose flatness has a structural cause the feature does not
+ * touch, is not a lever a fourth reading would inform.
  */
 export const SIEGE_BASE_DAYS = 1;
 
@@ -290,6 +341,15 @@ export const SIEGE_BASE_DAYS = 1;
  * 0 / 25 / 50 / 75 per cent ladder a player can read off the immunity screen, and it leaves a
  * quarter chance at full immunity that the door opens anyway — so no door is ever closed, which is
  * the thing the run needs to stay endable.
+ *
+ * **After the memory response: 0.25 stands, and the interaction that could have moved it went the
+ * other way.** This lever is chosen on `unresolved` and on nothing else, and the worry a feature
+ * that wins more fights raises is exactly the cliff above: more clears means deeper immunity, deeper
+ * immunity means more doors that never open, and a body that seals itself is a run that cannot reach
+ * the ten-region win. Measured at 200 seeds, `unresolved` is **19% / 14%** with arrivals on against
+ * 21% / 14% before them — down on one policy and unmoved on the other, so the season is no nearer
+ * the seal than it was. The mechanism is in the median run: arrivals end runs sooner rather than
+ * carrying more of them to the ceiling.
  */
 export const DOOR_RESIST_PER_CLEAR = 0.25;
 
