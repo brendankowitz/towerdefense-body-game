@@ -178,8 +178,16 @@ export const FRESH_PROFILE = { bank: 240, seed: 1 } as const;
  *     median run  97 / 83 days   held 9 / 9 of 10   core reached 33% / 41%
  *
  * All three targets still met on both policies, and every share is within two points of its
- * pre-feature value — inside the roughly three-and-a-half point standard error at 200 seeds, so
- * none of them is a move at all.
+ * pre-feature value. **That is a non-detection, not a null.** One share's standard error at 200
+ * seeds is about three and a half points, so at two of them this instrument cannot resolve a
+ * before/after move under roughly seven — what these rows establish is that nothing moved by more
+ * than that, which is a weaker claim than nothing moved and the one the seed count supports.
+ * Each of the three constants below carries a structural argument as well, and it is that argument
+ * rather than this table that is load-bearing.
+ *
+ * `held` is the least stable number here and is not a share at all: it is the median of a bimodal
+ * integer whose histogram runs from 1 to 10 with a peak at each end, so the `cheapest` player's
+ * 8 to 9 is one seed's worth of movement and is read below as a direction, never as a magnitude.
  *
  * **One figure moved further than noise and it is not a share: the median run is 24 days shorter on
  * `nearestToCore` and 15 shorter on `cheapest`.** That is the whole of what arrivals did to the

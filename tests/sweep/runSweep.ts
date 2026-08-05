@@ -346,10 +346,11 @@ function heartReport(groups: readonly RunGroup[]): string {
  * only thing that makes enumerating it worth a quarter of an hour.
  *
  * **That ranking is a rule and it excludes things.** At 200 seeds it spends the budget on vesper,
- * bronchitis, forearm, relapse and blister, and the sixth is the sinus at 11.6% — which is the one
- * case in the season where a re-fight at the cap clears *fewer* boards than no memory at all (684
- * against 693, measured on a narrowed run that happened to reach it), because that case charges the
- * player per kill and free kills are a bill. A case fought at the cap rarely can still be the case
+ * bronchitis, forearm, relapse and blister, and the sixth is the sinus at 11.6% — the one case
+ * *among those measured* where a re-fight at the cap clears *fewer* boards than no memory at all
+ * (684 against 693, on a narrowed run that happened to reach it), because that case charges the
+ * player per kill and free kills are a bill. Six of the eleven have been enumerated this way, so
+ * whether it is the only such case in the season is not something this has measured. A case fought at the cap rarely can still be the case
  * this feature does the most to, and the ranking will not show it. The per-case table is not capped
  * and always carries all eleven.
  */

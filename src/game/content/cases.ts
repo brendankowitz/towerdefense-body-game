@@ -881,7 +881,8 @@ export const CASES: readonly CaseDefinition[] = [
     //   nothing for the strains this table sends alongside it.
     // - **The 13.0% top is now 13.6%**, and that is measured rather than inferred. That row is day
     //   166, six cleared, immunity 3/3/3 — and `day` reaches the simulation only through
-    //   `unlockedKinds`, which has offered all six cells since day 8, so day 166 at 3/3/3 and this
+    //   `unlockedKinds`, which has offered all six cells since day 4 — the latest `unlock` in the
+    //   dock is 3 days elapsed — so day 166 at 3/3/3 and this
     //   harness's own day-11 entry at 3/3/3 are the identical board space. It is the same 1056/7776.
     //
     // So the range is **5.3% to 13.6%** and it widened at the top by six tenths of a point. What
