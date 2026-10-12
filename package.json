@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.6.8",
-    "@capacitor/ios": "^7.6.8",
+    "@capacitor/ios": "^7.6.9",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.0",
     "@testing-library/jest-dom": "^6.6.3",
